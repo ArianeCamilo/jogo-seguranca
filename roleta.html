@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#04181f">
+<meta name="robots" content="noindex,nofollow">
+<title>Shield Spin · Cyber Shield Game</title>
+<style>
+  @font-face { font-family: 'TOTVS'; font-weight: 200; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraLight.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 300; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Light.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 400; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Regular.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 600; font-style: normal; font-display: swap; src: url('fonts/TOTVS-SemiBold.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Bold.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 800; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraBold.ttf') format('truetype'); }
+  :root {
+    --bg0: #031319; --bg1: #052932;
+    --panel: rgba(4, 26, 34, .92); --panel-2: rgba(10, 52, 62, .55);
+    --cyan: #22d8f0; --lime: #c9f43a; --gold: #ffd84a;
+    --line: rgba(34, 216, 240, .28); --text: #e8f6f8; --muted: #7fa4ab;
+    --ok: #b6f23c; --bad: #ff5d7a; --warn: #ffc233;
+    --grad: linear-gradient(90deg, #e4ff6a 0%, #5be8d6 55%, #22c8f5 100%);
+    --mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --sans: Verdana, Geneva, "DejaVu Sans", sans-serif;
+    --display: 'TOTVS', Verdana, Geneva, sans-serif;
+    --u: min(1vw, 1.65vh);   /* unidade fluida: tudo se ajusta ao tamanho da tela, de notebook a TV 4K */
+  }
+  @media (max-aspect-ratio: 7/5) { :root { --u: min(1.7vw, 1.1vh); } }   /* telas mais "em pé": layout empilhado */
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden; color: var(--text); font: calc(var(--u) * 1.5)/1.45 var(--sans);
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+    /* mesmo fundo do quiz */
+    background:
+      radial-gradient(calc(var(--u) * 61) calc(var(--u) * 31) at 50% -12%, rgba(20, 130, 140, .55), transparent 62%),
+      radial-gradient(calc(var(--u) * 39) calc(var(--u) * 27) at 100% 100%, rgba(201, 244, 58, .10), transparent 60%),
+      radial-gradient(calc(var(--u) * 33) calc(var(--u) * 23) at 0% 70%, rgba(34, 216, 240, .08), transparent 60%),
+      linear-gradient(180deg, var(--bg0), var(--bg1));
+    background-attachment: fixed;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  h1, h2 { margin: 0; font-family: var(--display); line-height: 1.05; letter-spacing: -.02em; }
+  p { margin: 0 0 calc(var(--u) * 1); }
+  .muted { color: var(--muted); }
+  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(34,216,240,.35)); }
+  .tag { font: 700 calc(var(--u) * 1.3)/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); }
+  .tag::before { content: "// "; color: var(--muted); }
+  .tag.bad { color: var(--bad); } .tag.ok { color: var(--ok); }
+
+  /* ---------- cenário ---------- */
+  .scene { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .floor { position: absolute; left: -50%; right: -50%; bottom: -2%; height: 46vh;
+    background: repeating-linear-gradient(90deg, rgba(34,216,240,.35) 0 1px, transparent 1px 64px), repeating-linear-gradient(0deg, rgba(34,216,240,.35) 0 1px, transparent 1px 48px);
+    transform: perspective(420px) rotateX(62deg); transform-origin: 50% 100%;
+    -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 92%); mask-image: linear-gradient(to top, #000 10%, transparent 92%);
+    opacity: .42; animation: run 2.4s linear infinite; }
+  @keyframes run { to { background-position: 0 0, 0 48px; } }
+  .rain { position: absolute; top: 0; font: calc(var(--u) * .62)/1.7 var(--mono); color: var(--cyan); opacity: .06; white-space: pre; animation: fall linear infinite; }
+  @keyframes fall { from { transform: translateY(-60%); } to { transform: translateY(100vh); } }
+  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.45)); }
+  @keyframes blink { 50% { opacity: .25; } }
+
+  /* ---------- palco ---------- */
+  #stage { position: relative; z-index: 1; height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: center; gap: calc(var(--u) * 3);
+    padding: calc(var(--u) * 2) calc(var(--u) * 4) calc(var(--u) * 5.2); }
+  .wheelbox { display: grid; place-items: center; min-height: 0; min-width: 0; }
+  .wheelwrap { position: relative; width: min(100%, calc(100vh - var(--u) * 12), calc(100dvh - var(--u) * 12)); aspect-ratio: 1; filter: drop-shadow(0 0 40px rgba(34,216,240,.25)); }
+  .wheelwrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .pointer { position: absolute; top: 0; left: 50%; width: 8%; aspect-ratio: 1; transform: translate(-50%, 2%); background: var(--lime);
+    clip-path: polygon(0 0, 100% 0, 50% 100%); filter: drop-shadow(0 0 10px var(--lime)); z-index: 2; }
+  #rot { transform-origin: 0 0; will-change: transform; }
+  .ss { fill: #0a4552; } .sp { fill: #17406a; }
+  .sg  { fill: url(#gGold); } .sd { fill: #3a4a4f; }
+  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 1) calc(var(--u) * 2.4); margin-top: calc(var(--u) * 1.8); font: 700 calc(var(--u) * 1.35) var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: calc(var(--u) * .8); }
+  .sw { display: inline-block; width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); border: 1px solid rgba(34,216,240,.6); border-radius: 3px; }
+  .sw.ss { background: #0a4552; } .sw.sp { background: #17406a; } .sw.sg { background: linear-gradient(135deg, #fff0a0, #e0a21a); border-color: #ffd84a; }
+  .ls { font: 700 21px var(--display); fill: #e8f6f8; letter-spacing: .01em; }
+  .lg { font: 800 20px var(--display); fill: #3a2a00; letter-spacing: .05em; }
+  .ld { font: 800 21px var(--display); fill: #9fb1b6; letter-spacing: .06em; }
+
+  .side { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--u) * 2.4); }
+  .idform { display: flex; flex-direction: column; gap: calc(var(--u) * 1.4); }
+  .idform > p, .idform > .err { margin: 0; }
+  .idform > .btns { margin-top: calc(var(--u) * .4); }
+  #state { display: flex; flex-direction: column; gap: calc(var(--u) * 2.4); }
+  #state > p, #state > div > p { margin: 0; }
+  .side h1 { font-size: calc(var(--u) * 5.6); font-weight: 800; text-transform: uppercase; }
+  .lead { font-size: calc(var(--u) * 1.9); line-height: 1.4; color: var(--text); }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(var(--u) * 1.2); font: 700 calc(var(--u) * 1.4) var(--mono); color: var(--muted); }
+  .steps b { color: var(--lime); margin-right: .6em; }
+  .note { font: calc(var(--u) * 1.35) var(--mono); color: var(--muted); letter-spacing: .04em; }
+
+  .panel { --c: var(--cyan); --s: calc(var(--u) * 1.4); --t: 2px; position: relative; padding: calc(var(--u) * 2); border: 1px solid var(--line); border-radius: 4px;
+    background:
+      linear-gradient(var(--c), var(--c)) top left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top left / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top right / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom left / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom right / var(--t) var(--s) no-repeat,
+      var(--panel);
+    box-shadow: 0 0 40px rgba(34,216,240,.07), inset 0 0 40px rgba(34,216,240,.04); }
+
+  /* botão ajustado ao texto: largura automática, com respiro moderado nas laterais */
+  .btn { display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: calc(var(--u) * 14); padding: calc(var(--u) * 1.5) calc(var(--u) * 3.2); border-radius: 999px; border: 1px solid transparent;
+    font: 800 calc(var(--u) * 1.6)/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; text-align: center; white-space: nowrap; transition: transform .15s, box-shadow .2s; }
+  .btn:active:not(:disabled) { transform: scale(.98); }
+  .btn.primary { color: #03242b; background: linear-gradient(90deg, #d8fb55, #4fe6dd 60%, #36cdf5); box-shadow: 0 0 30px rgba(54,205,245,.45), inset 0 1px 0 rgba(255,255,255,.5); }
+  .btn.secondary { color: var(--cyan); background: rgba(0,0,0,.25); border-color: var(--line); }
+  .btn.danger { color: var(--bad); background: transparent; border-color: rgba(255,93,122,.5); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.pulse:not(:disabled) { animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 52px rgba(91,232,214,.8), inset 0 1px 0 rgba(255,255,255,.5); } }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--u) * 2); }
+  /* grupos de botões: todos com a largura do maior, para não depender de alinhamento */
+  .btns { display: inline-grid; grid-template-columns: 1fr; gap: calc(var(--u) * 1.4); }
+  .btns.cols { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }
+  .btns.two { grid-template-columns: repeat(2, 1fr); }
+  .btns .btn { width: 100%; }
+  #state > .btn, #state > .row, #state > .btns, .idform > .btns { align-self: flex-start; }
+  .modal .box > .btns { align-self: center; }
+  .modal .box > .btn { align-self: center; }
+  .modal .box > .row { justify-content: center; }
+  .chips { display: flex; flex-wrap: wrap; gap: calc(var(--u) * .8); margin: calc(var(--u) * 1.2) 0; }
+  .chip { font: 700 calc(var(--u) * 1.4)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: calc(var(--u) * .9) calc(var(--u) * 1.2); border: 1px solid var(--line); background: var(--panel-2); color: var(--cyan); }
+  .chip b { color: var(--lime); }
+  .chip.lime { color: #03242b; background: var(--lime); border-color: var(--lime); }
+
+  /* ---------- identificação ---------- */
+  .emailbox { display: flex; align-items: baseline; flex-wrap: wrap; padding: calc(var(--u) * 1.1) calc(var(--u) * 1.4); background: rgba(0,0,0,.35); border: 1px solid var(--line); font: 700 calc(var(--u) * 2.2) var(--mono); min-height: calc(var(--u) * 5); }
+  .emailbox .typed { color: var(--text); word-break: break-all; }
+  .emailbox .caret { display: inline-block; width: .6ch; height: 1.1em; margin-left: 2px; background: var(--lime); animation: blink 1s steps(2) infinite; align-self: center; }
+  .emailbox .suf { color: var(--muted); }
+  .kb { display: grid; gap: calc(var(--u) * .8); }
+  .kbrow { display: flex; gap: calc(var(--u) * .8); justify-content: center; }
+  .key { flex: 1; max-width: calc(var(--u) * 7.5); min-height: calc(var(--u) * 4.2); display: grid; place-items: center; font: 800 calc(var(--u) * 2) var(--mono); text-transform: lowercase;
+    color: var(--text); background: rgba(34,216,240,.08); border: 1px solid var(--line); border-radius: 6px; }
+  .key:active { background: rgba(201,244,58,.3); border-color: var(--lime); }
+  .key.wide { max-width: calc(var(--u) * 11); }
+  .err { color: var(--bad); font: calc(var(--u) * 1.3) var(--mono); min-height: 1.4em; }
+  .hello { font: 800 calc(var(--u) * 2.6) var(--mono); color: var(--lime); word-break: break-all; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * .8); }
+  .stats div { padding: calc(var(--u) * 1) calc(var(--u) * .6); border: 1px solid var(--line); background: var(--panel-2); text-align: center; }
+  .stats b { display: block; font: 800 calc(var(--u) * 2) var(--mono); }
+  .stats span { font: calc(var(--u) * 1.15) var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+  /* ---------- popup ---------- */
+  .modal { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: calc(var(--u) * 2); background: rgba(2, 10, 14, .84); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fade .25s both; }
+  .modal[hidden] { display: none; }
+  @keyframes fade { from { opacity: 0; } }
+  .modal .box { width: min(100%, calc(var(--u) * 88)); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: calc(var(--u) * 2); padding: calc(var(--u) * 2.8); animation: pop .35s cubic-bezier(.2,.9,.3,1.2) both; }
+  .modal .box > * { margin: 0; flex: none; }
+  .modal .box > .btn { margin-top: calc(var(--u) * .8); }
+  @keyframes pop { from { transform: scale(.92); opacity: 0; } }
+  .box h2 { font-size: calc(var(--u) * 3.8); font-weight: 800; margin: calc(var(--u) * .6) 0 calc(var(--u) * 1); }
+  .story { font-size: calc(var(--u) * 1.9); line-height: 1.45; }
+  .lesson { margin: calc(var(--u) * 1.4) 0; padding: calc(var(--u) * 1.4) calc(var(--u) * 1.6); background: rgba(201,244,58,.09); border-left: 4px solid var(--lime); font: 700 calc(var(--u) * 1.9)/1.35 var(--display); }
+  .lesson span { display: block; margin-bottom: calc(var(--u) * .5); font: 800 calc(var(--u) * 1.2) var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--lime); }
+  .code { margin: calc(var(--u) * 1.2) 0; padding: calc(var(--u) * 1.4); text-align: center; border: 2px dashed var(--gold); color: var(--gold); font: 800 calc(var(--u) * 5) var(--mono); letter-spacing: .3em; text-shadow: 0 0 20px rgba(255,216,74,.5); }
+  .prizeh { color: var(--gold); text-shadow: 0 0 30px rgba(255,216,74,.45); }
+  .linkish { background: none; border: 0; padding: calc(var(--u) * 1); color: var(--muted); font: calc(var(--u) * 1.25) var(--mono); letter-spacing: .12em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }
+
+  /* ---------- desafio ---------- */
+  .opts { display: grid; gap: calc(var(--u) * 1.3); margin: 0; }
+  .opts.two { grid-template-columns: 1fr 1fr; }
+  .it { display: flex; align-items: center; gap: calc(var(--u) * 1.2); width: 100%; text-align: left; padding: calc(var(--u) * 1.2) calc(var(--u) * 1.4); font-size: calc(var(--u) * 1.6); line-height: 1.3;
+    background: rgba(0,0,0,.3); border: 2px solid var(--line); border-radius: 4px; }
+  .it .n { flex: none; width: calc(var(--u) * 3.4); height: calc(var(--u) * 3.4); display: grid; place-items: center; font: 800 calc(var(--u) * 1.6) var(--mono); border: 1px solid var(--line); color: var(--cyan); }
+  .it.sel { border-color: var(--lime); background: rgba(201,244,58,.12); box-shadow: 0 0 22px rgba(201,244,58,.2); }
+  .it.sel .n { background: var(--lime); color: #03242b; border-color: var(--lime); }
+  .jbox { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: calc(var(--u) * 2); padding: calc(var(--u) * 1.4) calc(var(--u) * 1.6); background: rgba(0,0,0,.3); border: 1px solid var(--line); }
+  .jbox p { margin: 0; font-size: calc(var(--u) * 1.6); }
+  .jbox .row { gap: calc(var(--u) * 1); }
+  .jbox .row .it { white-space: nowrap; }
+  .jbox .row .it { width: auto; justify-content: center; font: 800 calc(var(--u) * 1.4) var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: calc(var(--u) * 1.1) calc(var(--u) * 1.6); }
+  .box.tight { gap: calc(var(--u) * 1.5); padding: calc(var(--u) * 2.4); }
+  .box.tight h2 { font-size: calc(var(--u) * 3.2); }
+  .box.tight .story { font-size: calc(var(--u) * 1.6); }
+  .box.tight .opts { gap: calc(var(--u) * 1); }
+  .box.tight .it { padding: calc(var(--u) * 1) calc(var(--u) * 1.3); }
+  .rv { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * .9); margin: 0; font-size: calc(var(--u) * 1.35); }
+  .rv div:only-child { grid-column: 1 / -1; }
+  .rv div { padding: calc(var(--u) * .8) calc(var(--u) * 1.2); border-left: 4px solid var(--ok); background: rgba(182,242,60,.07); }
+  #done, #confirm { position: sticky; bottom: 0; box-shadow: 0 calc(var(--u) * 1.2) 0 calc(var(--u) * .4) var(--panel); }
+  .rv div.no { border-left-color: var(--bad); background: rgba(255,93,122,.08); }
+  .rv small { display: block; color: var(--muted); font-size: calc(var(--u) * 1.25); }
+
+  /* ---------- admin / pin ---------- */
+  #pin { z-index: 40; }
+  .pinbox { width: min(100%, calc(var(--u) * 34)); text-align: center; }
+  .dots { font: 800 calc(var(--u) * 3) var(--mono); letter-spacing: .4em; min-height: 1.4em; color: var(--lime); }
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * .8); margin: calc(var(--u) * 1.2) 0; }
+  .pad .key { max-width: none; min-height: calc(var(--u) * 5.6); }
+  table { border-collapse: collapse; width: 100%; font: calc(var(--u) * 1.4) var(--mono); }
+  th, td { text-align: left; padding: calc(var(--u) * .6) calc(var(--u) * .8); border-bottom: 1px solid rgba(34,216,240,.12); }
+  th { color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+  .adm { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 2); }
+  .stock { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 1.4); padding: calc(var(--u) * 1.4); border: 1px solid var(--line); background: var(--panel-2); }
+  .stock .key { max-width: calc(var(--u) * 5); min-height: calc(var(--u) * 4.2); }
+  .stock b { font: 800 calc(var(--u) * 2.6) var(--mono); color: var(--lime); }
+  .hot { position: fixed; left: 0; bottom: 0; width: calc(var(--u) * 8); height: calc(var(--u) * 8); z-index: 25; }
+
+  #foot { position: fixed; left: 0; right: 0; bottom: calc(var(--u) * 1.4); z-index: 2; display: flex; justify-content: center; pointer-events: none; }
+  #foot img { height: calc(var(--u) * 2.8); width: auto; opacity: .9; }
+  #testbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; padding: 6px 12px;
+    font: 700 calc(var(--u) * 1.3)/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #2b1c00; background: var(--warn); }
+  #testbar[hidden] { display: none; }
+  #testbar button { background: none; border: 0; padding: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+  /* telas mais "em pé" (tablet, celular): roda em cima, painel embaixo */
+  @media (max-aspect-ratio: 7/5) {
+    #stage { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; justify-items: center; overflow-y: auto; gap: calc(var(--u) * 3); padding: calc(var(--u) * 6) calc(var(--u) * 3) calc(var(--u) * 9); }
+    .wheelwrap { width: min(100%, 46vh, 46dvh); }
+    .side { width: 100%; }
+    .side h1 { font-size: calc(var(--u) * 4.6); }
+    .adm, .btns.two { grid-template-columns: 1fr; }
+    .opts.two { grid-template-columns: 1fr; }
+    .jbox { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="scene" aria-hidden="true"><div class="floor"></div><div id="rain"></div><div class="vignette"></div></div>
+<div id="testbar" hidden></div>
+<main id="stage">
+  <section class="wheelbox" aria-label="Roleta">
+    <div class="wheelwrap">
+      <div class="pointer" aria-hidden="true"></div>
+      <svg viewBox="-310 -310 620 620" role="img" aria-label="Shield Spin, roleta com 12 fatias: 5 de segurança, 5 de privacidade e 2 de Proteção Total">
+        <defs>
+          <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset=".5" stop-color="#ffd84a"/><stop offset="1" stop-color="#e0a21a"/></linearGradient>
+          <linearGradient id="gRim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e4ff6a"/><stop offset=".55" stop-color="#5be8d6"/><stop offset="1" stop-color="#22c8f5"/></linearGradient>
+        </defs>
+        <circle r="304" fill="none" stroke="url(#gRim)" stroke-width="8"/>
+        <g id="rot"><g id="slices"></g></g>
+        <circle r="52" fill="#031319" stroke="url(#gRim)" stroke-width="5"/>
+        <path d="M0 -26 L22 -18 V3 C22 17 12 25 0 31 C-12 25 -22 17 -22 3 V-18 Z" fill="rgba(34,216,240,.18)" stroke="url(#gRim)" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="0" cy="-3" r="5" fill="#c9f43a"/>
+      </svg>
+    </div>
+  </section>
+  <section class="side">
+    <div>
+      <div class="tag">Cyber Shield Game</div>
+      <h1><span class="grad">Shield Spin</span></h1>
+      <div class="legend" aria-hidden="true"><span><i class="sw ss"></i>Segurança</span><span><i class="sw sp"></i>Privacidade</span><span><i class="sw sg"></i>Proteção Total</span></div>
+    </div>
+    <div id="state" aria-live="polite"></div>
+  </section>
+</main>
+<footer id="foot"></footer>
+<div id="modal" class="modal" role="dialog" aria-modal="true" hidden></div>
+<div id="pin" class="modal" role="dialog" aria-modal="true" hidden></div>
+<div class="hot" id="hot" aria-hidden="true"></div>
+
+<script>
+/* ============================================================
+   CONFIGURAÇÃO — ajuste aqui sem mexer no resto do código
+   ============================================================ */
+const CONFIG = {
+  domain: 'totvs.com.br',             // o e-mail digitado vira nome@domain
+  logoUrl: 'totvs-logo.svg',
+  stockSouvenirs: 110,                // brindes (100 + ~10 de folga para quem também ganha prêmio)
+  stockPrizes: 10,                    // prêmios (sorteados via Proteção Total)
+  cooldownMinutes: 60,                // cada e-mail só gira de novo depois deste tempo
+  pointsPerScene: 100,                // pontos ao cair numa cena de incidente
+  pointsPerChallengeItem: 200,        // pontos por item correto no Proteção Total (3 itens = até 600)
+  maxPremiumsPerHour: 0,              // 0 = sem limite; ex.: 3 libera no máximo 3 prêmios por hora
+  spinSeconds: 6,
+  idleSeconds: 45,                    // volta ao início se ninguém tocar
+  idleChallengeSeconds: 120,          // idem, durante o desafio
+  adminPin: '2468',                   // PROTÓTIPO: PIN no cliente não é segurança real
+  storageKey: 'sp-roleta-v1',
+};
+
+/* MODO TESTE: abrir com ?teste (ex.: roleta.html?teste). Sem espera entre giros,
+   dados guardados à parte, e um atalho para forçar o Proteção Total. */
+const TEST = /[?&]teste(=|&|$)/.test(location.search);
+if (TEST) Object.assign(CONFIG, { cooldownMinutes: 0, storageKey: 'sp-roleta-v1-teste' });
+
+/* ============================================================
+   CONTEÚDO: fatias, cenas e desafios
+   ============================================================ */
+const SLICES = [   // kind: 's' = segurança, 'p' = privacidade (5 de cada, alternadas na roda)
+  { id: 'gold1', gold: true, label: 'PROTEÇÃO TOTAL' },
+  { id: 'phishing', kind: 's', label: 'Caiu no phishing', scene: {
+    title: 'Você caiu em um phishing',
+    story: 'Um e-mail dizia ser do RH, pedia a atualização da sua senha em 1 hora e trazia um link. Você clicou e digitou a senha numa página falsa. Agora o golpista já tenta entrar nas suas contas.',
+    lesson: 'Urgência + link + ameaça são sinais de phishing. Confira o remetente, não clique e reporte à segurança.' } },
+  { id: 'ia', kind: 'p', label: 'Dados na IA', scene: {
+    title: 'Você colou dados numa IA pública',
+    story: 'Para ganhar tempo, você colou um contrato com dados de clientes numa ferramenta de IA aberta. O texto pode ser guardado e reutilizado por terceiros.',
+    lesson: 'Dado confidencial e dado pessoal não entram em ferramenta de IA que a empresa não aprovou.' } },
+  { id: 'senha', kind: 's', label: 'Senha vazada', scene: {
+    title: 'Sua senha vazou',
+    story: 'Uma loja online onde você usava a mesma senha do trabalho foi invadida. Sua senha apareceu numa lista à venda, e os criminosos estão testando ela em outros serviços.',
+    lesson: 'Use uma senha diferente para cada serviço, de preferência frases longas, e guarde tudo num gerenciador de senhas.' } },
+  { id: 'destino', kind: 'p', label: 'Destino errado', scene: {
+    title: 'Você enviou dados à pessoa errada',
+    story: 'Você anexou a planilha de clientes, com nomes, CPFs e telefones, e o autopreenchimento mandou o e-mail para alguém de fora da empresa. Os dados de várias pessoas ficaram expostos.',
+    lesson: 'Confira o destinatário antes de enviar e avise a segurança ou a privacidade na hora: reportar rápido reduz o dano.' } },
+  { id: 'ransomware', kind: 's', label: 'Ransomware', scene: {
+    title: 'Seus arquivos foram sequestrados',
+    story: 'Uma tela exige um pagamento para liberar seus arquivos. Você reiniciou o computador várias vezes e o problema se espalhou pela rede da empresa.',
+    lesson: 'Desconecte o equipamento da rede e avise a segurança na hora. Nunca pague o resgate e mantenha backup (regra 3-2-1).' } },
+  { id: 'gold2', gold: true, label: 'PROTEÇÃO TOTAL' },
+  { id: 'selfie', kind: 'p', label: 'Selfie reveladora', scene: {
+    title: 'Sua selfie revelou informações',
+    story: 'Você postou uma foto no trabalho, com o crachá no peito e a tela do computador ao fundo. Golpistas usaram os nomes, sistemas e dados visíveis para montar um golpe direcionado.',
+    lesson: 'Antes de postar, olhe o fundo da foto: crachá, telas e documentos expõem dados seus e da empresa.' } },
+  { id: 'wifi', kind: 's', label: 'Wi-Fi falso', scene: {
+    title: 'Você entrou num Wi-Fi falso',
+    story: 'A rede "Cafe_Gratis" foi criada por um golpista. Enquanto você acessava seu e-mail, ele via tudo o que passava pela conexão.',
+    lesson: 'Em rede pública, use a VPN da empresa. Confirme o nome oficial da rede antes de conectar.' } },
+  { id: 'demais', kind: 'p', label: 'Dados demais', scene: {
+    title: 'Você coletou mais dados do que precisava',
+    story: 'Para um cadastro simples, você pediu CPF, data de nascimento e endereço. A base vazou, e todos esses dados ficaram expostos sem necessidade.',
+    lesson: 'Colete só o necessário para a finalidade informada: dado que não foi coletado não vaza.' } },
+  { id: 'pendrive', kind: 's', label: 'Pendrive-isca', scene: {
+    title: 'Você plugou um pendrive achado',
+    story: 'Ele estava no estacionamento, com a etiqueta "Folha de pagamento". Ao plugar, um programa malicioso se instalou sozinho no seu computador.',
+    lesson: 'Dispositivo desconhecido nunca se conecta. Entregue à equipe de TI ou de segurança.' } },
+  { id: 'base', kind: 'p', label: 'Base aberta', scene: {
+    title: 'Você compartilhou a base inteira entre áreas',
+    story: 'Para agilizar, você enviou a outra área a base completa de clientes, com CPF, telefone e histórico, quando ela só precisava do e-mail. Os dados circularam sem necessidade e foram parar em planilhas sem controle.',
+    lesson: 'Compartilhe só os dados necessários, com quem precisa, e limite o fluxo de informações entre as áreas.' } },
+];
+
+/* Proteção Total: 3 itens por desafio, 3 formatos, com temas de segurança e de privacidade.
+   Passar = acertar os 3. */
+const SPOT = [
+  { title: 'Caça ao golpe', intro: 'Você recebeu este e-mail. Toque nos 3 sinais de golpe.', items: [
+    { t: 'De: rh@totvs-beneficios.com', bad: true, why: 'Domínio parecido com o oficial, mas não é o da empresa.' },
+    { t: 'Assunto: URGENTE: atualize sua senha em 1 hora', bad: true, why: 'Urgência e ameaça são marcas de phishing.' },
+    { t: 'Link: http://totvs-senha.top/login', bad: true, why: 'O link leva a um endereço que não é da empresa.' },
+    { t: 'Saudação: "Olá, tudo bem?"' }, { t: 'Enviado numa terça-feira, às 10h' },
+    { t: 'Assinatura: "Equipe de Pessoas"' }, { t: 'Texto em português correto' } ] },
+  { title: 'Caça ao golpe', intro: 'Você recebeu este SMS. Toque nos 3 sinais de golpe.', items: [
+    { t: 'Remetente: número desconhecido', bad: true, why: 'Empresas de verdade se identificam, não usam números aleatórios.' },
+    { t: 'Cobrança surpresa de R$ 4,90 para liberar a encomenda', bad: true, why: 'Valor baixo para você baixar a guarda e entregar o cartão.' },
+    { t: 'Link encurtado: bit.ly/x9Qa2', bad: true, why: 'Link encurtado esconde para onde você vai.' },
+    { t: 'Texto em português correto' }, { t: 'Enviado às 14h' }, { t: 'Mensagem curta e objetiva' } ] },
+  { title: 'Mesa com erros', intro: 'Observe esta mesa de trabalho. Toque nos 3 erros de segurança.', items: [
+    { t: 'Post-it com a senha colado no monitor', bad: true, why: 'Senha à vista é senha exposta.' },
+    { t: 'Computador destravado e ninguém na mesa', bad: true, why: 'Quem passa pode usar suas contas. Bloqueie a tela (Win + L).' },
+    { t: 'Pendrive desconhecido plugado no notebook', bad: true, why: 'Dispositivo desconhecido pode instalar malware.' },
+    { t: 'Crachá guardado no bolso' }, { t: 'Gaveta trancada com documentos' },
+    { t: 'Notebook preso por cabo de segurança' }, { t: 'Garrafa de água ao lado do teclado' } ] },
+  { title: 'Home office com erros', intro: 'Observe este trabalho remoto. Toque nos 3 erros.', items: [
+    { t: 'Reunião com cliente no Wi-Fi aberto do café, sem VPN', bad: true, why: 'Rede pública pode ser monitorada. Use a VPN.' },
+    { t: 'Tela inteira compartilhada, com e-mails abertos', bad: true, why: 'Compartilhe só a janela necessária, para não expor dados.' },
+    { t: 'Planilha de clientes enviada ao e-mail pessoal', bad: true, why: 'Dados de clientes só circulam em canais aprovados.' },
+    { t: 'VPN da empresa ativa em casa' }, { t: 'Notebook bloqueado ao sair da mesa' },
+    { t: 'Atualizações do sistema em dia' }, { t: 'Autenticação em dois fatores ativada' } ] },
+  { title: 'Dados expostos', intro: 'Observe este escritório. Toque nos 3 erros de privacidade.', items: [
+    { t: 'Planilha com o CPF dos clientes numa pasta aberta a todos', bad: true, why: 'Dado pessoal só para quem precisa dele para trabalhar.' },
+    { t: 'Base completa de clientes enviada a outra área que só precisa do e-mail', bad: true, why: 'Compartilhe só o necessário e limite o fluxo de dados entre áreas.' },
+    { t: 'Foto de tela com dados de clientes enviada num grupo pessoal', bad: true, why: 'Dados de clientes só circulam em canais aprovados.' },
+    { t: 'Relatório só com números agregados, sem nomes' }, { t: 'Documentos pessoais em armário trancado' },
+    { t: 'Acesso ao sistema limitado por perfil' }, { t: 'Planilha protegida, em ambiente aprovado pela empresa' } ] },
+  { title: 'Cadastro cheio demais', intro: 'Este formulário é só para um sorteio de brindes. Toque nos 3 campos que NÃO precisam ser coletados.', items: [
+    { t: 'CPF', bad: true, why: 'Não é necessário para um sorteio de brindes.' },
+    { t: 'Data de nascimento completa', bad: true, why: 'Não é necessária para esta finalidade.' },
+    { t: 'Endereço residencial', bad: true, why: 'Colete só o necessário para a finalidade informada.' },
+    { t: 'Nome' }, { t: 'E-mail corporativo' }, { t: 'Aceite do termo de participação' } ] },
+];
+const ORDER = [
+  { title: 'Senha na ordem', intro: 'Toque nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['senha123', 'Maria1990', 'M@ria1990#', 'onibus-lua-pipoca-sino-92'], why: 'Quanto mais longa e imprevisível, mais forte. Frases com palavras soltas vencem os truques previsíveis.' },
+  { title: 'Senha na ordem', intro: 'Toque nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['abc12345', 'Futebol2023', 'F8tebol#2023', 'trem-janela-estrela-bolo-33-azul'], why: 'Trocar letras por números e símbolos ajuda pouco. O tamanho e o acaso é que fortalecem a senha.' },
+  { title: 'Senha na ordem', intro: 'Toque nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['admin', 'admin2024', 'Adm1n@2024!', 'peixe-lanterna-cobre-nuvem-58'], why: 'Palavras óbvias com data são as primeiras a serem testadas por um atacante.' },
+  { title: 'Dados em ordem', intro: 'Toque nos dados do MENOS sensível para o MAIS sensível.', pw: ['Cargo na empresa', 'Nome completo', 'CPF', 'Exame médico'], why: 'Dados de saúde, biometria e crenças são sensíveis na LGPD e pedem proteção reforçada.' },
+  { title: 'Dados em ordem', intro: 'Toque nos dados do MENOS sensível para o MAIS sensível.', pw: ['Cidade onde mora', 'Telefone pessoal', 'CPF', 'Impressão digital (biometria)'], why: 'Biometria é dado pessoal sensível: se vazar, não dá para trocar como uma senha.' },
+];
+/* Risco ou tudo certo? Cada partida sorteia 3 situações, sempre com ao menos uma de segurança e uma de privacidade. */
+const JUDGE = [
+  { kind: 's', t: 'Vou usar a mesma senha do trabalho no meu cadastro da loja online.', risk: true, why: 'Se a loja vazar, a senha do trabalho vaza junto.' },
+  { kind: 's', t: 'Achei um pendrive no estacionamento. Vou plugar para descobrir de quem é.', risk: true, why: 'Dispositivo desconhecido pode instalar malware.' },
+  { kind: 's', t: 'Chegou um e-mail urgente do RH com um link para atualizar a senha. Vou clicar rápido.', risk: true, why: 'Urgência e link são sinais de phishing.' },
+  { kind: 's', t: 'Vou ativar a verificação em dois fatores na minha conta.', risk: false, why: 'Uma segunda camada protege a conta mesmo se a senha vazar.' },
+  { kind: 's', t: 'Quando saio da mesa, bloqueio a tela do computador.', risk: false, why: 'Bloquear a tela leva 1 segundo e evita acesso indevido.' },
+  { kind: 's', t: 'Em Wi-Fi público, só trabalho conectado à VPN da empresa.', risk: false, why: 'A VPN protege o tráfego em redes não confiáveis.' },
+  { kind: 'p', t: 'Vou mandar a planilha de clientes, com CPF, para o meu e-mail pessoal e terminar em casa.', risk: true, why: 'Dados de clientes só circulam em canais aprovados.' },
+  { kind: 'p', t: 'Vou colar o contrato do cliente numa IA pública para resumir.', risk: true, why: 'O que é colado em ferramentas externas pode ser guardado e reutilizado.' },
+  { kind: 'p', t: 'No cadastro do brinde vou pedir CPF e endereço, vai que precisamos depois.', risk: true, why: 'Colete só o necessário para a finalidade informada.' },
+  { kind: 'p', t: 'Outra área pediu a base de clientes. Vou enviar tudo, melhor sobrar do que faltar.', risk: true, why: 'Compartilhe só os campos necessários e limite o fluxo de dados entre áreas.' },
+  { kind: 'p', t: 'Quando outra área pede dados, envio só as colunas de que ela precisa.', risk: false, why: 'Mínimo necessário: o fluxo de dados entre áreas fica sob controle.' },
+  { kind: 'p', t: 'Antes de enviar o e-mail com dados de clientes, confiro o destinatário.', risk: false, why: 'Conferir evita um envio errado, que é incidente de privacidade.' },
+  { kind: 'p', t: 'Para o sorteio só peço o e-mail e aviso que os dados serão apagados depois do evento.', risk: false, why: 'Coleta mínima, com finalidade e prazo claros.' },
+  { kind: 'p', t: 'Planilhas temporárias com dados de clientes são excluídas quando o projeto termina.', risk: false, why: 'Cópias esquecidas viram risco sem utilidade.' },
+];
+
+/* ============================================================
+   UTILITÁRIOS E ARMAZENAMENTO (um único computador: localStorage)
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const maskEmail = e => { const [u, d] = e.split('@'); return (u[0] || '') + '***@' + d; };
+const hhmm = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const csvCell = v => { let s = String(v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const freshDb = () => ({ people: {}, log: [], stock: { souvenirs: CONFIG.stockSouvenirs, prizes: CONFIG.stockPrizes } });
+function readDb() {
+  try { const d = JSON.parse(localStorage.getItem(CONFIG.storageKey)); if (d && d.people && d.log && d.stock) return d; } catch { /* sem dados */ }
+  return freshDb();
+}
+let db = readDb();
+const save = () => { try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(db)); } catch { /* armazenamento indisponível */ } };
+const person = email => db.people[email] || (db.people[email] = { email, spins: 0, points: 0, souvenir: false, prizes: 0, challenge: null, lastSpinAt: 0 });
+const cooldownLeft = p => Math.max(0, p.lastSpinAt + CONFIG.cooldownMinutes * 60000 - Date.now());
+function newCode() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let code;
+  do { code = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join(''); } while (db.log.some(l => l.code === code));
+  return code;
+}
+function giveSouvenir(p) {
+  if (p.souvenir) return 'already';
+  if (db.stock.souvenirs <= 0) return 'none';
+  db.stock.souvenirs--; p.souvenir = true;
+  return 'given';
+}
+function premiumsLastHour() { return db.log.filter(l => l.type === 'prize' && l.at > Date.now() - 3600000).length; }
+
+/* ============================================================
+   ESTADO E RODA
+   ============================================================ */
+let ui = { mode: 'attract', email: null, local: '', challenge: null };
+let rot = 0, idleRaf = 0, idleT = 0, forceGold = false;
+const R = 290;
+const pt = (deg, r) => { const a = deg * Math.PI / 180; return [(r * Math.sin(a)).toFixed(2), (-r * Math.cos(a)).toFixed(2)]; };
+
+function drawWheel() {
+  const out = db.stock.prizes <= 0;
+  $('slices').innerHTML = SLICES.map((s, i) => {
+    const c = i * 30, [x1, y1] = pt(c - 15, R), [x2, y2] = pt(c + 15, R);
+    const cls = s.gold ? (out ? 'sd' : 'sg') : (s.kind === 'p' ? 'sp' : 'ss');
+    const tcls = s.gold ? (out ? 'ld' : 'lg') : 'ls';
+    return `<g><path class="${cls}" d="M0 0 L${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2} Z" stroke="rgba(34,216,240,.55)" stroke-width="2"/>
+      <text class="${tcls}" transform="rotate(${c - 90}) translate(${R - 20},0)" text-anchor="end" dominant-baseline="central">${esc(s.gold && out ? 'ENCERRADO' : s.label)}</text></g>`;
+  }).join('');
+}
+function setRot(deg, ms) {
+  const g = $('rot');
+  g.style.transition = ms ? `transform ${ms}ms cubic-bezier(.12,.6,.1,1)` : 'none';
+  g.style.transform = `rotate(${deg}deg)`;
+}
+function idleSpin() {
+  cancelAnimationFrame(idleRaf);
+  if (reduceMotion) return;
+  const step = () => { if (ui.mode !== 'attract') return; rot += .06; setRot(rot, 0); idleRaf = requestAnimationFrame(step); };
+  idleRaf = requestAnimationFrame(step);
+}
+
+/* Sorteio da fatia: Proteção Total só se a pessoa ainda não fez o desafio e há prêmios. */
+function pickSlice(p) {
+  const goldOk = !p.challenge && db.stock.prizes > 0 && (!CONFIG.maxPremiumsPerHour || premiumsLastHour() < CONFIG.maxPremiumsPerHour);
+  const idxs = SLICES.map((_, i) => i).filter(i => !SLICES[i].gold || goldOk);
+  if (TEST && forceGold && goldOk) { forceGold = false; renderTestBar(); return pick(idxs.filter(i => SLICES[i].gold)); }
+  return pick(idxs);
+}
+
+function startSpin() {
+  if (ui.mode !== 'ready') return;
+  const p = person(ui.email);
+  if (cooldownLeft(p) > 0) return showReady();
+  ui.mode = 'spin'; clearTimeout(idleT);
+  const idx = pickSlice(p);
+  p.spins++; p.lastSpinAt = Date.now();
+  if (SLICES[idx].gold) p.challenge = { pending: true, at: Date.now() };
+  save();
+  $('state').innerHTML = `<p class="lead">Girando<span class="caret">…</span></p><p class="note">&gt; descobrindo o que o destino reservou</p>`;
+  cancelAnimationFrame(idleRaf);
+  const ms = reduceMotion ? 1200 : CONFIG.spinSeconds * 1000;
+  const target = Math.ceil(rot / 360) * 360 + 360 * (5 + Math.floor(Math.random() * 2)) - idx * 30 + (Math.random() - .5) * 18;
+  setRot(rot, 0); void $('rot').getBoundingClientRect();
+  setRot(target, ms);
+  setTimeout(() => { rot = target % 360; setRot(rot, 0); settle(idx); }, ms + 300);
+}
+
+function settle(idx) {
+  const s = SLICES[idx], p = person(ui.email);
+  if (s.gold) return startChallenge();
+  const souv = giveSouvenir(p);
+  p.points += CONFIG.pointsPerScene;
+  db.log.push({ at: Date.now(), email: p.email, type: 'scene', slice: s.id, points: CONFIG.pointsPerScene, souvenir: souv });
+  save();
+  const brinde = { given: ['lime', 'Retire seu brinde com a equipe'], already: ['', 'Seu brinde já foi retirado'], none: ['', 'Brindes esgotados'] }[souv];
+  openModal(`<div class="box panel">
+    <div class="tag bad">Alerta de ${s.kind === 'p' ? 'privacidade' : 'segurança'}</div>
+    <h2><span class="grad">${esc(s.scene.title)}</span></h2>
+    <p class="story">${esc(s.scene.story)}</p>
+    <div class="lesson"><span>Para não repetir</span>${esc(s.scene.lesson)}</div>
+    <div class="chips"><span class="chip"><b>+${CONFIG.pointsPerScene}</b> pontos</span><span class="chip ${brinde[0]}">${brinde[1]}</span></div>
+    <button class="btn primary" id="done" type="button">Concluir</button></div>`);
+  $('done').onclick = finishTurn;
+  ui.mode = 'modal'; bumpIdle();
+}
+function finishTurn() {
+  closeModal();
+  if (cooldownLeft(person(ui.email)) > 0) showAttract(); else showReady();
+}
+
+/* ============================================================
+   PROTEÇÃO TOTAL
+   ============================================================ */
+function makeChallenge() {
+  const kind = pick(['spot', 'order', 'judge']);
+  if (kind === 'spot') { const v = pick(SPOT); return { kind, title: v.title, intro: v.intro, items: shuffle(v.items), sel: new Set() }; }
+  if (kind === 'order') { const v = pick(ORDER); return { kind, title: v.title, intro: v.intro, mono: !!v.mono, pw: v.pw, why: v.why, shown: shuffle(v.pw), chosen: [] }; }
+  // 3 situações: ao menos uma de segurança, uma de privacidade, e nem todas iguais (risco x tudo certo)
+  let items;
+  do {
+    const s = shuffle(JUDGE.filter(j => j.kind === 's')), p = shuffle(JUDGE.filter(j => j.kind === 'p'));
+    items = shuffle([s[0], p[0], pick([...s.slice(1), ...p.slice(1)])]);
+  } while (new Set(items.map(j => j.risk)).size < 2);
+  return { kind, title: 'Risco ou tudo certo?', intro: 'Classifique cada situação.', items, ans: [] };
+}
+function startChallenge() {
+  const ch = ui.challenge = makeChallenge();
+  const body = {
+    spot: () => `<div class="opts two">${ch.items.map((it, i) => `<button class="it" type="button" data-i="${i}"><span class="n">+</span><span>${esc(it.t)}</span></button>`).join('')}</div>`,
+    order: () => `<div class="opts two">${ch.shown.map((pw, i) => `<button class="it" type="button" data-i="${i}"><span class="n">&nbsp;</span><span${ch.mono ? ' style="font-family:var(--mono)"' : ''}>${esc(pw)}</span></button>`).join('')}</div>
+      <button class="linkish" id="redo" type="button">Refazer a ordem</button>`,
+    judge: () => ch.items.map((it, i) => `<div class="jbox"><p>${esc(it.t)}</p><div class="row"><button class="it" type="button" data-i="${i}" data-v="1">Risco</button><button class="it" type="button" data-i="${i}" data-v="0">Tudo certo</button></div></div>`).join(''),
+  }[ch.kind]();
+  openModal(`<div class="box tight panel">
+    <div class="tag">Proteção Total</div>
+    <h2><span class="grad">${esc(ch.title)}</span></h2>
+    <p class="story">${esc(ch.intro)} Acerte os 3 e ganhe um prêmio!</p>
+    ${body}
+    <button class="btn primary" id="confirm" type="button" disabled>Confirmar</button></div>`);
+  const confirm = $('confirm'), box = $('modal');
+  const update = () => {
+    if (ch.kind === 'spot') {
+      box.querySelectorAll('.it').forEach((b, i) => { const on = ch.sel.has(i); b.classList.toggle('sel', on); b.querySelector('.n').textContent = on ? '✓' : '+'; });
+      confirm.disabled = ch.sel.size === 0;
+    } else if (ch.kind === 'order') {
+      box.querySelectorAll('.it').forEach((b, i) => { const k = ch.chosen.indexOf(i); b.classList.toggle('sel', k >= 0); b.querySelector('.n').textContent = k >= 0 ? k + 1 : ' '; });
+      confirm.disabled = ch.chosen.length < 4;
+    } else {
+      box.querySelectorAll('.it').forEach(b => b.classList.toggle('sel', ch.ans[+b.dataset.i] === +b.dataset.v));
+      confirm.disabled = ch.ans.filter(a => a !== undefined).length < 3;
+    }
+  };
+  box.querySelectorAll('.it').forEach(b => b.onclick = () => {
+    const i = +b.dataset.i;
+    if (ch.kind === 'spot') { ch.sel.has(i) ? ch.sel.delete(i) : ch.sel.add(i); }
+    else if (ch.kind === 'order') { if (!ch.chosen.includes(i)) ch.chosen.push(i); }
+    else ch.ans[i] = +b.dataset.v;
+    update(); bumpIdle();
+  });
+  if ($('redo')) $('redo').onclick = () => { ch.chosen = []; update(); };
+  confirm.onclick = () => finishChallenge(evaluate(ch));
+  ui.mode = 'modal'; bumpIdle();
+}
+/* Cada desafio devolve score 0..3 e o gabarito. */
+function evaluate(ch) {
+  if (ch.kind === 'spot') {
+    const found = ch.items.filter((it, i) => it.bad && ch.sel.has(i)).length;
+    const fp = ch.items.filter((it, i) => !it.bad && ch.sel.has(i)).length;
+    const review = ch.items.map((it, i) => it.bad ? { ok: ch.sel.has(i), t: it.t, why: it.why } : (ch.sel.has(i) ? { ok: false, t: it.t, why: 'Isso é normal, não é um sinal de golpe.' } : null)).filter(Boolean);
+    return { score: Math.max(0, found - fp), review };
+  }
+  if (ch.kind === 'order') {
+    const rank = ch.chosen.map(i => ch.pw.indexOf(ch.shown[i]));
+    let score = 0; for (let k = 0; k < 3; k++) if (rank[k] < rank[k + 1]) score++;
+    return { score, review: [{ ok: score === 3, t: 'Ordem certa: ' + ch.pw.join('  →  '), why: ch.why }] };
+  }
+  const review = ch.items.map((it, i) => ({ ok: ch.ans[i] === (it.risk ? 1 : 0), t: (it.risk ? 'Risco: ' : 'Tudo certo: ') + it.t, why: it.why }));
+  return { score: review.filter(r => r.ok).length, review };
+}
+function finishChallenge(res) {
+  const p = person(ui.email), ch = ui.challenge; ui.challenge = null;
+  const pts = res.score * CONFIG.pointsPerChallengeItem, won = res.score === 3 && db.stock.prizes > 0;
+  p.points += pts;
+  p.challenge = { pending: false, score: res.score, pass: won, at: Date.now(), format: ch ? ch.kind : '' };
+  let code = '', souv = '';
+  if (won) {
+    db.stock.prizes--; p.prizes++; code = newCode();
+    if (!p.souvenir) p.souvenir = true;         // o prêmio já conta como o brinde da pessoa
+    db.log.push({ at: Date.now(), email: p.email, type: 'prize', code, delivered: false, points: pts });
+  } else souv = giveSouvenir(p);                 // consolo: quem ainda não tem brinde recebe um
+  db.log.push({ at: Date.now(), email: p.email, type: 'challenge', format: p.challenge.format, score: res.score, pass: won, points: pts });
+  save(); drawWheel();
+  const review = res.review ? `<div class="rv">${res.review.map(r => `<div class="${r.ok ? '' : 'no'}">${r.ok ? '✓' : '✗'} ${esc(r.t)}<small>${esc(r.why)}</small></div>`).join('')}</div>` : '';
+  if (won) {
+    openModal(`<div class="box panel" style="--c:var(--gold)">
+      <div class="tag ok">Proteção Total concluída</div>
+      <h2 class="prizeh">Você ganhou um prêmio!</h2>
+      <p class="story">Mostre esta tela à equipe para retirar.</p>
+      <div class="code">${esc(code)}</div>
+      <div class="chips"><span class="chip"><b>+${pts}</b> pontos</span><span class="chip lime">Prêmio</span></div>
+      <button class="btn primary" id="done" type="button">Concluir</button>
+      <div style="text-align:center"><button class="linkish" id="staff" type="button">Equipe: confirmar entrega</button></div></div>`);
+    $('staff').onclick = () => askPin(() => {
+      const l = db.log.find(x => x.code === code); if (l) { l.delivered = true; save(); }
+      $('staff').textContent = 'Entrega registrada ✓'; $('staff').disabled = true;
+    });
+  } else {
+    const brinde = { given: ['lime', 'Retire seu brinde com a equipe'], already: ['', 'Seu brinde já foi retirado'], none: ['', 'Brindes esgotados'], '': ['', ''] }[souv];
+    openModal(`<div class="box tight panel">
+      <div class="tag bad">Proteção Total</div>
+      <h2><span class="grad">${res.score === 3 ? 'Perfeito, mas os prêmios acabaram' : 'Quase!'}</span></h2>
+      <p class="story">Você acertou ${res.score} de 3. Veja o gabarito:</p>${review}
+      <div class="chips"><span class="chip"><b>+${pts}</b> pontos</span>${brinde[1] ? `<span class="chip ${brinde[0]}">${brinde[1]}</span>` : ''}</div>
+      <button class="btn primary" id="done" type="button">Concluir</button></div>`);
+  }
+  $('done').onclick = finishTurn;
+  ui.mode = 'modal'; bumpIdle();
+}
+
+/* ============================================================
+   TELAS DO PAINEL LATERAL
+   ============================================================ */
+function showAttract() {
+  clearTimeout(idleT); closeModal();
+  ui = { mode: 'attract', email: null, local: '', challenge: null };
+  $('state').innerHTML = `
+    <p class="lead">Gire a roda, enfrente uma situação de segurança ou de privacidade, aprenda a se proteger e concorra a prêmios.</p>
+    <ul class="steps"><li><b>1</b>Informe seu e-mail corporativo</li><li><b>2</b>Gire a roda</li><li><b>3</b>Aprenda com a cena e some pontos no ranking</li></ul>
+    <p class="note">&gt; Caiu numa fatia dourada (PROTEÇÃO TOTAL)? Passe no desafio e você ganha um prêmio!</p>
+    <button class="btn primary pulse" id="go" type="button">Toque para começar</button>`;
+  $('go').onclick = showId;
+  idleSpin();
+}
+const KB = ['1234567890', 'qwertyuiop', 'asdfghjkl'];
+function showId() {
+  ui.mode = 'id'; ui.local = ''; cancelAnimationFrame(idleRaf);
+  const key = k => `<button class="key" type="button" data-k="${esc(k)}">${esc(k)}</button>`;
+  $('state').innerHTML = `<div class="idform">
+    <p class="note">&gt; digite seu e-mail corporativo</p>
+    <div class="emailbox" id="eb"></div>
+    <div class="err" id="err" role="alert"></div>
+    <div class="kb">
+      ${KB.map(r => `<div class="kbrow">${[...r].map(key).join('')}</div>`).join('')}
+      <div class="kbrow">${[...'zxcvbnm'].map(key).join('')}${key('.')}${key('-')}${key('_')}<button class="key wide" type="button" data-k="⌫" aria-label="Apagar">⌫</button></div>
+    </div>
+    <div class="btns cols"><button class="btn secondary" id="back" type="button">Voltar</button><button class="btn primary" id="ok" type="button" disabled>Continuar</button></div></div>`;
+  const paint = () => {
+    $('eb').innerHTML = `<span class="typed">${esc(ui.local)}</span><span class="caret"></span><span class="suf">@${esc(CONFIG.domain)}</span>`;
+    $('ok').disabled = !validLocal(ui.local);
+  };
+  const press = k => {
+    if (k === '⌫') ui.local = ui.local.slice(0, -1);
+    else if (ui.local.length < 40) ui.local += k;
+    $('err').textContent = ''; paint(); bumpIdle();
+  };
+  $('state').querySelectorAll('[data-k]').forEach(b => b.onclick = () => press(b.dataset.k));
+  $('back').onclick = showAttract;
+  $('ok').onclick = () => { if (!validLocal(ui.local)) return; ui.email = ui.local + '@' + CONFIG.domain; showReady(); };
+  paint(); bumpIdle();
+}
+const validLocal = s => /^[a-z0-9][a-z0-9._-]*$/.test(s) && s.length >= 2 && !/[._-]$/.test(s);
+addEventListener('keydown', e => {          // teclado físico (útil nos testes)
+  if (ui.mode !== 'id' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const b = e.key === 'Backspace' ? $('state').querySelector('[data-k="⌫"]')
+    : e.key === 'Enter' ? $('ok') : $('state').querySelector(`[data-k="${CSS.escape(e.key.toLowerCase())}"]`);
+  if (b && !b.disabled) b.click();
+});
+
+function showReady() {
+  ui.mode = 'ready'; cancelAnimationFrame(idleRaf);
+  const p = person(ui.email), left = cooldownLeft(p);
+  const info = p.spins ? `<div class="stats"><div><b>${p.spins}</b><span>giros</span></div><div><b>${p.points}</b><span>pontos</span></div><div><b>${p.challenge ? '✓' : '—'}</b><span>desafio</span></div></div>` : '';
+  if (left > 0) {
+    const mins = Math.ceil(left / 60000);
+    $('state').innerHTML = `
+      <p class="hello">${esc(maskEmail(ui.email))}</p>${info}
+      <div class="panel"><p class="lead" style="margin:0">Você já girou. Volte a partir das <b style="color:var(--lime)">${hhmm(p.lastSpinAt + CONFIG.cooldownMinutes * 60000)}</b> (faltam ${mins} min) para girar de novo.</p></div>
+      <button class="btn secondary" id="bye" type="button">Concluir</button>`;
+    $('bye').onclick = showAttract;
+  } else {
+    $('state').innerHTML = `
+      <p class="hello">${esc(maskEmail(ui.email))}</p>${info}
+      <p class="lead">${p.challenge ? 'Seu desafio Proteção Total já foi feito. Cada giro soma pontos no ranking.' : 'Pronto! Gire a roda e descubra o que o destino reservou.'}</p>
+      <div class="btns"><button class="btn primary pulse" id="spin" type="button">Girar</button>
+      <button class="btn secondary" id="other" type="button">Trocar e-mail</button></div>`;
+    $('spin').onclick = startSpin; $('other').onclick = showId;
+  }
+  bumpIdle();
+}
+
+/* ============================================================
+   POPUPS, INATIVIDADE, PIN E ÁREA DA EQUIPE
+   ============================================================ */
+function openModal(html) { const m = $('modal'); m.innerHTML = html; m.hidden = false; const b = m.querySelector('.box'); if (b) b.scrollTop = 0; }
+function closeModal() { $('modal').hidden = true; $('modal').innerHTML = ''; }
+
+function bumpIdle() {
+  clearTimeout(idleT);
+  if (ui.mode === 'attract' || ui.mode === 'spin' || !$('pin').hidden) return;
+  idleT = setTimeout(endSession, (ui.challenge ? CONFIG.idleChallengeSeconds : CONFIG.idleSeconds) * 1000);
+}
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, bumpIdle, true));
+function endSession() {
+  if (ui.challenge) finishChallenge({ score: 0, review: null }), closeModal();   // desafio abandonado vale 0
+  showAttract();
+}
+
+function askPin(onOk) {
+  const m = $('pin'); let v = '';
+  m.hidden = false; clearTimeout(idleT);
+  const paint = () => {
+    m.innerHTML = `<div class="box panel pinbox"><div class="tag">Equipe</div><p class="lead">Digite o PIN</p><div class="dots">${'●'.repeat(v.length) || '&nbsp;'}</div><div class="err" id="perr"></div>
+      <div class="pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button class="key" type="button" data-n="${n}">${n}</button>`).join('')}<button class="key" type="button" data-n="x">⌫</button><button class="key" type="button" data-n="0">0</button><button class="key" type="button" data-n="ok">OK</button></div>
+      <button class="linkish" id="pc" type="button">Cancelar</button></div>`;
+    m.querySelectorAll('[data-n]').forEach(b => b.onclick = () => {
+      const n = b.dataset.n;
+      if (n === 'x') v = v.slice(0, -1);
+      else if (n === 'ok') { if (v === CONFIG.adminPin) { m.hidden = true; m.innerHTML = ''; bumpIdle(); return onOk(); } v = ''; paint(); $('perr').textContent = '> PIN incorreto'; return; }
+      else if (v.length < 8) v += n;
+      paint();
+    });
+    $('pc').onclick = () => { m.hidden = true; m.innerHTML = ''; bumpIdle(); };
+  };
+  paint();
+}
+
+function rankingRows() {
+  return Object.values(db.people).filter(p => p.spins > 0).sort((a, b) => b.points - a.points || b.spins - a.spins);
+}
+function download(name, rows) {
+  const blob = new Blob(['﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function openAdmin() {
+  clearTimeout(idleT);
+  const people = rankingRows(), pend = db.log.filter(l => l.type === 'prize' && !l.delivered);
+  const delivered = db.log.filter(l => l.type === 'prize' && l.delivered).length;
+  const stock = (k, label) => `<div class="stock"><span>${label}</span><button class="key" data-s="${k}" data-d="-1" type="button">−</button><b>${db.stock[k]}</b><button class="key" data-s="${k}" data-d="1" type="button">+</button></div>`;
+  openModal(`<div class="box tight panel">
+    <div class="tag">Equipe</div><h2><span class="grad">Painel da roleta</span></h2>
+    <div class="adm">${stock('souvenirs', 'Brindes restantes')}${stock('prizes', 'Prêmios restantes')}</div>
+    <p class="note" style="margin-top:12px">${people.length} pessoas · ${people.reduce((s, p) => s + p.spins, 0)} giros · ${db.log.filter(l => l.type === 'challenge').length} desafios · prêmios entregues: ${delivered} · pendentes: ${pend.length}</p>
+    ${pend.length ? `<table><thead><tr><th>Código</th><th>E-mail</th><th>Hora</th><th></th></tr></thead><tbody>${pend.map(l => `<tr><td>${esc(l.code)}</td><td>${esc(l.email)}</td><td>${hhmm(l.at)}</td><td><button class="key wide" data-dv="${esc(l.code)}" type="button">Entregue</button></td></tr>`).join('')}</tbody></table>` : '<p class="note">Nenhum prêmio pendente de entrega.</p>'}
+    <div class="btns two"><button class="btn secondary" id="x1" type="button">Exportar ranking</button><button class="btn secondary" id="x2" type="button">Exportar giros</button><button class="btn danger" id="zero" type="button">Zerar tudo</button><button class="btn primary" id="close" type="button">Fechar</button></div></div>`);
+  const m = $('modal');
+  m.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { db.stock[b.dataset.s] = Math.max(0, db.stock[b.dataset.s] + +b.dataset.d); save(); drawWheel(); openAdmin(); });
+  m.querySelectorAll('[data-dv]').forEach(b => b.onclick = () => { const l = db.log.find(x => x.code === b.dataset.dv); if (l) { l.delivered = true; save(); } openAdmin(); });
+  $('x1').onclick = () => download('roleta-ranking.csv', [['email', 'giros', 'pontos_roleta', 'desafio_acertos', 'desafio_aprovado', 'brinde', 'premios', 'ultimo_giro'],
+    ...people.map(p => [p.email, p.spins, p.points, p.challenge ? p.challenge.score : '', p.challenge ? (p.challenge.pass ? 'sim' : 'nao') : '', p.souvenir ? 'sim' : 'nao', p.prizes, new Date(p.lastSpinAt).toISOString()])]);
+  $('x2').onclick = () => download('roleta-giros.csv', [['data', 'email', 'tipo', 'detalhe', 'pontos', 'codigo_premio', 'entregue'],
+    ...db.log.map(l => [new Date(l.at).toISOString(), l.email, l.type, l.slice || (l.type === 'challenge' ? `${l.format} ${l.score}/3` : ''), l.points || 0, l.code || '', l.type === 'prize' ? (l.delivered ? 'sim' : 'nao') : ''])]);
+  $('zero').onclick = () => { if (confirm('Apagar TODOS os dados e restaurar o estoque inicial? Esta ação não pode ser desfeita.')) { db = freshDb(); save(); drawWheel(); showAttract(); } };
+  $('close').onclick = () => { closeModal(); ui.mode === 'attract' ? showAttract() : bumpIdle(); };
+  ui.mode = 'modal';
+}
+let taps = [];
+$('hot').addEventListener('pointerdown', () => {
+  const now = Date.now(); taps = taps.filter(t => now - t < 1500); taps.push(now);
+  if (taps.length >= 3) { taps = []; askPin(openAdmin); }
+});
+
+/* ---------- modo teste ---------- */
+function renderTestBar() {
+  const bar = $('testbar'); bar.hidden = false;
+  bar.innerHTML = `<span>Modo teste</span><button type="button" id="tbGold">${forceGold ? 'Próximo giro: Proteção Total ✓' : 'Forçar Proteção Total no próximo giro'}</button><button type="button" id="tbAdmin">Painel</button><button type="button" id="tbZero">Zerar</button><button type="button" id="tbExit">Sair</button>`;
+  $('tbGold').onclick = () => { forceGold = !forceGold; renderTestBar(); };
+  $('tbAdmin').onclick = openAdmin;
+  $('tbZero').onclick = () => { if (confirm('Apagar os dados de teste?')) { db = freshDb(); save(); drawWheel(); showAttract(); } };
+  $('tbExit').onclick = () => { location.href = location.pathname; };
+}
+
+/* ---------- fundo do quiz: colunas de código caindo ---------- */
+(function initRain() {
+  const snippets = [
+    "if (link.suspicious) report();", "const mfa = true;", "hash(password, salt);", "while (alive) { scan(); }",
+    "lgpd.consent(user);", "firewall.allow(trusted);", "token.rotate();", "if (!verified) deny();",
+    "encrypt(data, key);", "audit.log(event);", "return 'threat_blocked';", "session.expire(15);",
+    "patch(vuln.cve);", "const zeroTrust = 1;", "phishing.detect(mail);", "vpn.connect();",
+  ];
+  const rain = $('rain');
+  for (let c = 0; c < 6; c++) {
+    const col = document.createElement('div');
+    col.className = 'rain';
+    col.style.left = (c * 17 + Math.random() * 6) + '%';
+    col.style.animationDuration = (45 + Math.random() * 40) + 's';
+    col.style.animationDelay = (-Math.random() * 60) + 's';
+    col.textContent = shuffle(snippets).concat(shuffle(snippets)).join('\n');
+    rain.appendChild(col);
+  }
+})();
+
+/* ---------- início ---------- */
+if (CONFIG.logoUrl) $('foot').innerHTML = `<img src="${esc(CONFIG.logoUrl)}" alt="TOTVS">`;
+if (TEST) renderTestBar();
+drawWheel();
+showAttract();
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#04181f">
 <meta name="robots" content="noindex,nofollow">
-<title>Jogo Cyber Shield · Segurança e Privacidade</title>
+<title>Cyber Shield Game · TOTVS</title>
 <style>
   @font-face { font-family: 'TOTVS'; font-weight: 200; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraLight.ttf') format('truetype'); }
   @font-face { font-family: 'TOTVS'; font-weight: 300; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Light.ttf') format('truetype'); }
@@ -107,8 +107,8 @@
 
   /* ---------- hero ---------- */
   .home { min-height: calc(100vh - 112px); min-height: calc(100dvh - 112px); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0 0 24px; }
-  .headline { font-size: clamp(2.6rem, 12.5vw, 3.8rem); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-transform: uppercase; margin: 14px 0 18px; }
-  .provoke { max-width: 30ch; margin: 0 auto 30px; font: .85rem/1.5 var(--mono); color: var(--muted); }
+  .headline { font-size: clamp(2.3rem, 11vw, 3.6rem); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-transform: uppercase; margin: 14px 0 18px; }
+  .provoke { max-width: 36ch; margin: 0 auto 30px; font: .85rem/1.5 var(--mono); color: var(--muted); }
   .caret::after { content: "_"; margin-left: 2px; color: var(--lime); animation: blink 1s steps(2) infinite; }
   .home-actions { width: 100%; max-width: 340px; }
   .shield { width: 120px; height: 120px; margin: 0 auto 18px; display: block; filter: drop-shadow(0 0 22px rgba(34,216,240,.45)); }
@@ -295,7 +295,7 @@
    CONFIGURAÇÃO — ajuste aqui sem mexer no resto do código
    ============================================================ */
 const CONFIG = {
-  gameTitle: ['Jogo', 'Cyber', 'Shield'],
+  gameTitle: ['Cyber', 'Shield', 'Game'],
   logoUrl: 'totvs-logo.svg',          // logo branco no rodapé (arquivo ao lado do index.html); '' para ocultar
   allowedDomains: ['totvs.com.br'],   // [] para aceitar qualquer domínio
   questionsPerGame: 10,
@@ -514,8 +514,8 @@ function screenHome() {
     <div class="home">
       ${SHIELD_SVG}
       <div class="tag">${esc(CONFIG.gameTitle.join(' '))}</div>
-      <h1 class="headline">Você é o <span class="grad">elo mais fraco?</span></h1>
-      <p class="provoke caret">Um clique errado é tudo o que um invasor precisa</p>
+      <h1 class="headline">Aceita o desafio de <span class="grad">proteger a TOTVS?</span></h1>
+      <p class="provoke caret">Um clique errado abre a porta ao invasor. Um dado mal tratado expõe uma pessoa.</p>
       <div class="home-actions">
         <button class="btn primary" id="start" type="button">Iniciar</button>
         <button class="btn secondary" id="goRank" type="button">Ranking</button>
@@ -569,12 +569,15 @@ function screenRegister(prefill = {}) {
 
 const qid = q => { let h = 5381; for (const c of q.q) h = ((h << 5) + h + c.charCodeAt(0)) | 0; return (h >>> 0).toString(36); };
 
-/** Sorteia as perguntas da partida dando prioridade às que o jogador ainda não viu. */
+/** Sorteia a partida: metade de segurança e metade de privacidade, dando prioridade às que o jogador ainda não viu. */
 function pickQuestions(seenIds) {
   const seen = new Set(seenIds);
-  const fresh = shuffle(QUESTIONS.filter(q => !seen.has(qid(q))));
-  const old = shuffle(QUESTIONS.filter(q => seen.has(qid(q))));
-  return fresh.concat(old).slice(0, CONFIG.questionsPerGame);
+  const half = Math.ceil(CONFIG.questionsPerGame / 2);
+  const take = (t, n) => {
+    const pool = QUESTIONS.filter(q => q.t === t);
+    return shuffle(pool.filter(q => !seen.has(qid(q)))).concat(shuffle(pool.filter(q => seen.has(qid(q))))).slice(0, n);
+  };
+  return shuffle([...take('s', half), ...take('p', CONFIG.questionsPerGame - half)]);
 }
 
 async function startGame() {
