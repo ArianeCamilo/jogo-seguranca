@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#04181f">
+<meta name="robots" content="noindex,nofollow">
+<title>Jogo Cyber Shield · Segurança e Privacidade</title>
+<style>
+  @font-face { font-family: 'TOTVS'; font-weight: 200; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraLight.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 300; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Light.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 400; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Regular.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 600; font-style: normal; font-display: swap; src: url('fonts/TOTVS-SemiBold.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Bold.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 800; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraBold.ttf') format('truetype'); }
+  :root {
+    --bg0: #031319;
+    --bg1: #052932;
+    --panel: rgba(4, 26, 34, .9);
+    --panel-2: rgba(10, 52, 62, .55);
+    --cyan: #22d8f0;
+    --lime: #c9f43a;
+    --line: rgba(34, 216, 240, .28);
+    --text: #e8f6f8;
+    --muted: #7fa4ab;
+    --ok: #b6f23c;
+    --bad: #ff5d7a;
+    --warn: #ffc233;
+    --grad: linear-gradient(90deg, #e4ff6a 0%, #5be8d6 55%, #22c8f5 100%);
+    --mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --sans: Verdana, Geneva, "DejaVu Sans", sans-serif;
+    --display: 'TOTVS', Verdana, Geneva, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg0); }
+  body {
+    margin: 0; color: var(--text); font: 16px/1.5 var(--sans);
+    min-height: 100vh; min-height: 100dvh; position: relative; overflow-x: hidden;
+    background:
+      radial-gradient(1100px 560px at 50% -12%, rgba(20, 130, 140, .55), transparent 62%),
+      radial-gradient(700px 480px at 100% 100%, rgba(201, 244, 58, .10), transparent 60%),
+      radial-gradient(600px 420px at 0% 70%, rgba(34, 216, 240, .08), transparent 60%),
+      linear-gradient(180deg, var(--bg0), var(--bg1));
+    background-attachment: fixed;
+  }
+
+  /* ---------- cenário ---------- */
+  .scene { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .floor {
+    position: absolute; left: -50%; right: -50%; bottom: -2%; height: 46vh;
+    background:
+      repeating-linear-gradient(90deg, rgba(34,216,240,.35) 0 1px, transparent 1px 64px),
+      repeating-linear-gradient(0deg, rgba(34,216,240,.35) 0 1px, transparent 1px 48px);
+    transform: perspective(420px) rotateX(62deg); transform-origin: 50% 100%;
+    -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 92%);
+            mask-image: linear-gradient(to top, #000 10%, transparent 92%);
+    opacity: .42; animation: run 2.4s linear infinite;
+  }
+  @keyframes run { to { background-position: 0 0, 0 48px; } }
+  .rain { position: absolute; top: 0; font: 11px/1.7 var(--mono); color: var(--cyan); opacity: .06; white-space: pre; animation: fall linear infinite; }
+  @keyframes fall { from { transform: translateY(-60%); } to { transform: translateY(100vh); } }
+  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.45)); }
+
+  main, #foot { position: relative; z-index: 1; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .wrap { max-width: 560px; margin: 0 auto; padding: calc(24px + env(safe-area-inset-top)) 18px 8px; }
+  #testbar { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; padding: 7px 12px;
+    font: 700 .66rem/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #2b1c00; background: var(--warn); }
+  #testbar[hidden] { display: none; }
+  #testbar button { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+  body.test .wrap { padding-top: 56px; }
+  #foot { display: flex; justify-content: center; padding: 18px 18px calc(24px + env(safe-area-inset-bottom)); }
+  #foot img { height: 26px; width: auto; display: block; opacity: .9; }
+  .screen { animation: in .4s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  /* ---------- tipografia ---------- */
+  h1, h2 { margin: 0; font-family: var(--display); line-height: 1.05; letter-spacing: -.02em; }
+  .title { font-size: clamp(2.5rem, 13vw, 3.7rem); font-weight: 800; text-transform: uppercase; }
+  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(34,216,240,.35)); }
+  .tag { font: 700 .72rem/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); }
+  .tag::before { content: "// "; color: var(--muted); }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); }
+  .small { font-size: .85rem; }
+  .mono { font-family: var(--mono); }
+  .center { text-align: center; }
+
+  /* ---------- painel HUD (cantos em L) ---------- */
+  .panel {
+    --c: var(--cyan); --s: 16px; --t: 2px;
+    position: relative; padding: 20px; margin-bottom: 16px; border: 1px solid var(--line); border-radius: 4px;
+    background:
+      linear-gradient(var(--c), var(--c)) top left / var(--s) var(--t) no-repeat,
+      linear-gradient(var(--c), var(--c)) top left / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / var(--s) var(--t) no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / var(--s) var(--t) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / var(--s) var(--t) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / var(--t) var(--s) no-repeat,
+      var(--panel);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    box-shadow: 0 0 40px rgba(34,216,240,.07), inset 0 0 40px rgba(34,216,240,.04);
+  }
+
+  /* ---------- hero ---------- */
+  .home { min-height: calc(100vh - 112px); min-height: calc(100dvh - 112px); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0 0 24px; }
+  .headline { font-size: clamp(2.6rem, 12.5vw, 3.8rem); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-transform: uppercase; margin: 14px 0 18px; }
+  .provoke { max-width: 30ch; margin: 0 auto 30px; font: .85rem/1.5 var(--mono); color: var(--muted); }
+  .caret::after { content: "_"; margin-left: 2px; color: var(--lime); animation: blink 1s steps(2) infinite; }
+  .home-actions { width: 100%; max-width: 340px; }
+  .shield { width: 120px; height: 120px; margin: 0 auto 18px; display: block; filter: drop-shadow(0 0 22px rgba(34,216,240,.45)); }
+  .shield .spin { transform-box: fill-box; transform-origin: center; animation: spin 24s linear infinite; }
+  .shield .spin.rev { animation-duration: 16s; animation-direction: reverse; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .chips { display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  .chip { font: 700 .7rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 8px 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--cyan); }
+  .chip b { color: var(--lime); }
+
+  /* ---------- formulário ---------- */
+  label { display: block; font: 700 .7rem/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; }
+  input[type=text], input[type=email], input[type=password] {
+    width: 100%; padding: 14px; font: 1rem var(--mono); color: var(--text); background: rgba(0,0,0,.28);
+    border: 1px solid var(--line); border-radius: 2px; transition: border-color .2s, box-shadow .2s; }
+  input::placeholder { color: rgba(127,164,171,.55); }
+  input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(34,216,240,.18), 0 0 18px rgba(34,216,240,.2); }
+  .check { display: flex; gap: 10px; align-items: flex-start; margin: 18px 0 4px; font: 400 .85rem/1.45 var(--sans); letter-spacing: 0; text-transform: none; color: var(--muted); }
+  .check input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--lime); flex: none; }
+  .error { color: var(--bad); font: .85rem var(--mono); margin-top: 12px; min-height: 1.3em; }
+
+  /* ---------- botões ---------- */
+  .btn { display: block; width: 100%; margin-top: 12px; padding: 15px 18px; border-radius: 999px; border: 1px solid transparent; cursor: pointer;
+    font: 800 .9rem/1 var(--mono); letter-spacing: .2em; text-transform: uppercase; text-align: center; transition: transform .15s, box-shadow .2s, background .2s; }
+  .btn:active:not(:disabled) { transform: scale(.98); }
+  .btn.primary { color: #03242b; background: linear-gradient(90deg, #d8fb55, #4fe6dd 60%, #36cdf5); box-shadow: 0 0 26px rgba(54,205,245,.45), inset 0 1px 0 rgba(255,255,255,.5); }
+  .btn.primary:hover:not(:disabled) { box-shadow: 0 0 38px rgba(91,232,214,.7), inset 0 1px 0 rgba(255,255,255,.5); }
+  .btn.secondary { color: var(--cyan); background: rgba(0,0,0,.25); border-color: var(--line); }
+  .btn.secondary:hover { border-color: var(--cyan); box-shadow: 0 0 18px rgba(34,216,240,.25); }
+  .btn.danger { color: var(--bad); background: transparent; border-color: rgba(255,93,122,.5); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  button:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  .homelink { display: inline-block; margin: 0 0 14px; padding: 6px 0; background: none; border: 0; cursor: pointer; font: 700 .74rem/1 var(--mono); letter-spacing: .06em; color: var(--muted); transition: color .2s; }
+  .homelink:hover { color: var(--cyan); }
+  .linkish { background: none; border: 0; color: var(--muted); font: .72rem var(--mono); letter-spacing: .14em; text-transform: uppercase; cursor: pointer; padding: 10px; text-decoration: underline; text-underline-offset: 4px; }
+
+  /* ---------- partida ---------- */
+  .hud { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin-bottom: 10px; }
+  .hud .lvl { font: 800 1.5rem/1 var(--mono); }
+  .hud .lvl small { font-size: .8rem; color: var(--muted); }
+  .hud .score { text-align: right; font: 700 .68rem/1 var(--mono); letter-spacing: .16em; color: var(--muted); }
+  .hud .score b { display: block; margin-top: 6px; font-size: 1.5rem; letter-spacing: 0; color: var(--lime); text-shadow: 0 0 14px rgba(201,244,58,.45); }
+  .progress { display: flex; gap: 4px; margin-bottom: 14px; }
+  .progress i { flex: 1; height: 4px; background: rgba(127,164,171,.2); }
+  .progress i.done { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  .progress i.cur { background: var(--lime); box-shadow: 0 0 10px var(--lime); animation: blink 1s steps(2) infinite; }
+  .combo { display: inline-block; font: 800 .72rem/1 var(--mono); letter-spacing: .16em; padding: 6px 9px; color: #03242b; background: var(--lime); box-shadow: 0 0 16px rgba(201,244,58,.6); animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+  .q-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .timer { position: relative; width: 54px; height: 54px; color: var(--cyan); }
+  .timer svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+  .timer circle { fill: none; stroke-width: 4; }
+  .timer .bg { stroke: rgba(127,164,171,.22); }
+  .timer .fg { stroke: currentColor; stroke-linecap: round; filter: drop-shadow(0 0 5px currentColor); transition: stroke-dashoffset .1s linear; }
+  .timer span { position: absolute; inset: 0; display: grid; place-items: center; font: 800 1rem var(--mono); color: var(--text); }
+  .timer.low { color: var(--warn); }
+  .timer.crit { color: var(--bad); animation: shake .4s infinite; }
+  @keyframes shake { 25% { transform: translateX(-1px); } 75% { transform: translateX(1px); } }
+  .q { font-family: var(--display); font-size: 1.25rem; font-weight: 700; line-height: 1.35; margin: 0 0 18px; }
+  .opt { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 13px 14px; margin-bottom: 10px; cursor: pointer;
+    color: var(--text); font: inherit; background: rgba(0,0,0,.25); border: 1px solid var(--line); border-radius: 2px; transition: border-color .15s, background .15s, box-shadow .15s, transform .15s; }
+  .opt .key { flex: none; width: 28px; height: 28px; display: grid; place-items: center; font: 800 .8rem var(--mono); color: var(--cyan); border: 1px solid var(--line); background: rgba(34,216,240,.08); }
+  .opt:hover:not(:disabled) { border-color: var(--cyan); background: rgba(34,216,240,.09); box-shadow: 0 0 18px rgba(34,216,240,.18); transform: translateX(3px); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { border-color: var(--ok); background: rgba(182,242,60,.12); box-shadow: 0 0 20px rgba(182,242,60,.22); }
+  .opt.correct .key { color: #03242b; background: var(--ok); border-color: var(--ok); }
+  .opt.wrong { border-color: var(--bad); background: rgba(255,93,122,.12); }
+  .opt.wrong .key { color: #fff; background: var(--bad); border-color: var(--bad); }
+  .opt.dim { opacity: .38; }
+  .term { margin-top: 4px; padding: 14px 16px; font: .88rem/1.55 var(--mono); background: rgba(0,0,0,.4); border-left: 3px solid var(--muted); animation: in .3s both; }
+  .term.ok { border-left-color: var(--ok); }
+  .term.bad { border-left-color: var(--bad); }
+  .term .h { font-weight: 800; letter-spacing: .08em; margin-bottom: 6px; }
+  .term.ok .h { color: var(--ok); }
+  .term.bad .h { color: var(--bad); }
+  .term .b { color: var(--muted); font-family: var(--sans); font-size: .92rem; }
+  .term .b::before { content: "// "; color: var(--cyan); font-family: var(--mono); }
+
+  /* ---------- resultado ---------- */
+  .stars { display: flex; gap: 6px; justify-content: center; margin: 10px 0 6px; }
+  .stars { align-items: flex-end; }
+  .stars svg { width: 66px; height: 66px; overflow: visible; }
+  .stars svg:nth-child(3) { width: 92px; height: 92px; }
+  .stars svg:first-child { width: 0; height: 0; }
+  .stars .on { fill: url(#gStar); filter: drop-shadow(0 0 10px rgba(201,244,58,.7)); stroke: none; }
+  .stars .off { fill: none; stroke: rgba(127,164,171,.55); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+  .rank-title { font: 800 1.05rem/1.2 var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); }
+  .score-big { font-family: var(--display); font-size: clamp(3.4rem, 18vw, 5rem); font-weight: 800; line-height: 1; margin: 10px 0 2px; font-variant-numeric: tabular-nums; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
+  .stats div { padding: 12px 6px; border: 1px solid var(--line); background: var(--panel-2); text-align: center; }
+  .stats b { display: block; font: 800 1.15rem var(--mono); color: var(--text); }
+  .stats span { font: .62rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+  /* ---------- ranking ---------- */
+  .rank { list-style: none; margin: 0; padding: 0; counter-reset: none; }
+  .rank li { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 12px 10px; border-bottom: 1px solid rgba(34,216,240,.12); }
+  .rank li:last-child { border-bottom: 0; }
+  .rank li.me { background: rgba(201,244,58,.08); box-shadow: inset 3px 0 0 var(--lime); }
+  .rank .pos { font: 800 1.05rem var(--mono); text-align: center; color: var(--muted); }
+  .rank .top1 .pos { color: #ffd84a; text-shadow: 0 0 12px rgba(255,216,74,.7); }
+  .rank .top2 .pos { color: #d5e4ea; text-shadow: 0 0 12px rgba(213,228,234,.5); }
+  .rank .top3 .pos { color: #ff9f5a; text-shadow: 0 0 12px rgba(255,159,90,.5); }
+  .rank .who b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rank .who span { font: .75rem var(--mono); color: var(--muted); }
+  .rank .pts { font: 800 1.1rem var(--mono); color: var(--lime); }
+  .empty { padding: 28px 0; text-align: center; font: .9rem var(--mono); color: var(--muted); }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font: .8rem var(--mono); }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(34,216,240,.12); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+
+  /* ---------- telão (#telao) ---------- */
+  body.tv { --u: min(1vw, 1.75vh); overflow: hidden; }
+  body.tv.idle { cursor: none; }
+  body.tv .wrap { max-width: none; padding: calc(var(--u) * 1.6) calc(var(--u) * 4) calc(var(--u) * .4); }
+  body.tv #foot { position: fixed; left: 0; right: 0; bottom: calc(var(--u) * 1); padding: 0; pointer-events: none; }
+  body.tv #foot img { height: calc(var(--u) * 2.4); }
+  body.tv .tag { font-size: calc(var(--u) * 1); }
+  body.tv .homelink { position: fixed; right: calc(var(--u) * 2); bottom: calc(var(--u) * 1.2); z-index: 5; margin: 0; font-size: calc(var(--u) * .9); transition: opacity .4s; }
+  body.tv.idle .homelink, body.tv.idle #tvfs { opacity: 0; }
+  .tv-head { display: flex; justify-content: space-between; align-items: flex-end; gap: calc(var(--u) * 2); }
+  .tv-title { font-size: calc(var(--u) * 5.2); margin-top: calc(var(--u) * .5); }
+  .tv-meta { display: flex; align-items: center; gap: calc(var(--u) * 2); font: 700 calc(var(--u) * 1) var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding-bottom: calc(var(--u) * .6); }
+  .tv-meta b { color: var(--lime); }
+  .tv-live { color: var(--lime); }
+  .tv-live::before { content: ""; display: inline-block; width: .7em; height: .7em; margin-right: .6em; border-radius: 50%; background: var(--lime); box-shadow: 0 0 10px var(--lime); animation: blink 1.2s steps(2) infinite; }
+  #tvfs { transition: opacity .4s; }
+  .tv-pods { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: calc(var(--u) * 1.6); align-items: end; margin: calc(var(--u) * 1) 0 calc(var(--u) * 1); }
+  .pod { margin: 0; padding: calc(var(--u) * 1.4) calc(var(--u) * 1.2); text-align: center; min-width: 0; --s: calc(var(--u) * 1.4); }
+  .pod.p1 { --c: #ffd84a; order: 2; padding-top: calc(var(--u) * 2); padding-bottom: calc(var(--u) * 2); box-shadow: 0 0 60px rgba(255,216,74,.14), inset 0 0 40px rgba(255,216,74,.06); }
+  .pod.p2 { --c: #d5e4ea; order: 1; }
+  .pod.p3 { --c: #ff9f5a; order: 3; }
+  .pod .medal { font: 800 calc(var(--u) * 1.5) var(--mono); letter-spacing: .2em; color: var(--c); text-shadow: 0 0 14px var(--c); }
+  .pod .pname { font: 700 calc(var(--u) * 2) / 1.15 var(--display); margin-top: calc(var(--u) * .5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pod.p1 .pname { font-size: calc(var(--u) * 2.7); }
+  .pod .pmail { font: calc(var(--u) * 1) var(--mono); color: var(--muted); margin-top: calc(var(--u) * .2); }
+  .pod .ppts { font: 800 calc(var(--u) * 4.4) / 1 var(--display); margin-top: calc(var(--u) * .7); font-variant-numeric: tabular-nums; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(34,216,240,.35)); }
+  .pod.p1 .ppts { font-size: calc(var(--u) * 6); }
+  .pod .pmeta { font: 700 calc(var(--u) * 1) var(--mono); letter-spacing: .12em; color: var(--muted); margin-top: calc(var(--u) * .6); text-transform: uppercase; }
+  .pod.vazio { opacity: .35; }
+  .pod.vazio .pname { font-size: calc(var(--u) * 1.4); color: var(--muted); }
+  .tv-rows { list-style: none; margin: 0; padding: 0 calc(var(--u) * 1); display: grid; grid-auto-flow: column; column-gap: calc(var(--u) * 4); }
+  .tv-rows li { display: grid; grid-template-columns: calc(var(--u) * 3.6) 1fr auto; gap: calc(var(--u) * 1); align-items: center; padding: calc(var(--u) * .75) calc(var(--u) * .6); border-bottom: 1px solid rgba(34,216,240,.14); min-width: 0; }
+  .tv-rows .pos { font: 800 calc(var(--u) * 1.5) var(--mono); color: var(--muted); text-align: center; }
+  .tv-rows .who { min-width: 0; }
+  .tv-rows .who b { display: block; font: 700 calc(var(--u) * 1.6) / 1.2 var(--sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tv-rows .who span { font: calc(var(--u) * .9) var(--mono); color: var(--muted); }
+  .tv-rows .pts { font: 800 calc(var(--u) * 2) var(--mono); color: var(--lime); font-variant-numeric: tabular-nums; }
+  .fresh { animation: fresh 2.6s ease-out; }
+  @keyframes fresh { 0%, 40% { background-color: rgba(201,244,58,.28); } 100% { background-color: transparent; } }
+  .tv-empty { padding: calc(var(--u) * 4) 0; text-align: center; font: calc(var(--u) * 1.6) var(--mono); color: var(--muted); }
+  .tv-foot { display: flex; justify-content: space-between; gap: calc(var(--u) * 2); margin-top: calc(var(--u) * 1.2); padding-right: calc(var(--u) * 12); font: calc(var(--u) * 1) var(--mono); letter-spacing: .08em; color: var(--muted); }
+  .tv-foot b { color: var(--cyan); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="scene" aria-hidden="true">
+  <div class="floor"></div>
+  <div id="rain"></div>
+  <div class="vignette"></div>
+</div>
+<main class="wrap" id="app" aria-live="polite"></main>
+<div id="testbar" hidden></div>
+<footer id="foot"></footer>
+
+<script src="perguntas.js"></script>
+<script>
+/* ============================================================
+   CONFIGURAÇÃO — ajuste aqui sem mexer no resto do código
+   ============================================================ */
+const CONFIG = {
+  gameTitle: ['Jogo', 'Cyber', 'Shield'],
+  logoUrl: 'totvs-logo.svg',          // logo branco no rodapé (arquivo ao lado do index.html); '' para ocultar
+  allowedDomains: ['totvs.com.br'],   // [] para aceitar qualquer domínio
+  questionsPerGame: 10,
+  secondsPerQuestion: 20,
+  basePoints: 100,                    // pontos por acerto
+  speedBonusMax: 100,                 // bônus máximo por rapidez
+  comboStep: 10,                      // bônus por acerto consecutivo (a partir do 2º)
+  comboMax: 50,                       // teto do bônus de combo
+  attemptsPerEmail: 3,                // melhor pontuação conta
+  rankingSize: 10,
+  adminPin: '2468',                   // PROTÓTIPO: trocar/remover quando houver backend
+  storageKey: 'sp-game-v1',
+};
+
+/* MODO TESTE: abrir o jogo com ?teste no endereço (ex.: index.html?teste).
+   Aceita qualquer e-mail, sem limite de tentativas, e usa um armazenamento
+   separado, então nada do teste entra no ranking real. */
+const TEST = /[?&]teste(=|&|$)/.test(location.search);
+if (TEST) Object.assign(CONFIG, { allowedDomains: [], attemptsPerEmail: Infinity, storageKey: 'sp-game-v1-teste' });
+const attemptsLabel = n => n === Infinity ? '∞' : n;
+
+/* ============================================================
+   CAMADA DE ARMAZENAMENTO
+   Hoje: localStorage (cada aparelho tem seu próprio ranking).
+   Para ligar ao backend/TI: reimplementar estes métodos
+   (todos assíncronos) sem alterar o resto do jogo.
+   ============================================================ */
+const Store = {
+  _read() {
+    try {
+      const d = JSON.parse(localStorage.getItem(CONFIG.storageKey)) || {};
+      return { results: d.results || [], seen: d.seen || {} };
+    } catch { return { results: [], seen: {} }; }
+  },
+  _write(data) { localStorage.setItem(CONFIG.storageKey, JSON.stringify(data)); },
+  async countAttempts(email) {
+    return this._read().results.filter(r => r.email === email).length;
+  },
+  async saveResult(result) {
+    const data = this._read();
+    data.results.push(result);
+    this._write(data);
+  },
+  async getAllResults() { return this._read().results; },
+  async getSeen(email) { return this._read().seen[email] || []; },
+  async addSeen(email, ids) {
+    const data = this._read();
+    data.seen[email] = [...new Set([...(data.seen[email] || []), ...ids])];
+    this._write(data);
+  },
+  async clearAll() { this._write({ results: [], seen: {} }); },
+};
+
+/* ============================================================
+   UTILITÁRIOS
+   ============================================================ */
+const $app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const normEmail = e => e.trim().toLowerCase();
+const maskEmail = e => { const [u, d] = e.split('@'); return (u[0] || '') + '***@' + d; };
+const fmtTime = ms => (ms / 1000).toFixed(1).replace('.', ',') + 's';
+const pad2 = n => String(n).padStart(2, '0');
+const csvCell = v => { let s = String(v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function validateEmail(email) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Informe um e-mail válido.';
+  const domain = email.split('@')[1];
+  const ds = CONFIG.allowedDomains;
+  if (ds.length && !ds.some(d => domain === d || domain.endsWith('.' + d)))
+    return 'Use seu e-mail corporativo (@' + ds[0] + ').';
+  return '';
+}
+
+/** Melhor resultado por e-mail, ordenado: pontos > acertos > menor tempo > mais cedo. */
+function buildRanking(results) {
+  const best = new Map();
+  for (const r of results) {
+    const cur = best.get(r.email);
+    if (!cur || cmp(r, cur) < 0) best.set(r.email, r);
+  }
+  return [...best.values()].sort(cmp);
+}
+function cmp(a, b) {
+  return b.score - a.score || b.correct - a.correct || a.timeMs - b.timeMs || a.at - b.at;
+}
+
+/* ============================================================
+   VISUAL: cenário, marca e ícones
+   ============================================================ */
+function initScene() {
+  const snippets = [
+    "if (link.suspicious) report();", "const mfa = true;", "hash(password, salt);", "while (alive) { scan(); }",
+    "lgpd.consent(user);", "firewall.allow(trusted);", "token.rotate();", "if (!verified) deny();",
+    "encrypt(data, key);", "audit.log(event);", "return 'threat_blocked';", "session.expire(15);",
+    "patch(vuln.cve);", "const zeroTrust = 1;", "phishing.detect(mail);", "vpn.connect();",
+  ];
+  const rain = document.getElementById('rain');
+  for (let c = 0; c < 6; c++) {
+    const col = document.createElement('div');
+    col.className = 'rain';
+    col.style.left = (c * 17 + Math.random() * 6) + '%';
+    col.style.animationDuration = (45 + Math.random() * 40) + 's';
+    col.style.animationDelay = (-Math.random() * 60) + 's';
+    col.textContent = shuffle(snippets).concat(shuffle(snippets)).join('\n');
+    rain.appendChild(col);
+  }
+  if (CONFIG.logoUrl) document.getElementById('foot').innerHTML = `<img src="${esc(CONFIG.logoUrl)}" alt="TOTVS">`;
+  if (TEST) initTestBar();
+}
+
+/* ---------- Modo teste: faixa de aviso + dados de exemplo ---------- */
+function initTestBar() {
+  document.body.classList.add('test');
+  const bar = document.getElementById('testbar');
+  bar.hidden = false;
+  bar.innerHTML = `<span title="Os dados do teste ficam separados e não entram no ranking real">Modo teste</span>
+    <button type="button" id="tbSeed" title="Adiciona 12 jogadores fictícios ao ranking de teste">Gerar exemplos</button>
+    <button type="button" id="tbClear" title="Apaga os dados do modo teste neste aparelho">Limpar</button>
+    <button type="button" id="tbExit" title="Voltar ao jogo normal">Sair</button>`;
+  document.getElementById('tbSeed').onclick = async () => {
+    const names = ['Ana Souza', 'Bruno Lima', 'Carla Mendes', 'Diego Alves', 'Eduarda Ribeiro', 'Felipe Santos', 'Gabriela Costa', 'Henrique Pereira', 'Isabela Martins', 'João Carvalho', 'Karina Rocha', 'Lucas Oliveira'];
+    const stamp = Date.now();
+    for (const [i, name] of names.entries()) {
+      const correct = 4 + Math.floor(Math.random() * 7);
+      await Store.saveResult({
+        id: 'ex' + stamp.toString(36) + i, name, email: `exemplo${i + 1}@teste.local`,
+        score: correct * 100 + Math.round(Math.random() * correct * 130), correct, total: CONFIG.questionsPerGame,
+        timeMs: 50000 + Math.round(Math.random() * 90000), at: stamp + i,
+      });
+    }
+    route();
+  };
+  document.getElementById('tbClear').onclick = async () => {
+    if (confirm('Apagar todos os dados de teste deste aparelho?')) { await Store.clearAll(); route(); }
+  };
+  document.getElementById('tbExit').onclick = () => { location.href = location.pathname + location.hash; };
+}
+
+const SHIELD_SVG = `
+<svg class="shield" viewBox="0 0 120 120" aria-hidden="true">
+  <defs>
+    <linearGradient id="gSh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e4ff6a"/><stop offset=".55" stop-color="#5be8d6"/><stop offset="1" stop-color="#22c8f5"/></linearGradient>
+  </defs>
+  <circle class="spin" cx="60" cy="60" r="56" fill="none" stroke="#22d8f0" stroke-opacity=".55" stroke-width="1.2" stroke-dasharray="3 9"/>
+  <circle class="spin rev" cx="60" cy="60" r="48" fill="none" stroke="#c9f43a" stroke-opacity=".5" stroke-width="1.5" stroke-dasharray="26 14 4 14"/>
+  <path d="M60 24 L88 34 V59 C88 77 76 89 60 97 C44 89 32 77 32 59 V34 Z" fill="rgba(34,216,240,.14)" stroke="url(#gSh)" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M60 33 L80 40 V59 C80 72 71 81 60 87 C49 81 40 72 40 59 V40 Z" fill="none" stroke="#22d8f0" stroke-opacity=".35" stroke-width="1"/>
+  <circle cx="60" cy="56" r="7" fill="url(#gSh)"/>
+  <path d="M57 60 H63 L65 74 H55 Z" fill="url(#gSh)"/>
+</svg>`;
+
+const STAR_PATH = 'M266.8 4C269.3 3.8 273.1 7 274.2 9.7C275.4 12.4 273.8 16.8 273.7 20.3C273.6 23.8 273.8 27.4 273.6 30.9C273.4 34.4 273 38 272.7 41.5C272.5 45 272.3 48.6 272.1 52.1C271.9 55.6 271.8 59.2 271.7 62.7C271.6 66.2 271.6 69.8 271.4 73.3C271.2 76.8 270.9 80.3 270.7 83.8C270.5 87.3 270.2 90.9 270 94.4C269.8 97.9 269.9 101.5 269.7 105C269.6 108.5 269.3 112.1 269.1 115.6C268.9 119.1 268.9 122.7 268.7 126.2C268.5 129.7 267.9 133.3 267.7 136.8C267.5 140.3 267.8 143.9 267.7 147.4C267.6 150.9 266.7 154.6 267.1 158C267.5 161.4 268.3 165.1 270 168C271.7 171 274.7 173.3 277.3 175.7C279.9 178.1 282.9 180.1 285.7 182.2C288.5 184.3 291.4 186.4 294.2 188.5C297 190.6 299.9 192.8 302.7 194.9C305.5 197 308.4 199.1 311.2 201.2C314 203.3 316.9 205.5 319.7 207.6C322.5 209.7 325.4 211.9 328.2 214C331 216.1 333.9 218.2 336.7 220.3C339.6 222.4 342.5 224.4 345.3 226.5C348.2 228.6 351 230.8 353.8 232.9C356.7 235 359.6 237 362.4 239.1C365.2 241.2 368 243.4 370.8 245.5C373.6 247.7 376.5 249.8 379.2 252C381.9 254.3 385.6 256.2 387.1 259C388.6 261.8 389.3 266.2 388.1 268.9C386.9 271.6 382.9 274 379.8 275C376.7 276 372.8 275 369.3 275C365.8 275 362.2 275 358.7 274.8C355.2 274.6 351.6 274.1 348.1 273.9C344.6 273.7 341 273.8 337.5 273.6C334 273.4 330.4 273.1 326.9 272.8C323.4 272.5 319.8 272.1 316.3 271.9C312.8 271.7 309.2 272 305.7 271.8C302.2 271.7 298.7 271.3 295.2 271C291.7 270.8 288.1 270.5 284.6 270.3C281.1 270.1 277.5 270 274 269.8C270.5 269.6 266.9 269.1 263.4 268.9C259.9 268.7 256.3 268.6 252.8 268.4C249.3 268.2 245.7 267.5 242.2 267.8C238.7 268.1 235.1 268.7 232 270.2C228.9 271.7 226.1 274.3 223.6 276.7C221.1 279.2 219.1 282.2 216.9 284.9C214.7 287.7 212.6 290.4 210.4 293.2C208.2 296 206 298.8 203.7 301.5C201.5 304.2 199.2 306.9 196.9 309.6C194.6 312.3 192.4 315 190.1 317.7C187.8 320.4 185.4 323 183 325.6C180.7 328.3 178.3 330.9 176 333.6C173.7 336.3 171.4 338.9 169.1 341.6C166.8 344.3 164.5 347 162.2 349.7C159.9 352.4 157.6 355.1 155.3 357.8C153 360.5 150.7 363.2 148.4 365.9C146.1 368.6 144 371.8 141.4 373.8C138.8 375.8 134.6 378.9 132.8 377.9C131 376.9 131.1 371.3 130.7 367.9C130.3 364.5 130.7 360.8 130.6 357.3C130.5 353.8 130.3 350.2 130.1 346.7C130 343.2 129.8 339.6 129.7 336.1C129.6 332.6 129.9 329 129.7 325.5C129.6 322 129 318.4 128.8 314.9C128.6 311.4 128.7 307.8 128.7 304.3C128.7 300.8 128.7 297.2 128.7 293.7C128.7 290.2 128.7 286.6 128.9 283.1C129.1 279.6 129.6 276 129.7 272.5C129.9 269 129.6 265.4 129.8 261.9C130 258.4 130.6 254.8 130.7 251.3C130.9 247.8 131.2 244.2 130.7 240.7C130.3 237.2 129.6 233.5 128 230.5C126.4 227.5 123.6 225 121 222.6C118.4 220.2 115.4 218.3 112.6 216.2C109.8 214.1 106.9 212 104.1 209.8C101.3 207.7 98.5 205.5 95.7 203.3C92.9 201.2 90.1 199 87.3 196.9C84.5 194.8 81.6 192.7 78.8 190.6C76 188.5 73.2 186.2 70.4 184.1C67.6 182 64.6 179.9 61.8 177.8C59 175.7 56.2 173.5 53.4 171.3C50.6 169.2 47.8 167 45 164.9C42.2 162.8 39.3 160.6 36.5 158.5C33.7 156.4 30.9 154.3 28.1 152.1C25.3 150 22.4 147.8 19.6 145.6C16.8 143.5 13.8 141.5 11.2 139.2C8.6 136.9 4.3 134.1 4 131.6C3.7 129.1 6.9 125.3 9.6 124.1C12.3 122.9 16.7 124.3 20.2 124.4C23.7 124.5 27.3 124.7 30.8 124.8C34.3 125 37.9 125.1 41.4 125.3C44.9 125.5 48.5 125.6 52 125.8C55.5 126 59.1 126.3 62.6 126.5C66.1 126.7 69.7 126.6 73.2 126.8C76.7 127 80.2 127.4 83.7 127.6C87.2 127.8 90.8 127.8 94.3 128C97.8 128.2 101.4 128.6 104.9 128.8C108.4 129 112 128.9 115.5 129.1C119 129.3 122.6 129.6 126.1 129.8C129.6 130 133.2 130 136.7 130.2C140.2 130.4 143.8 130.7 147.3 130.8C150.8 130.9 154.5 131.4 157.9 130.9C161.4 130.5 165 129.8 168 128.1C171 126.4 173.4 123.5 175.7 120.9C178.1 118.3 180 115.2 182.1 112.4C184.2 109.6 186.4 106.8 188.5 104C190.7 101.2 192.9 98.4 195 95.6C197.2 92.8 199.3 89.9 201.4 87.1C203.5 84.3 205.7 81.5 207.8 78.7C209.9 75.9 212.1 73 214.2 70.2C216.3 67.4 218.5 64.5 220.6 61.7C222.7 58.9 224.9 56 227 53.2C229.2 50.4 231.4 47.7 233.5 44.9C235.7 42.1 237.8 39.2 239.9 36.4C242 33.6 244.1 30.7 246.2 27.9C248.3 25.1 250.6 22.3 252.7 19.5C254.9 16.7 256.8 13.7 259.1 11.1C261.5 8.5 264.3 4.2 266.8 4Z';
+const STAR_VIEWBOX = '0 0 392.1 381.9';
+const starsSvg = n => `
+<div class="stars" aria-label="${n} de 3 estrelas">
+  <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="gStar" x1="0" y1=".3" x2="1" y2=".75"><stop offset="0" stop-color="#00d8ff"/><stop offset=".5" stop-color="#9ff3c4"/><stop offset="1" stop-color="#d8fa50"/></linearGradient><path id="starShape" d="${STAR_PATH}"/></defs></svg>
+  ${[0, 1, 2].map(i => `<svg viewBox="${STAR_VIEWBOX}"><use href="#starShape" class="${i < n ? 'on' : 'off'}"/></svg>`).join('')}
+</div>`;
+
+function rankTitle(correct, total) {
+  const p = correct / total;
+  if (p === 1) return { name: 'Lenda da Cibersegurança', stars: 3, msg: 'Gabaritou! Nenhuma ameaça passou por você.' };
+  if (p >= .8) return { name: 'Defensor Elite', stars: 3, msg: 'Você já pensa como quem protege a empresa.' };
+  if (p >= .6) return { name: 'Analista Sênior', stars: 2, msg: 'Mandou bem! Faltou pouco para o topo.' };
+  if (p >= .4) return { name: 'Aprendiz de SOC', stars: 1, msg: 'Bom começo. Revise os conceitos e tente de novo.' };
+  return { name: 'Alvo de Phishing', stars: 0, msg: 'Os golpistas agradecem. Hora de revisar e voltar mais forte.' };
+}
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+let player = null;      // { name, email }
+let game = null;        // estado da partida
+let timer = null;
+let keyHandler = null;
+
+function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+function render(html, kind = 'page') {
+  stopTimer();
+  if (keyHandler) { document.removeEventListener('keydown', keyHandler); keyHandler = null; }
+  const back = kind === 'home' ? '' : '<button class="homelink" type="button">&larr; Voltar ao Início</button>';
+  $app.innerHTML = `<div class="screen">${back}${html}</div>`;
+  const link = $app.querySelector('.homelink');
+  if (link) link.onclick = () => {
+    if (kind === 'game' && !confirm('Sair da partida? O progresso desta tentativa será perdido.')) return;
+    if (location.hash === '' || location.hash === '#') screenHome(); else go('');
+  };
+  window.scrollTo(0, 0);
+}
+function countUp(el, to, ms = 1000) {
+  if (reduceMotion || to === 0) { el.textContent = to; return; }
+  const t0 = performance.now();
+  const step = now => {
+    const k = Math.min(1, (now - t0) / ms);
+    el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3)));
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* ============================================================
+   TELAS
+   ============================================================ */
+const go = hash => { location.hash = hash; };
+
+function screenHome() {
+  render(`
+    <div class="home">
+      ${SHIELD_SVG}
+      <div class="tag">${esc(CONFIG.gameTitle.join(' '))}</div>
+      <h1 class="headline">Você é o <span class="grad">elo mais fraco?</span></h1>
+      <p class="provoke caret">Um clique errado é tudo o que um invasor precisa</p>
+      <div class="home-actions">
+        <button class="btn primary" id="start" type="button">Iniciar</button>
+        <button class="btn secondary" id="goRank" type="button">Ranking</button>
+      </div>
+    </div>
+  `, 'home');
+  document.getElementById('start').onclick = () => go('jogar');
+  document.getElementById('goRank').onclick = () => go('ranking');
+}
+
+function screenRegister(prefill = {}) {
+  render(`
+    <div class="tag">Missão</div>
+    <h1 class="title" style="font-size:2.2rem;margin:8px 0 14px"><span class="grad">Identifique-se</span></h1>
+    <div class="chips" style="justify-content:flex-start;margin:0 0 18px">
+      <span class="chip"><b>${CONFIG.questionsPerGame}</b> fases</span>
+      <span class="chip"><b>${CONFIG.secondsPerQuestion}s</b> por fase</span>
+      <span class="chip"><b>${attemptsLabel(CONFIG.attemptsPerEmail)}</b> tentativas</span>
+    </div>
+    <form class="panel" id="form" novalidate>
+      <label for="name">Nome</label>
+      <input id="name" type="text" autocomplete="name" maxlength="60" value="${esc(prefill.name || '')}" required>
+      <label for="email">E-mail corporativo</label>
+      <input id="email" type="email" autocomplete="email" inputmode="email" maxlength="120" placeholder="nome@${esc(CONFIG.allowedDomains[0] || 'empresa.com')}" value="${esc(prefill.email || '')}" required>
+      <label class="check" for="consent">
+        <input id="consent" type="checkbox">
+        <span>Concordo em informar meu nome e e-mail para participar do ranking e da premiação desta atividade. Os dados serão usados apenas para esse fim e excluídos após o evento.</span>
+      </label>
+      <div class="error" id="err" role="alert"></div>
+      <button class="btn primary" type="submit">Começar</button>
+    </form>
+  `);
+  document.getElementById('form').onsubmit = async ev => {
+    ev.preventDefault();
+    const name = document.getElementById('name').value.trim().replace(/\s+/g, ' ');
+    const email = normEmail(document.getElementById('email').value);
+    const consent = document.getElementById('consent').checked;
+    const err = document.getElementById('err');
+    if (name.length < 2) return err.textContent = '> erro: informe seu nome.';
+    const emailErr = validateEmail(email);
+    if (emailErr) return err.textContent = '> erro: ' + emailErr.toLowerCase();
+    if (!consent) return err.textContent = '> erro: é necessário concordar para participar.';
+    const used = await Store.countAttempts(email);
+    if (used >= CONFIG.attemptsPerEmail)
+      return err.textContent = `> acesso negado: você já usou suas ${CONFIG.attemptsPerEmail} tentativas. Confira sua posição no ranking!`;
+    player = { name, email };
+    startGame();
+  };
+}
+
+const qid = q => { let h = 5381; for (const c of q.q) h = ((h << 5) + h + c.charCodeAt(0)) | 0; return (h >>> 0).toString(36); };
+
+/** Sorteia as perguntas da partida dando prioridade às que o jogador ainda não viu. */
+function pickQuestions(seenIds) {
+  const seen = new Set(seenIds);
+  const fresh = shuffle(QUESTIONS.filter(q => !seen.has(qid(q))));
+  const old = shuffle(QUESTIONS.filter(q => seen.has(qid(q))));
+  return fresh.concat(old).slice(0, CONFIG.questionsPerGame);
+}
+
+async function startGame() {
+  const picked = pickQuestions(await Store.getSeen(player.email));
+  await Store.addSeen(player.email, picked.map(qid));
+  game = {
+    qs: picked.map(q => {
+      const opts = shuffle([{ text: q.correct, ok: true }, ...q.wrong.map(text => ({ text, ok: false }))]);
+      return { q: q.q, why: q.why, opts };
+    }),
+    i: 0, score: 0, correct: 0, timeMs: 0, streak: 0,
+  };
+  screenQuestion();
+}
+
+const RING_C = 2 * Math.PI * 27;
+
+function screenQuestion() {
+  const total = game.qs.length, q = game.qs[game.i];
+  const limit = CONFIG.secondsPerQuestion * 1000;
+  render(`
+    <div class="hud">
+      <div class="lvl"><small>FASE</small> ${pad2(game.i + 1)}<small>/${pad2(total)}</small></div>
+      <div id="combo">${game.streak >= 2 ? `<span class="combo">COMBO x${game.streak}</span>` : ''}</div>
+      <div class="score">SCORE<b id="score">${game.score}</b></div>
+    </div>
+    <div class="progress" aria-hidden="true">${game.qs.map((_, k) => `<i class="${k < game.i ? 'done' : k === game.i ? 'cur' : ''}"></i>`).join('')}</div>
+    <section class="panel">
+      <div class="q-head">
+        <span class="tag">Ameaça detectada</span>
+        <div class="timer" id="timer" role="timer" aria-label="Tempo restante">
+          <svg viewBox="0 0 64 64"><circle class="bg" cx="32" cy="32" r="27"/><circle class="fg" id="ring" cx="32" cy="32" r="27" stroke-dasharray="${RING_C}" stroke-dashoffset="0"/></svg>
+          <span id="secs">${CONFIG.secondsPerQuestion}</span>
+        </div>
+      </div>
+      <p class="q">${esc(q.q)}</p>
+      <div id="opts">${q.opts.map((o, k) => `<button class="opt" type="button" data-k="${k}"><span class="key">${'ABCD'[k]}</span><span>${esc(o.text)}</span></button>`).join('')}</div>
+    </section>
+    <div id="fb"></div>
+  `, 'game');
+  const start = performance.now();
+  const box = document.getElementById('timer'), ring = document.getElementById('ring'), secs = document.getElementById('secs');
+  let answered = false;
+
+  const finish = chosen => {
+    if (answered) return;
+    answered = true; stopTimer();
+    const elapsed = Math.min(performance.now() - start, limit);
+    const right = chosen !== null && q.opts[chosen].ok;
+    let gained = 0;
+    if (right) {
+      game.streak++; game.correct++;
+      const combo = Math.min(Math.max(game.streak - 1, 0) * CONFIG.comboStep, CONFIG.comboMax);
+      gained = CONFIG.basePoints + Math.round(CONFIG.speedBonusMax * (1 - elapsed / limit)) + combo;
+      game.score += gained;
+    } else game.streak = 0;
+    game.timeMs += elapsed;
+    document.getElementById('score').textContent = game.score;
+    document.getElementById('combo').innerHTML = game.streak >= 2 ? `<span class="combo">COMBO x${game.streak}</span>` : '';
+    document.querySelectorAll('.opt').forEach((b, k) => {
+      b.disabled = true;
+      if (q.opts[k].ok) b.classList.add('correct');
+      else if (k === chosen) b.classList.add('wrong');
+      else b.classList.add('dim');
+    });
+    const last = game.i === game.qs.length - 1;
+    const head = right ? `> ACCESS GRANTED &nbsp;+${gained}` : chosen === null ? '> TIMEOUT: ameaça não neutralizada' : '> THREAT DETECTED: resposta incorreta';
+    document.getElementById('fb').innerHTML = `
+      <div class="term ${right ? 'ok' : 'bad'}"><div class="h">${head}</div><div class="b">${esc(q.why)}</div></div>
+      <button class="btn primary" id="next" type="button">${last ? 'Ver resultado' : 'Próxima fase'}</button>`;
+    const next = document.getElementById('next');
+    next.focus({ preventScroll: true });
+    next.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+    next.onclick = () => { if (last) finishGame(); else { game.i++; screenQuestion(); } };
+  };
+
+  document.querySelectorAll('.opt').forEach(b => b.onclick = () => finish(+b.dataset.k));
+  keyHandler = e => {
+    const k = 'abcd1234'.indexOf(e.key.toLowerCase()) % 4;
+    if (!answered && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1 && 'abcd1234'.includes(e.key.toLowerCase()) && k < q.opts.length) finish(k);
+  };
+  document.addEventListener('keydown', keyHandler);
+
+  timer = setInterval(() => {
+    const left = Math.max(0, limit - (performance.now() - start));
+    ring.style.strokeDashoffset = RING_C * (1 - left / limit);
+    secs.textContent = Math.ceil(left / 1000);
+    box.classList.toggle('low', left < limit * .5 && left >= limit * .25);
+    box.classList.toggle('crit', left < limit * .25);
+    if (left <= 0) finish(null);
+  }, 100);
+}
+
+async function finishGame() {
+  const result = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: player.name, email: player.email,
+    score: game.score, correct: game.correct, total: game.qs.length,
+    timeMs: Math.round(game.timeMs), at: Date.now(),
+  };
+  await Store.saveResult(result);
+  const ranking = buildRanking(await Store.getAllResults());
+  const pos = ranking.findIndex(r => r.email === player.email) + 1;
+  const used = await Store.countAttempts(player.email);
+  const left = CONFIG.attemptsPerEmail - used;
+  const isBest = ranking[pos - 1].id === result.id;
+  const t = rankTitle(result.correct, result.total);
+  render(`
+    <section class="panel center">
+      <div class="tag">Missão concluída</div>
+      ${starsSvg(t.stars)}
+      <div class="rank-title">${esc(t.name)}</div>
+      <div class="score-big grad" id="big">0</div>
+      <div class="muted mono small">PONTOS · ${esc(player.name)}</div>
+      <div class="stats">
+        <div><b>${result.correct}/${result.total}</b><span>acertos</span></div>
+        <div><b>${fmtTime(result.timeMs)}</b><span>tempo</span></div>
+        <div><b>${pos}º</b><span>ranking</span></div>
+      </div>
+    </section>
+    <p class="center muted">${t.msg}${isBest ? '' : ' Sua melhor pontuação continua valendo no ranking.'}</p>
+    <button class="btn primary" id="rank" type="button">Ver ranking</button>
+    ${left > 0 ? `<button class="btn secondary" id="again" type="button">Jogar de novo (${attemptsLabel(left)})</button>` : '<p class="center muted small mono" style="margin-top:16px">&gt; todas as tentativas utilizadas</p>'}
+  `);
+  countUp(document.getElementById('big'), result.score);
+  document.getElementById('rank').onclick = () => go('ranking');
+  const again = document.getElementById('again');
+  if (again) again.onclick = startGame;
+}
+
+async function screenRanking(meEmail) {
+  const ranking = buildRanking(await Store.getAllResults());
+  const top = ranking.slice(0, CONFIG.rankingSize);
+  const me = meEmail ? ranking.findIndex(r => r.email === meEmail) : -1;
+  const row = (r, i, isMe) => `
+    <li class="${isMe ? 'me ' : ''}${i < 3 ? 'top' + (i + 1) : ''}">
+      <span class="pos">${pad2(i + 1)}</span>
+      <span class="who"><b>${esc(r.name)}</b><span>${esc(maskEmail(r.email))}</span></span>
+      <span class="pts">${r.score}</span>
+    </li>`;
+  render(`
+    <div class="tag">Leaderboard</div>
+    <h1 class="title" style="font-size:2.4rem;margin:8px 0 6px"><span class="grad">Ranking</span></h1>
+    <p class="muted small">Top ${CONFIG.rankingSize}. Em caso de empate vence quem acertou mais e respondeu mais rápido.</p>
+    <section class="panel" style="padding:8px 10px">
+      ${top.length ? `<ol class="rank">${top.map((r, i) => row(r, i, i === me)).join('')}</ol>` : '<p class="empty">&gt; nenhum jogador ainda. Seja o primeiro!</p>'}
+    </section>
+    ${me >= CONFIG.rankingSize ? `<section class="panel" style="padding:8px 10px"><ol class="rank">${row(ranking[me], me, true)}</ol></section>` : ''}
+    <button class="btn primary" id="play" type="button">Jogar</button>
+    <div class="center"><button class="linkish" id="admin" type="button">Organização</button></div>
+  `);
+  document.getElementById('play').onclick = () => go('jogar');
+  document.getElementById('admin').onclick = () => go('organizacao');
+}
+
+/* ---------- Área da organização (PROTÓTIPO: PIN no cliente não é segurança real) ---------- */
+function screenAdminLogin() {
+  if (TEST) return screenAdmin();
+  render(`
+    <div class="tag">Acesso restrito</div>
+    <h1 class="title" style="font-size:2.2rem;margin:8px 0 16px"><span class="grad">Organização</span></h1>
+    <form class="panel" id="f" novalidate>
+      <label for="pin" style="margin-top:0">PIN</label>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="off">
+      <div class="error" id="err" role="alert"></div>
+      <button class="btn primary" type="submit">Entrar</button>
+    </form>
+    <button class="btn secondary" id="back" type="button">Voltar</button>`);
+  document.getElementById('back').onclick = () => go('ranking');
+  document.getElementById('f').onsubmit = ev => {
+    ev.preventDefault();
+    if (document.getElementById('pin').value === CONFIG.adminPin) screenAdmin();
+    else document.getElementById('err').textContent = '> acesso negado: PIN incorreto.';
+  };
+}
+
+async function screenAdmin() {
+  const all = await Store.getAllResults();
+  const ranking = buildRanking(all);
+  render(`
+    <div class="tag">Acesso restrito</div>
+    <h1 class="title" style="font-size:2.2rem;margin:8px 0 6px"><span class="grad">Organização</span></h1>
+    <p class="muted small mono">${all.length} partidas · ${ranking.length} participantes únicos (neste aparelho)</p>
+    <section class="panel"><div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>Nome</th><th>E-mail</th><th>Pts</th><th>Acertos</th><th>Tempo</th></tr></thead>
+      <tbody>${ranking.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${r.score}</td><td>${r.correct}/${r.total}</td><td>${fmtTime(r.timeMs)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Sem dados.</td></tr>'}</tbody>
+    </table></div></section>
+    <button class="btn primary" id="csv" type="button" ${all.length ? '' : 'disabled'}>Exportar CSV (ranking)</button>
+    <button class="btn secondary" id="tv" type="button">Abrir ranking no telão</button>
+    <button class="btn danger" id="clear" type="button">Apagar todos os dados</button>
+    <button class="btn secondary" id="back" type="button">Voltar</button>`);
+  document.getElementById('back').onclick = () => go('ranking');
+  document.getElementById('tv').onclick = () => go('telao');
+  document.getElementById('csv').onclick = () => {
+    const head = ['posicao', 'nome', 'email', 'pontos', 'acertos', 'total', 'tempo_ms', 'data'];
+    const lines = ranking.map((r, i) => [i + 1, r.name, r.email, r.score, r.correct, r.total, r.timeMs, new Date(r.at).toISOString()].map(csvCell).join(','));
+    const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'ranking-seguranca-privacidade.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  document.getElementById('clear').onclick = async () => {
+    if (confirm('Apagar TODOS os resultados deste aparelho? Esta ação não pode ser desfeita.')) { await Store.clearAll(); screenAdmin(); }
+  };
+}
+
+/* ---------- Telão: ranking em tela cheia, atualiza sozinho (abrir em #telao) ---------- */
+let tvStop = null;
+function stopTv() {
+  if (tvStop) { tvStop(); tvStop = null; }
+  document.body.classList.remove('tv', 'idle');
+}
+function screenTv() {
+  document.body.classList.add('tv');
+  const podSlot = (r, i, fresh) => r ? `
+    <section class="panel pod p${i + 1}${fresh ? ' fresh' : ''}">
+      <div class="medal">${pad2(i + 1)}</div>
+      <div class="pname">${esc(r.name)}</div>
+      <div class="pmail">${esc(maskEmail(r.email))}</div>
+      <div class="ppts">${r.score}</div>
+      <div class="pmeta">${r.correct}/${r.total} acertos &middot; ${fmtTime(r.timeMs)}</div>
+    </section>` : `
+    <section class="panel pod p${i + 1} vazio"><div class="medal">${pad2(i + 1)}</div><div class="pname">aguardando&hellip;</div></section>`;
+  const rowItem = (r, i, fresh) => `
+    <li class="${fresh ? 'fresh' : ''}">
+      <span class="pos">${pad2(i + 1)}</span>
+      <span class="who"><b>${esc(r.name)}</b><span>${esc(maskEmail(r.email))}</span></span>
+      <span class="pts">${r.score}</span>
+    </li>`;
+  render(`
+    <div class="tv-head">
+      <div>
+        <div class="tag">Leaderboard ao vivo</div>
+        <h1 class="title tv-title"><span class="grad">Ranking</span></h1>
+      </div>
+      <div class="tv-meta">
+        <span class="tv-live">ao vivo</span>
+        <span id="tvcount"></span>
+        <button class="linkish" id="tvfs" type="button">Tela cheia (F)</button>
+      </div>
+    </div>
+    <div id="tvlist"></div>
+    <div class="tv-foot">
+      <span>&gt; jogue agora: <b>${esc(location.host + location.pathname.replace(/index\.html$/, ''))}</b></span>
+      <span>Desempate: mais acertos, depois menor tempo.</span>
+    </div>
+  `);
+
+  const list = document.getElementById('tvlist');
+  const count = document.getElementById('tvcount');
+  let sig = '', prev = null, busy = false;
+  const refresh = async () => {
+    if (busy) return;
+    busy = true;
+    try {
+      const all = await Store.getAllResults();
+      const ranking = buildRanking(all);
+      const top = ranking.slice(0, CONFIG.rankingSize);
+      count.innerHTML = `<b>${ranking.length}</b> jogadores &middot; <b>${all.length}</b> partidas`;
+      const next = JSON.stringify(top.map(r => [r.email, r.score]));
+      if (next === sig) return;
+      const was = prev;
+      prev = new Map(top.map(r => [r.email, r.score]));
+      sig = next;
+      const isNew = r => !!was && was.get(r.email) !== r.score;
+      if (!top.length) { list.innerHTML = '<p class="tv-empty">&gt; nenhum jogador ainda. Seja o primeiro!</p>'; return; }
+      const rest = top.slice(3);
+      list.innerHTML = `
+        <div class="tv-pods">${[0, 1, 2].map(i => podSlot(top[i], i, top[i] && isNew(top[i]))).join('')}</div>
+        ${rest.length ? `<ol class="tv-rows" style="grid-template-rows:repeat(${Math.ceil(rest.length / 2)},auto)">${rest.map((r, i) => rowItem(r, i + 3, isNew(r))).join('')}</ol>` : ''}`;
+    } finally { busy = false; }
+  };
+
+  const fsBtn = document.getElementById('tvfs');
+  const toggleFs = () => {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen();
+    } catch { /* navegador sem suporte a tela cheia */ }
+  };
+  fsBtn.onclick = toggleFs;
+  keyHandler = ev => { if (ev.key === 'f' || ev.key === 'F') toggleFs(); };
+  document.addEventListener('keydown', keyHandler);
+
+  let idleT;
+  const wake = () => {
+    document.body.classList.remove('idle');
+    clearTimeout(idleT);
+    idleT = setTimeout(() => document.body.classList.add('idle'), 3000);
+  };
+  addEventListener('mousemove', wake);
+  wake();
+
+  refresh();
+  const poll = setInterval(refresh, 3000);
+  addEventListener('storage', refresh);
+  tvStop = () => {
+    clearInterval(poll); clearTimeout(idleT);
+    removeEventListener('mousemove', wake);
+    removeEventListener('storage', refresh);
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  };
+}
+
+function route() {
+  stopTv();
+  const h = location.hash.replace('#', '');
+  if (h === 'telao') screenTv();
+  else if (h === 'ranking') screenRanking(player && player.email);
+  else if (h === 'jogar') screenRegister(player || {});
+  else if (h === 'organizacao') screenAdminLogin();
+  else screenHome();
+}
+addEventListener('hashchange', route);
+
+initScene();
+route();
+</script>
+</body>
+</html>
