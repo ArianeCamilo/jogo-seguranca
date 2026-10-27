@@ -178,6 +178,17 @@
   .opt.wrong { border-color: var(--bad); background: rgba(255,93,122,.12); }
   .opt.wrong .key { color: #fff; background: var(--bad); border-color: var(--bad); }
   .opt.dim { opacity: .38; }
+  .opt.sel { border-color: var(--lime); background: rgba(201,244,58,.1); box-shadow: 0 0 18px rgba(201,244,58,.2); }
+  .opt.sel .key { color: #03242b; background: var(--lime); border-color: var(--lime); }
+  #confirm { margin-top: 6px; }
+  .term .rule { margin: 4px 0 10px; padding: 10px 12px; font: 700 1rem/1.35 var(--display); color: var(--text); background: rgba(201,244,58,.09); border-left: 3px solid var(--lime); }
+  .term .rule span { display: block; margin-bottom: 4px; font: 800 .62rem/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--lime); }
+  .readbar { height: 3px; margin: 12px 0 0; background: rgba(127,164,171,.2); }
+  .readbar i { display: block; height: 100%; width: 0; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  ul.rules { margin: 12px 0 0; padding: 0; list-style: none; }
+  ul.rules li { position: relative; padding: 8px 0 8px 18px; border-bottom: 1px solid rgba(34,216,240,.12); font: 700 .95rem/1.35 var(--display); }
+  ul.rules li:last-child { border-bottom: 0; }
+  ul.rules li::before { content: ""; position: absolute; left: 2px; top: 15px; width: 7px; height: 7px; background: var(--lime); box-shadow: 0 0 8px var(--lime); transform: rotate(45deg); }
   .term { margin-top: 4px; padding: 14px 16px; font: .88rem/1.55 var(--mono); background: rgba(0,0,0,.4); border-left: 3px solid var(--muted); animation: in .3s both; }
   .term.ok { border-left-color: var(--ok); }
   .term.bad { border-left-color: var(--bad); }
@@ -289,8 +300,11 @@ const CONFIG = {
   allowedDomains: ['totvs.com.br'],   // [] para aceitar qualquer domínio
   questionsPerGame: 10,
   secondsPerQuestion: 20,
-  basePoints: 100,                    // pontos por acerto
+  levelPoints: [100, 150, 200],       // pontos por acerto: pergunta fácil, média, difícil
   speedBonusMax: 100,                 // bônus máximo por rapidez
+  reviewFactor: 0.5,                  // acerto na rodada de revisão vale 50% dos pontos da pergunta
+  readSecondsOk: 6,                  // pausa para ler a explicação após um acerto
+  readSecondsWrong: 8,               // pausa para ler a explicação após um erro
   comboStep: 10,                      // bônus por acerto consecutivo (a partir do 2º)
   comboMax: 50,                       // teto do bônus de combo
   attemptsPerEmail: 3,                // melhor pontuação conta
@@ -360,14 +374,17 @@ function validateEmail(email) {
   return '';
 }
 
-/** Melhor resultado por e-mail, ordenado: pontos > acertos > menor tempo > mais cedo. */
+/** Soma das partidas de cada e-mail, ordenada: pontos > acertos > menor tempo > terminou antes. */
 function buildRanking(results) {
-  const best = new Map();
+  const by = new Map();
   for (const r of results) {
-    const cur = best.get(r.email);
-    if (!cur || cmp(r, cur) < 0) best.set(r.email, r);
+    const a = by.get(r.email);
+    if (!a) { by.set(r.email, { ...r, games: 1 }); continue; }
+    if (r.at > a.at) a.name = r.name;
+    a.score += r.score; a.correct += r.correct; a.total += r.total; a.timeMs += r.timeMs;
+    a.at = Math.max(a.at, r.at); a.games++;
   }
-  return [...best.values()].sort(cmp);
+  return [...by.values()].sort(cmp);
 }
 function cmp(a, b) {
   return b.score - a.score || b.correct - a.correct || a.timeMs - b.timeMs || a.at - b.at;
@@ -518,6 +535,7 @@ function screenRegister(prefill = {}) {
       <span class="chip"><b>${CONFIG.secondsPerQuestion}s</b> por fase</span>
       <span class="chip"><b>${attemptsLabel(CONFIG.attemptsPerEmail)}</b> tentativas</span>
     </div>
+    <p class="muted small" style="margin:-4px 0 16px">Os pontos de todas as suas tentativas se somam no ranking. Errou? As perguntas voltam numa rodada de revisão com pontos extras.</p>
     <form class="panel" id="form" novalidate>
       <label for="name">Nome</label>
       <input id="name" type="text" autocomplete="name" maxlength="60" value="${esc(prefill.name || '')}" required>
@@ -565,8 +583,10 @@ async function startGame() {
   game = {
     qs: picked.map(q => {
       const opts = shuffle([{ text: q.correct, ok: true }, ...q.wrong.map(text => ({ text, ok: false }))]);
-      return { q: q.q, why: q.why, opts };
+      return { q: q.q, why: q.why, rule: q.rule, d: q.d || 2, opts };
     }),
+    mode: 'main',          // 'main' = 10 perguntas; 'review' = rodada de revisão dos erros
+    rev: [], missed: [], revRight: 0,
     i: 0, score: 0, correct: 0, timeMs: 0, streak: 0,
   };
   screenQuestion();
@@ -574,71 +594,120 @@ async function startGame() {
 
 const RING_C = 2 * Math.PI * 27;
 
+/** Rodada de revisão: as perguntas erradas voltam, com alternativas embaralhadas. */
+function screenReviewIntro() {
+  game.mode = 'review'; game.i = 0;
+  game.rev = game.missed.map(k => ({ ...game.qs[k], opts: shuffle(game.qs[k].opts) }));
+  const n = game.rev.length;
+  render(`
+    <div class="tag">Rodada de revisão</div>
+    <h1 class="title" style="font-size:2.2rem;margin:8px 0 14px"><span class="grad">Hora de revisar</span></h1>
+    <section class="panel">
+      <p style="margin-top:0">Você errou <b>${n}</b> ${n === 1 ? 'pergunta' : 'perguntas'}. ${n === 1 ? 'Ela volta' : 'Elas voltam'} agora, com as alternativas em outra ordem.</p>
+      <p class="muted" style="margin-bottom:0">Cada acerto vale <b>${Math.round(CONFIG.reviewFactor * 100)}%</b> dos pontos da pergunta. Não há bônus de rapidez: use o que acabou de ler.</p>
+    </section>
+    <button class="btn primary" id="go" type="button">Começar revisão</button>
+  `, 'game');
+  document.getElementById('go').onclick = screenQuestion;
+}
+
 function screenQuestion() {
-  const total = game.qs.length, q = game.qs[game.i];
+  const review = game.mode === 'review';
+  const list = review ? game.rev : game.qs;
+  const total = list.length, q = list[game.i];
   const limit = CONFIG.secondsPerQuestion * 1000;
   render(`
     <div class="hud">
-      <div class="lvl"><small>FASE</small> ${pad2(game.i + 1)}<small>/${pad2(total)}</small></div>
-      <div id="combo">${game.streak >= 2 ? `<span class="combo">COMBO x${game.streak}</span>` : ''}</div>
+      <div class="lvl"><small>${review ? 'REVISÃO' : 'FASE'}</small> ${pad2(game.i + 1)}<small>/${pad2(total)}</small></div>
+      <div id="combo">${!review && game.streak >= 2 ? `<span class="combo">COMBO x${game.streak}</span>` : ''}</div>
       <div class="score">SCORE<b id="score">${game.score}</b></div>
     </div>
-    <div class="progress" aria-hidden="true">${game.qs.map((_, k) => `<i class="${k < game.i ? 'done' : k === game.i ? 'cur' : ''}"></i>`).join('')}</div>
+    <div class="progress" aria-hidden="true">${list.map((_, k) => `<i class="${k < game.i ? 'done' : k === game.i ? 'cur' : ''}"></i>`).join('')}</div>
     <section class="panel">
       <div class="q-head">
-        <span class="tag">Ameaça detectada</span>
+        <span class="tag">${review ? 'Revisão' : 'Ameaça detectada'}</span>
         <div class="timer" id="timer" role="timer" aria-label="Tempo restante">
           <svg viewBox="0 0 64 64"><circle class="bg" cx="32" cy="32" r="27"/><circle class="fg" id="ring" cx="32" cy="32" r="27" stroke-dasharray="${RING_C}" stroke-dashoffset="0"/></svg>
           <span id="secs">${CONFIG.secondsPerQuestion}</span>
         </div>
       </div>
       <p class="q">${esc(q.q)}</p>
-      <div id="opts">${q.opts.map((o, k) => `<button class="opt" type="button" data-k="${k}"><span class="key">${'ABCD'[k]}</span><span>${esc(o.text)}</span></button>`).join('')}</div>
+      <div id="opts">${q.opts.map((o, k) => `<button class="opt" type="button" data-k="${k}" aria-pressed="false"><span class="key">${'ABCD'[k]}</span><span>${esc(o.text)}</span></button>`).join('')}</div>
+      <button class="btn primary" id="confirm" type="button" disabled>Confirmar resposta</button>
     </section>
     <div id="fb"></div>
   `, 'game');
   const start = performance.now();
   const box = document.getElementById('timer'), ring = document.getElementById('ring'), secs = document.getElementById('secs');
-  let answered = false;
+  let answered = false, sel = null;
 
+  /** Confirmar (ou o tempo acabar) para o relógio; a leitura da explicação não é cronometrada. */
   const finish = chosen => {
     if (answered) return;
     answered = true; stopTimer();
     const elapsed = Math.min(performance.now() - start, limit);
     const right = chosen !== null && q.opts[chosen].ok;
+    const base = CONFIG.levelPoints[q.d - 1];
     let gained = 0;
-    if (right) {
+    if (review) {
+      if (right) { gained = Math.round(base * CONFIG.reviewFactor); game.revRight++; }
+    } else if (right) {
       game.streak++; game.correct++;
       const combo = Math.min(Math.max(game.streak - 1, 0) * CONFIG.comboStep, CONFIG.comboMax);
-      gained = CONFIG.basePoints + Math.round(CONFIG.speedBonusMax * (1 - elapsed / limit)) + combo;
-      game.score += gained;
-    } else game.streak = 0;
-    game.timeMs += elapsed;
+      gained = base + Math.round(CONFIG.speedBonusMax * (1 - elapsed / limit)) + combo;
+    } else { game.streak = 0; game.missed.push(game.i); }
+    if (!review) game.timeMs += elapsed;
+    game.score += gained;
     document.getElementById('score').textContent = game.score;
-    document.getElementById('combo').innerHTML = game.streak >= 2 ? `<span class="combo">COMBO x${game.streak}</span>` : '';
+    document.getElementById('combo').innerHTML = !review && game.streak >= 2 ? `<span class="combo">COMBO x${game.streak}</span>` : '';
+    document.getElementById('confirm').remove();
     document.querySelectorAll('.opt').forEach((b, k) => {
-      b.disabled = true;
+      b.disabled = true; b.classList.remove('sel');
       if (q.opts[k].ok) b.classList.add('correct');
       else if (k === chosen) b.classList.add('wrong');
       else b.classList.add('dim');
     });
-    const last = game.i === game.qs.length - 1;
-    const head = right ? `> ACCESS GRANTED &nbsp;+${gained}` : chosen === null ? '> TIMEOUT: ameaça não neutralizada' : '> THREAT DETECTED: resposta incorreta';
+    const last = game.i === list.length - 1;
+    const nextLabel = !last ? (review ? 'Próxima revisão' : 'Próxima fase')
+      : !review && game.missed.length ? 'Começar revisão' : 'Ver resultado';
+    const head = right ? (review ? `> REVISÃO CONCLUÍDA &nbsp;+${gained}` : `> ACCESS GRANTED &nbsp;+${gained}`)
+      : chosen === null ? '> TIMEOUT: ameaça não neutralizada' : '> THREAT DETECTED: resposta incorreta';
     document.getElementById('fb').innerHTML = `
-      <div class="term ${right ? 'ok' : 'bad'}"><div class="h">${head}</div><div class="b">${esc(q.why)}</div></div>
-      <button class="btn primary" id="next" type="button">${last ? 'Ver resultado' : 'Próxima fase'}</button>`;
-    const next = document.getElementById('next');
-    next.focus({ preventScroll: true });
+      <div class="term ${right ? 'ok' : 'bad'}">
+        <div class="h">${head}</div>
+        <div class="rule"><span>Regra de ouro</span>${esc(q.rule)}</div>
+        <div class="b">${esc(q.why)}</div>
+      </div>
+      <div class="readbar" aria-hidden="true"><i id="readfill"></i></div>
+      <button class="btn primary" id="next" type="button" disabled></button>`;
+    const next = document.getElementById('next'), fill = document.getElementById('readfill');
+    const wait = (right ? CONFIG.readSecondsOk : CONFIG.readSecondsWrong) * 1000, t0 = performance.now();
+    const tick = () => {
+      const left = Math.max(0, wait - (performance.now() - t0));
+      fill.style.width = (100 * (1 - left / wait)) + '%';
+      if (left > 0) { next.textContent = `Leia a regra de ouro… ${Math.ceil(left / 1000)}s`; return; }
+      stopTimer();
+      next.disabled = false; next.textContent = nextLabel;
+      next.focus({ preventScroll: true });
+    };
+    tick(); timer = setInterval(tick, 100);
     next.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
-    next.onclick = () => { if (last) finishGame(); else { game.i++; screenQuestion(); } };
+    next.onclick = () => {
+      if (!last) { game.i++; screenQuestion(); }
+      else if (!review && game.missed.length) screenReviewIntro();
+      else finishGame();
+    };
   };
 
-  document.querySelectorAll('.opt').forEach(b => b.onclick = () => finish(+b.dataset.k));
-  keyHandler = e => {
-    const k = 'abcd1234'.indexOf(e.key.toLowerCase()) % 4;
-    if (!answered && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1 && 'abcd1234'.includes(e.key.toLowerCase()) && k < q.opts.length) finish(k);
-  };
-  document.addEventListener('keydown', keyHandler);
+  const confirmBtn = document.getElementById('confirm');
+  document.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+    if (answered) return;
+    sel = +b.dataset.k;
+    document.querySelectorAll('.opt').forEach((x, k) => { x.classList.toggle('sel', k === sel); x.setAttribute('aria-pressed', k === sel); });
+    confirmBtn.disabled = false;
+    confirmBtn.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+  });
+  confirmBtn.onclick = () => { if (sel !== null) finish(sel); };
 
   timer = setInterval(() => {
     const left = Math.max(0, limit - (performance.now() - start));
@@ -655,15 +724,18 @@ async function finishGame() {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     name: player.name, email: player.email,
     score: game.score, correct: game.correct, total: game.qs.length,
+    reviewCorrect: game.revRight, reviewTotal: game.rev.length,
     timeMs: Math.round(game.timeMs), at: Date.now(),
   };
   await Store.saveResult(result);
   const ranking = buildRanking(await Store.getAllResults());
   const pos = ranking.findIndex(r => r.email === player.email) + 1;
+  const mine = ranking[pos - 1];
   const used = await Store.countAttempts(player.email);
   const left = CONFIG.attemptsPerEmail - used;
-  const isBest = ranking[pos - 1].id === result.id;
   const t = rankTitle(result.correct, result.total);
+  const hasReview = result.reviewTotal > 0;
+  const missedRules = game.missed.map(k => game.qs[k].rule);
   render(`
     <section class="panel center">
       <div class="tag">Missão concluída</div>
@@ -671,13 +743,20 @@ async function finishGame() {
       <div class="rank-title">${esc(t.name)}</div>
       <div class="score-big grad" id="big">0</div>
       <div class="muted mono small">PONTOS · ${esc(player.name)}</div>
-      <div class="stats">
+      ${mine.games > 1 ? `<div class="muted mono small" style="margin-top:4px">TOTAL NO RANKING · <b style="color:var(--lime)">${mine.score}</b> (${mine.games} partidas)</div>` : ''}
+      <div class="stats" style="grid-template-columns:repeat(${hasReview ? 4 : 3},1fr)">
         <div><b>${result.correct}/${result.total}</b><span>acertos</span></div>
+        ${hasReview ? `<div><b>${result.reviewCorrect}/${result.reviewTotal}</b><span>revisão</span></div>` : ''}
         <div><b>${fmtTime(result.timeMs)}</b><span>tempo</span></div>
         <div><b>${pos}º</b><span>ranking</span></div>
       </div>
     </section>
-    <p class="center muted">${t.msg}${isBest ? '' : ' Sua melhor pontuação continua valendo no ranking.'}</p>
+    <p class="center muted">${t.msg}${mine.games > 1 ? ' Seus pontos se somam aos das partidas anteriores.' : ''}</p>
+    ${missedRules.length ? `
+    <section class="panel">
+      <div class="tag">Regras de ouro para levar</div>
+      <ul class="rules">${missedRules.map(r => `<li>${esc(r)}</li>`).join('')}</ul>
+    </section>` : ''}
     <button class="btn primary" id="rank" type="button">Ver ranking</button>
     ${left > 0 ? `<button class="btn secondary" id="again" type="button">Jogar de novo (${attemptsLabel(left)})</button>` : '<p class="center muted small mono" style="margin-top:16px">&gt; todas as tentativas utilizadas</p>'}
   `);
@@ -700,7 +779,7 @@ async function screenRanking(meEmail) {
   render(`
     <div class="tag">Leaderboard</div>
     <h1 class="title" style="font-size:2.4rem;margin:8px 0 6px"><span class="grad">Ranking</span></h1>
-    <p class="muted small">Top ${CONFIG.rankingSize}. Em caso de empate vence quem acertou mais e respondeu mais rápido.</p>
+    <p class="muted small">Top ${CONFIG.rankingSize}. Os pontos de todas as suas partidas se somam. Em caso de empate vence quem acertou mais e respondeu mais rápido.</p>
     <section class="panel" style="padding:8px 10px">
       ${top.length ? `<ol class="rank">${top.map((r, i) => row(r, i, i === me)).join('')}</ol>` : '<p class="empty">&gt; nenhum jogador ainda. Seja o primeiro!</p>'}
     </section>
@@ -741,8 +820,8 @@ async function screenAdmin() {
     <h1 class="title" style="font-size:2.2rem;margin:8px 0 6px"><span class="grad">Organização</span></h1>
     <p class="muted small mono">${all.length} partidas · ${ranking.length} participantes únicos (neste aparelho)</p>
     <section class="panel"><div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Nome</th><th>E-mail</th><th>Pts</th><th>Acertos</th><th>Tempo</th></tr></thead>
-      <tbody>${ranking.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${r.score}</td><td>${r.correct}/${r.total}</td><td>${fmtTime(r.timeMs)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Sem dados.</td></tr>'}</tbody>
+      <thead><tr><th>#</th><th>Nome</th><th>E-mail</th><th>Pts</th><th>Acertos</th><th>Partidas</th><th>Tempo</th></tr></thead>
+      <tbody>${ranking.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${r.score}</td><td>${r.correct}/${r.total}</td><td>${r.games}</td><td>${fmtTime(r.timeMs)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">Sem dados.</td></tr>'}</tbody>
     </table></div></section>
     <button class="btn primary" id="csv" type="button" ${all.length ? '' : 'disabled'}>Exportar CSV (ranking)</button>
     <button class="btn secondary" id="tv" type="button">Abrir ranking no telão</button>
@@ -751,8 +830,8 @@ async function screenAdmin() {
   document.getElementById('back').onclick = () => go('ranking');
   document.getElementById('tv').onclick = () => go('telao');
   document.getElementById('csv').onclick = () => {
-    const head = ['posicao', 'nome', 'email', 'pontos', 'acertos', 'total', 'tempo_ms', 'data'];
-    const lines = ranking.map((r, i) => [i + 1, r.name, r.email, r.score, r.correct, r.total, r.timeMs, new Date(r.at).toISOString()].map(csvCell).join(','));
+    const head = ['posicao', 'nome', 'email', 'pontos', 'acertos', 'total', 'partidas', 'tempo_ms', 'data'];
+    const lines = ranking.map((r, i) => [i + 1, r.name, r.email, r.score, r.correct, r.total, r.games, r.timeMs, new Date(r.at).toISOString()].map(csvCell).join(','));
     const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = 'ranking-seguranca-privacidade.csv';
@@ -802,7 +881,7 @@ function screenTv() {
     <div id="tvlist"></div>
     <div class="tv-foot">
       <span>&gt; jogue agora: <b>${esc(location.host + location.pathname.replace(/index\.html$/, ''))}</b></span>
-      <span>Desempate: mais acertos, depois menor tempo.</span>
+      <span>Soma das partidas &middot; desempate: mais acertos, depois menor tempo.</span>
     </div>
   `);
 
