@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#04181f">
+<meta name="theme-color" content="#002233">
 <meta name="robots" content="noindex,nofollow">
 <title>Shield Spin · Cyber Shield Game</title>
 <style>
@@ -15,15 +15,16 @@
   @font-face { font-family: 'TOTVS'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Bold.ttf') format('truetype'); }
   @font-face { font-family: 'TOTVS'; font-weight: 800; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraBold.ttf') format('truetype'); }
   :root {
-    --bg0: #031319; --bg1: #052932;
-    --panel: rgba(4, 26, 34, .92); --panel-2: rgba(10, 52, 62, .55);
-    --cyan: #22d8f0; --lime: #c9f43a; --gold: #ffd84a;
-    --line: rgba(34, 216, 240, .28); --text: #e8f6f8; --muted: #7fa4ab;
-    --ok: #b6f23c; --bad: #ff5d7a; --warn: #ffc233;
-    --grad: linear-gradient(90deg, #e4ff6a 0%, #5be8d6 55%, #22c8f5 100%);
-    --mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    --sans: Verdana, Geneva, "DejaVu Sans", sans-serif;
-    --display: 'TOTVS', Verdana, Geneva, sans-serif;
+    --bg0: #002233; --bg1: #002233;
+    --panel: rgba(0,34,51,.92); --panel-2: rgba(255,255,255,.07);
+    /* paleta do jogo: apenas estas cores, mais branco */
+    --purple: #A44DFF; --pink: #FF009E; --cyan: #00DBFF; --mint: #00FFD4; --lime: #D9FF65; --orange: #FF8900;
+    --line: rgba(164,77,255,.45); --text: #FFFFFF; --muted: rgba(255,255,255,.72);
+    --ok: #00FFD4; --bad: #FF009E; --warn: #FF8900;
+    --grad: linear-gradient(90deg, #A44DFF, #FF009E);   /* único gradiente do jogo */
+    --label: 'TOTVS', Verdana, sans-serif;   /* rótulos, botões e números */
+    --sans: Verdana, sans-serif;
+    --display: 'TOTVS', Verdana, sans-serif;
     --u: min(1vw, 1.65vh);   /* unidade fluida: tudo se ajusta ao tamanho da tela, de notebook a TV 4K */
   }
   @media (max-aspect-ratio: 7/5) { :root { --u: min(1.7vw, 1.1vh); } }   /* telas mais "em pé": layout empilhado */
@@ -34,9 +35,9 @@
     user-select: none; -webkit-user-select: none; touch-action: manipulation;
     /* mesmo fundo do quiz */
     background:
-      radial-gradient(calc(var(--u) * 61) calc(var(--u) * 31) at 50% -12%, rgba(20, 130, 140, .55), transparent 62%),
-      radial-gradient(calc(var(--u) * 39) calc(var(--u) * 27) at 100% 100%, rgba(201, 244, 58, .10), transparent 60%),
-      radial-gradient(calc(var(--u) * 33) calc(var(--u) * 23) at 0% 70%, rgba(34, 216, 240, .08), transparent 60%),
+      radial-gradient(calc(var(--u) * 61) calc(var(--u) * 31) at 50% -12%, rgba(164,77,255,.42), transparent 62%),
+      radial-gradient(calc(var(--u) * 39) calc(var(--u) * 27) at 100% 100%, rgba(255,0,158,.16), transparent 60%),
+      radial-gradient(calc(var(--u) * 33) calc(var(--u) * 23) at 0% 70%, rgba(164,77,255,.12), transparent 60%),
       linear-gradient(180deg, var(--bg0), var(--bg1));
     background-attachment: fixed;
   }
@@ -45,74 +46,71 @@
   h1, h2 { margin: 0; font-family: var(--display); line-height: 1.05; letter-spacing: -.02em; }
   p { margin: 0 0 calc(var(--u) * 1); }
   .muted { color: var(--muted); }
-  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(34,216,240,.35)); }
-  .tag { font: 700 calc(var(--u) * 1.3)/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); }
+  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(164,77,255,.35)); }
+  .tag { font: 700 calc(var(--u) * 1.3)/1 var(--label); letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); }
   .tag::before { content: "// "; color: var(--muted); }
   .tag.bad { color: var(--bad); } .tag.ok { color: var(--ok); }
 
   /* ---------- cenário ---------- */
   .scene { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
   .floor { position: absolute; left: -50%; right: -50%; bottom: -2%; height: 46vh;
-    background: repeating-linear-gradient(90deg, rgba(34,216,240,.35) 0 1px, transparent 1px 64px), repeating-linear-gradient(0deg, rgba(34,216,240,.35) 0 1px, transparent 1px 48px);
+    background: repeating-linear-gradient(90deg, rgba(164,77,255,.35) 0 1px, transparent 1px 64px), repeating-linear-gradient(0deg, rgba(164,77,255,.35) 0 1px, transparent 1px 48px);
     transform: perspective(420px) rotateX(62deg); transform-origin: 50% 100%;
     -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 92%); mask-image: linear-gradient(to top, #000 10%, transparent 92%);
     opacity: .42; animation: run 2.4s linear infinite; }
   @keyframes run { to { background-position: 0 0, 0 48px; } }
-  .rain { position: absolute; top: 0; font: calc(var(--u) * .62)/1.7 var(--mono); color: var(--cyan); opacity: .06; white-space: pre; animation: fall linear infinite; }
+  .rain { position: absolute; top: 0; font: calc(var(--u) * .62)/1.7 var(--sans); color: var(--purple); opacity: .06; white-space: pre; animation: fall linear infinite; }
   @keyframes fall { from { transform: translateY(-60%); } to { transform: translateY(100vh); } }
-  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.45)); }
+  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,34,51,.45)); }
   @keyframes blink { 50% { opacity: .25; } }
 
   /* ---------- palco ---------- */
   #stage { position: relative; z-index: 1; height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: center; gap: calc(var(--u) * 3);
     padding: calc(var(--u) * 2) calc(var(--u) * 4) calc(var(--u) * 5.2); }
   .wheelbox { display: grid; place-items: center; min-height: 0; min-width: 0; }
-  .wheelwrap { position: relative; width: min(100%, calc(100vh - var(--u) * 12), calc(100dvh - var(--u) * 12)); aspect-ratio: 1; filter: drop-shadow(0 0 40px rgba(34,216,240,.25)); }
+  .wheelwrap { position: relative; width: min(100%, calc(100vh - var(--u) * 12), calc(100dvh - var(--u) * 12)); aspect-ratio: 1; filter: drop-shadow(0 0 40px rgba(164,77,255,.25)); }
   .wheelwrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .pointer { position: absolute; top: 0; left: 50%; width: 8%; aspect-ratio: 1; transform: translate(-50%, 2%); background: var(--lime);
     clip-path: polygon(0 0, 100% 0, 50% 100%); filter: drop-shadow(0 0 10px var(--lime)); z-index: 2; }
   #rot { transform-origin: 0 0; will-change: transform; }
-  .ss { fill: #0a4552; } .sp { fill: #17406a; }
-  .sg  { fill: url(#gGold); } .sd { fill: #3a4a4f; }
-  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 1) calc(var(--u) * 2.4); margin-top: calc(var(--u) * 1.8); font: 700 calc(var(--u) * 1.35) var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .ss { fill: rgba(0,219,255,.24); } .sp { fill: rgba(217,255,101,.2); }
+  .sg  { fill: url(#gGold); } .sd { fill: rgba(255,255,255,.14); }
+  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 1) calc(var(--u) * 2.4); margin-top: calc(var(--u) * 1.8); font: 700 calc(var(--u) * 1.35) var(--label); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   .legend span { display: inline-flex; align-items: center; gap: calc(var(--u) * .8); }
-  .sw { display: inline-block; width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); border: 1px solid rgba(34,216,240,.6); border-radius: 3px; }
-  .sw.ss { background: #0a4552; } .sw.sp { background: #17406a; } .sw.sg { background: linear-gradient(135deg, #fff0a0, #e0a21a); border-color: #ffd84a; }
-  .ls { font: 700 21px var(--display); fill: #e8f6f8; letter-spacing: .01em; }
-  .lg { font: 800 20px var(--display); fill: #3a2a00; letter-spacing: .05em; }
-  .ld { font: 800 21px var(--display); fill: #9fb1b6; letter-spacing: .06em; }
+  .sw { display: inline-block; width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); border: 1px solid rgba(164,77,255,.6); border-radius: 3px; }
+  .sw.ss { background: rgba(0,219,255,.24); } .sw.sp { background: rgba(217,255,101,.2); } .sw.sg { background: linear-gradient(180deg, #A44DFF, #FF009E); border-color: #FFFFFF; }
+  .ls { font: 700 21px var(--display); fill: #FFFFFF; letter-spacing: .01em; }
+  .lg { font: 800 20px var(--display); fill: #FFFFFF; letter-spacing: .05em; }
+  .ld { font: 800 21px var(--display); fill: rgba(255,255,255,.6); letter-spacing: .06em; }
 
   .side { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--u) * 2.4); }
-  .idform { display: flex; flex-direction: column; gap: calc(var(--u) * 1.4); }
-  .idform > p, .idform > .err { margin: 0; }
-  .idform > .btns { margin-top: calc(var(--u) * .4); }
   #state { display: flex; flex-direction: column; gap: calc(var(--u) * 2.4); }
   #state > p, #state > div > p { margin: 0; }
   .side h1 { font-size: calc(var(--u) * 5.6); font-weight: 800; text-transform: uppercase; }
   .lead { font-size: calc(var(--u) * 1.9); line-height: 1.4; color: var(--text); }
-  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(var(--u) * 1.2); font: 700 calc(var(--u) * 1.4) var(--mono); color: var(--muted); }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(var(--u) * 1.2); font: 700 calc(var(--u) * 1.4) var(--label); color: var(--muted); }
   .steps b { color: var(--lime); margin-right: .6em; }
-  .note { font: calc(var(--u) * 1.35) var(--mono); color: var(--muted); letter-spacing: .04em; }
+  .note { font: calc(var(--u) * 1.35) var(--label); color: var(--muted); letter-spacing: .04em; }
 
-  .panel { --c: var(--cyan); --s: calc(var(--u) * 1.4); --t: 2px; position: relative; padding: calc(var(--u) * 2); border: 1px solid var(--line); border-radius: 4px;
+  .panel { --c: var(--purple); --s: calc(var(--u) * 1.4); --t: 2px; position: relative; padding: calc(var(--u) * 2); border: 1px solid var(--line); border-radius: 4px;
     background:
       linear-gradient(var(--c), var(--c)) top left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top left / var(--t) var(--s) no-repeat,
       linear-gradient(var(--c), var(--c)) top right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top right / var(--t) var(--s) no-repeat,
       linear-gradient(var(--c), var(--c)) bottom left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom left / var(--t) var(--s) no-repeat,
       linear-gradient(var(--c), var(--c)) bottom right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom right / var(--t) var(--s) no-repeat,
       var(--panel);
-    box-shadow: 0 0 40px rgba(34,216,240,.07), inset 0 0 40px rgba(34,216,240,.04); }
+    box-shadow: 0 0 40px rgba(164,77,255,.07), inset 0 0 40px rgba(164,77,255,.04); }
 
   /* botão ajustado ao texto: largura automática, com respiro moderado nas laterais */
   .btn { display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: calc(var(--u) * 14); padding: calc(var(--u) * 1.5) calc(var(--u) * 3.2); border-radius: 999px; border: 1px solid transparent;
-    font: 800 calc(var(--u) * 1.6)/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; text-align: center; white-space: nowrap; transition: transform .15s, box-shadow .2s; }
+    font: 800 calc(var(--u) * 1.6)/1 var(--label); letter-spacing: .14em; text-transform: uppercase; text-align: center; white-space: nowrap; transition: transform .15s, box-shadow .2s; }
   .btn:active:not(:disabled) { transform: scale(.98); }
-  .btn.primary { color: #03242b; background: linear-gradient(90deg, #d8fb55, #4fe6dd 60%, #36cdf5); box-shadow: 0 0 30px rgba(54,205,245,.45), inset 0 1px 0 rgba(255,255,255,.5); }
-  .btn.secondary { color: var(--cyan); background: rgba(0,0,0,.25); border-color: var(--line); }
-  .btn.danger { color: var(--bad); background: transparent; border-color: rgba(255,93,122,.5); }
+  .btn.primary { color: #FFFFFF; background: var(--grad); box-shadow: 0 0 30px rgba(164,77,255,.45), inset 0 1px 0 rgba(255,255,255,.35); }
+  .btn.secondary { color: #FFFFFF; background: rgba(0,34,51,.4); border-color: var(--line); }
+  .btn.danger { color: var(--bad); background: transparent; border-color: rgba(255,0,158,.5); }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
   .btn.pulse:not(:disabled) { animation: pulse 1.8s ease-in-out infinite; }
-  @keyframes pulse { 50% { box-shadow: 0 0 52px rgba(91,232,214,.8), inset 0 1px 0 rgba(255,255,255,.5); } }
+  @keyframes pulse { 50% { box-shadow: 0 0 52px rgba(255,0,158,.75), inset 0 1px 0 rgba(255,255,255,.35); } }
   .row { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--u) * 2); }
   /* grupos de botões: todos com a largura do maior, para não depender de alinhamento */
   .btns { display: inline-grid; grid-template-columns: 1fr; gap: calc(var(--u) * 1.4); }
@@ -124,30 +122,25 @@
   .modal .box > .btn { align-self: center; }
   .modal .box > .row { justify-content: center; }
   .chips { display: flex; flex-wrap: wrap; gap: calc(var(--u) * .8); margin: calc(var(--u) * 1.2) 0; }
-  .chip { font: 700 calc(var(--u) * 1.4)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: calc(var(--u) * .9) calc(var(--u) * 1.2); border: 1px solid var(--line); background: var(--panel-2); color: var(--cyan); }
+  .chip { font: 700 calc(var(--u) * 1.4)/1 var(--label); letter-spacing: .08em; text-transform: uppercase; padding: calc(var(--u) * .9) calc(var(--u) * 1.2); border: 1px solid var(--line); background: var(--panel-2); color: var(--cyan); }
   .chip b { color: var(--lime); }
-  .chip.lime { color: #03242b; background: var(--lime); border-color: var(--lime); }
+  .chip.lime { color: #002233; background: var(--lime); border-color: var(--lime); }
 
   /* ---------- identificação ---------- */
-  .emailbox { display: flex; align-items: baseline; flex-wrap: wrap; padding: calc(var(--u) * 1.1) calc(var(--u) * 1.4); background: rgba(0,0,0,.35); border: 1px solid var(--line); font: 700 calc(var(--u) * 2.2) var(--mono); min-height: calc(var(--u) * 5); }
-  .emailbox .typed { color: var(--text); word-break: break-all; }
-  .emailbox .caret { display: inline-block; width: .6ch; height: 1.1em; margin-left: 2px; background: var(--lime); animation: blink 1s steps(2) infinite; align-self: center; }
-  .emailbox .suf { color: var(--muted); }
-  .kb { display: grid; gap: calc(var(--u) * .8); }
-  .kbrow { display: flex; gap: calc(var(--u) * .8); justify-content: center; }
-  .key { flex: 1; max-width: calc(var(--u) * 7.5); min-height: calc(var(--u) * 4.2); display: grid; place-items: center; font: 800 calc(var(--u) * 2) var(--mono); text-transform: lowercase;
-    color: var(--text); background: rgba(34,216,240,.08); border: 1px solid var(--line); border-radius: 6px; }
-  .key:active { background: rgba(201,244,58,.3); border-color: var(--lime); }
-  .key.wide { max-width: calc(var(--u) * 11); }
-  .err { color: var(--bad); font: calc(var(--u) * 1.3) var(--mono); min-height: 1.4em; }
-  .hello { font: 800 calc(var(--u) * 2.6) var(--mono); color: var(--lime); word-break: break-all; }
+  .key { flex: 1; max-width: calc(var(--u) * 7.5); min-height: calc(var(--u) * 4.2); display: grid; place-items: center; font: 800 calc(var(--u) * 2) var(--label); text-transform: lowercase;
+    color: var(--text); background: rgba(164,77,255,.08); border: 1px solid var(--line); border-radius: 6px; }
+  .key:active { background: rgba(217,255,101,.3); border-color: var(--lime); }
+  .key.wide { max-width: calc(var(--u) * 11); font-size: calc(var(--u) * 1.4); }
+  .pad .key[data-n="x"], .pad .key[data-n="ok"] { font-size: calc(var(--u) * 1.5); }
+  .it svg, .rv svg, .stats svg, .linkish svg { width: 1em; height: 1em; vertical-align: -.12em; }
+  .err { color: var(--bad); font: calc(var(--u) * 1.3) var(--sans); min-height: 1.4em; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * .8); }
   .stats div { padding: calc(var(--u) * 1) calc(var(--u) * .6); border: 1px solid var(--line); background: var(--panel-2); text-align: center; }
-  .stats b { display: block; font: 800 calc(var(--u) * 2) var(--mono); }
-  .stats span { font: calc(var(--u) * 1.15) var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .stats b { display: block; font: 800 calc(var(--u) * 2) var(--label); }
+  .stats span { font: calc(var(--u) * 1.15) var(--label); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 
   /* ---------- popup ---------- */
-  .modal { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: calc(var(--u) * 2); background: rgba(2, 10, 14, .84); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fade .25s both; }
+  .modal { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: calc(var(--u) * 2); background: rgba(0,34,51,.84); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fade .25s both; }
   .modal[hidden] { display: none; }
   @keyframes fade { from { opacity: 0; } }
   .modal .box { width: min(100%, calc(var(--u) * 88)); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: calc(var(--u) * 2); padding: calc(var(--u) * 2.8); animation: pop .35s cubic-bezier(.2,.9,.3,1.2) both; }
@@ -156,25 +149,29 @@
   @keyframes pop { from { transform: scale(.92); opacity: 0; } }
   .box h2 { font-size: calc(var(--u) * 3.8); font-weight: 800; margin: calc(var(--u) * .6) 0 calc(var(--u) * 1); }
   .story { font-size: calc(var(--u) * 1.9); line-height: 1.45; }
-  .lesson { margin: calc(var(--u) * 1.4) 0; padding: calc(var(--u) * 1.4) calc(var(--u) * 1.6); background: rgba(201,244,58,.09); border-left: 4px solid var(--lime); font: 700 calc(var(--u) * 1.9)/1.35 var(--display); }
-  .lesson span { display: block; margin-bottom: calc(var(--u) * .5); font: 800 calc(var(--u) * 1.2) var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--lime); }
-  .code { margin: calc(var(--u) * 1.2) 0; padding: calc(var(--u) * 1.4); text-align: center; border: 2px dashed var(--gold); color: var(--gold); font: 800 calc(var(--u) * 5) var(--mono); letter-spacing: .3em; text-shadow: 0 0 20px rgba(255,216,74,.5); }
-  .prizeh { color: var(--gold); text-shadow: 0 0 30px rgba(255,216,74,.45); }
-  .linkish { background: none; border: 0; padding: calc(var(--u) * 1); color: var(--muted); font: calc(var(--u) * 1.25) var(--mono); letter-spacing: .12em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }
+  .lesson { margin: calc(var(--u) * 1.4) 0; padding: calc(var(--u) * 1.4) calc(var(--u) * 1.6); background: rgba(217,255,101,.09); border-left: 4px solid var(--lime); font: 700 calc(var(--u) * 1.9)/1.35 var(--display); }
+  .lesson span { display: block; margin-bottom: calc(var(--u) * .5); font: 800 calc(var(--u) * 1.2) var(--label); letter-spacing: .18em; text-transform: uppercase; color: var(--lime); }
+  .qbox { padding: calc(var(--u) * 1.2) calc(var(--u) * 1.5); background: rgba(0,219,255,.08); border-left: 4px solid var(--cyan); font: 700 calc(var(--u) * 1.7)/1.35 var(--display); }
+  .qbox span { display: block; margin-bottom: calc(var(--u) * .5); font: 800 calc(var(--u) * 1.2) var(--label); letter-spacing: .14em; text-transform: uppercase; color: var(--cyan); }
+  .box.tight .qbox { font-size: calc(var(--u) * 1.6); }
+  .stats.two { grid-template-columns: repeat(2, 1fr); }
+  .code { margin: calc(var(--u) * 1.2) 0; padding: calc(var(--u) * 1.4); text-align: center; border: 2px dashed var(--lime); color: var(--lime); font: 800 calc(var(--u) * 5) var(--label); letter-spacing: .3em; text-shadow: 0 0 20px rgba(217,255,101,.5); }
+  .prizeh { color: var(--lime); text-shadow: 0 0 30px rgba(217,255,101,.45); }
+  .linkish { background: none; border: 0; padding: calc(var(--u) * 1); color: var(--muted); font: calc(var(--u) * 1.25) var(--label); letter-spacing: .12em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }
 
   /* ---------- desafio ---------- */
   .opts { display: grid; gap: calc(var(--u) * 1.3); margin: 0; }
   .opts.two { grid-template-columns: 1fr 1fr; }
   .it { display: flex; align-items: center; gap: calc(var(--u) * 1.2); width: 100%; text-align: left; padding: calc(var(--u) * 1.2) calc(var(--u) * 1.4); font-size: calc(var(--u) * 1.6); line-height: 1.3;
-    background: rgba(0,0,0,.3); border: 2px solid var(--line); border-radius: 4px; }
-  .it .n { flex: none; width: calc(var(--u) * 3.4); height: calc(var(--u) * 3.4); display: grid; place-items: center; font: 800 calc(var(--u) * 1.6) var(--mono); border: 1px solid var(--line); color: var(--cyan); }
-  .it.sel { border-color: var(--lime); background: rgba(201,244,58,.12); box-shadow: 0 0 22px rgba(201,244,58,.2); }
-  .it.sel .n { background: var(--lime); color: #03242b; border-color: var(--lime); }
-  .jbox { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: calc(var(--u) * 2); padding: calc(var(--u) * 1.4) calc(var(--u) * 1.6); background: rgba(0,0,0,.3); border: 1px solid var(--line); }
+    background: rgba(0,34,51,.3); border: 2px solid var(--line); border-radius: 4px; }
+  .it .n { flex: none; width: calc(var(--u) * 3.4); height: calc(var(--u) * 3.4); display: grid; place-items: center; font: 800 calc(var(--u) * 1.6) var(--label); border: 1px solid var(--line); color: var(--cyan); }
+  .it.sel { border-color: var(--lime); background: rgba(217,255,101,.12); box-shadow: 0 0 22px rgba(217,255,101,.2); }
+  .it.sel .n { background: var(--lime); color: #002233; border-color: var(--lime); }
+  .jbox { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: calc(var(--u) * 2); padding: calc(var(--u) * 1.4) calc(var(--u) * 1.6); background: rgba(0,34,51,.3); border: 1px solid var(--line); }
   .jbox p { margin: 0; font-size: calc(var(--u) * 1.6); }
   .jbox .row { gap: calc(var(--u) * 1); }
   .jbox .row .it { white-space: nowrap; }
-  .jbox .row .it { width: auto; justify-content: center; font: 800 calc(var(--u) * 1.4) var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: calc(var(--u) * 1.1) calc(var(--u) * 1.6); }
+  .jbox .row .it { width: auto; justify-content: center; font: 800 calc(var(--u) * 1.4) var(--label); letter-spacing: .08em; text-transform: uppercase; padding: calc(var(--u) * 1.1) calc(var(--u) * 1.6); }
   .box.tight { gap: calc(var(--u) * 1.5); padding: calc(var(--u) * 2.4); }
   .box.tight h2 { font-size: calc(var(--u) * 3.2); }
   .box.tight .story { font-size: calc(var(--u) * 1.6); }
@@ -182,30 +179,40 @@
   .box.tight .it { padding: calc(var(--u) * 1) calc(var(--u) * 1.3); }
   .rv { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * .9); margin: 0; font-size: calc(var(--u) * 1.35); }
   .rv div:only-child { grid-column: 1 / -1; }
-  .rv div { padding: calc(var(--u) * .8) calc(var(--u) * 1.2); border-left: 4px solid var(--ok); background: rgba(182,242,60,.07); }
+  .rv div { padding: calc(var(--u) * .8) calc(var(--u) * 1.2); border-left: 4px solid var(--ok); background: rgba(0,255,212,.07); }
   #done, #confirm { position: sticky; bottom: 0; box-shadow: 0 calc(var(--u) * 1.2) 0 calc(var(--u) * .4) var(--panel); }
-  .rv div.no { border-left-color: var(--bad); background: rgba(255,93,122,.08); }
+  .rv div.no { border-left-color: var(--bad); background: rgba(255,0,158,.08); }
   .rv small { display: block; color: var(--muted); font-size: calc(var(--u) * 1.25); }
 
   /* ---------- admin / pin ---------- */
   #pin { z-index: 40; }
   .pinbox { width: min(100%, calc(var(--u) * 34)); text-align: center; }
-  .dots { font: 800 calc(var(--u) * 3) var(--mono); letter-spacing: .4em; min-height: 1.4em; color: var(--lime); }
+  .dots { font: 800 calc(var(--u) * 3) var(--label); letter-spacing: .4em; min-height: 1.4em; color: var(--lime); }
   .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * .8); margin: calc(var(--u) * 1.2) 0; }
   .pad .key { max-width: none; min-height: calc(var(--u) * 5.6); }
-  table { border-collapse: collapse; width: 100%; font: calc(var(--u) * 1.4) var(--mono); }
-  th, td { text-align: left; padding: calc(var(--u) * .6) calc(var(--u) * .8); border-bottom: 1px solid rgba(34,216,240,.12); }
+  table { border-collapse: collapse; width: 100%; font: calc(var(--u) * 1.4) var(--sans); }
+  th, td { text-align: left; padding: calc(var(--u) * .6) calc(var(--u) * .8); border-bottom: 1px solid rgba(164,77,255,.12); }
   th { color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
-  .adm { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 2); }
-  .stock { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 1.4); padding: calc(var(--u) * 1.4); border: 1px solid var(--line); background: var(--panel-2); }
-  .stock .key { max-width: calc(var(--u) * 5); min-height: calc(var(--u) * 4.2); }
-  .stock b { font: 800 calc(var(--u) * 2.6) var(--mono); color: var(--lime); }
+  /* página da organização */
+  #stage[hidden], #org[hidden] { display: none; }
+  #org { position: fixed; inset: 0; z-index: 10; overflow-y: auto; padding: calc(var(--u) * 3) calc(var(--u) * 5) calc(var(--u) * 6); }
+  .org-wrap { max-width: calc(var(--u) * 104); margin: 0 auto; display: flex; flex-direction: column; gap: calc(var(--u) * 2.4); }
+  .org-wrap .panel { margin: 0; }
+  .org-head { display: flex; justify-content: space-between; align-items: flex-end; gap: calc(var(--u) * 2); flex-wrap: wrap; }
+  .org-head h1 { font-size: calc(var(--u) * 4.4); font-weight: 800; text-transform: uppercase; margin-top: calc(var(--u) * .8); }
+  .org-head .btn { margin-top: 0; }
+  .org-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 2.4); }
+  .stockcard { display: flex; flex-direction: column; gap: calc(var(--u) * 1.2); }
+  .stockcard .note { margin: 0; }
+  .bignum { font: 800 calc(var(--u) * 7) var(--display); line-height: 1; color: var(--lime); font-variant-numeric: tabular-nums; }
+  .adjust { display: flex; gap: calc(var(--u) * 1); flex-wrap: wrap; }
+  .adjust .key { flex: none; min-width: calc(var(--u) * 7); max-width: none; font-size: calc(var(--u) * 1.6); }
+  .stats.wide { grid-template-columns: repeat(4, 1fr); }
+  .stats.wide div { padding: calc(var(--u) * 1.2) calc(var(--u) * .6); }
   .hot { position: fixed; left: 0; bottom: 0; width: calc(var(--u) * 8); height: calc(var(--u) * 8); z-index: 25; }
 
-  #foot { position: fixed; left: 0; right: 0; bottom: calc(var(--u) * 1.4); z-index: 2; display: flex; justify-content: center; pointer-events: none; }
-  #foot img { height: calc(var(--u) * 2.8); width: auto; opacity: .9; }
   #testbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; padding: 6px 12px;
-    font: 700 calc(var(--u) * 1.3)/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #2b1c00; background: var(--warn); }
+    font: 700 calc(var(--u) * 1.3)/1.3 var(--label); letter-spacing: .08em; text-transform: uppercase; color: #002233; background: var(--warn); }
   #testbar[hidden] { display: none; }
   #testbar button { background: none; border: 0; padding: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; text-decoration: underline; text-underline-offset: 3px; }
   /* telas mais "em pé" (tablet, celular): roda em cima, painel embaixo */
@@ -214,7 +221,9 @@
     .wheelwrap { width: min(100%, 46vh, 46dvh); }
     .side { width: 100%; }
     .side h1 { font-size: calc(var(--u) * 4.6); }
-    .adm, .btns.two { grid-template-columns: 1fr; }
+    .org-grid, .btns.two { grid-template-columns: 1fr; }
+    .stats.wide { grid-template-columns: repeat(2, 1fr); }
+    #org { padding: calc(var(--u) * 3) calc(var(--u) * 3) calc(var(--u) * 6); }
     .opts.two { grid-template-columns: 1fr; }
     .jbox { grid-template-columns: 1fr; }
   }
@@ -230,14 +239,14 @@
       <div class="pointer" aria-hidden="true"></div>
       <svg viewBox="-310 -310 620 620" role="img" aria-label="Shield Spin, roleta com 12 fatias: 5 de segurança, 5 de privacidade e 2 de Proteção Total">
         <defs>
-          <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset=".5" stop-color="#ffd84a"/><stop offset="1" stop-color="#e0a21a"/></linearGradient>
-          <linearGradient id="gRim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e4ff6a"/><stop offset=".55" stop-color="#5be8d6"/><stop offset="1" stop-color="#22c8f5"/></linearGradient>
+          <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A44DFF"/><stop offset="1" stop-color="#FF009E"/></linearGradient>
+          <linearGradient id="gRim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A44DFF"/><stop offset="1" stop-color="#FF009E"/></linearGradient>
         </defs>
         <circle r="304" fill="none" stroke="url(#gRim)" stroke-width="8"/>
         <g id="rot"><g id="slices"></g></g>
-        <circle r="52" fill="#031319" stroke="url(#gRim)" stroke-width="5"/>
-        <path d="M0 -26 L22 -18 V3 C22 17 12 25 0 31 C-12 25 -22 17 -22 3 V-18 Z" fill="rgba(34,216,240,.18)" stroke="url(#gRim)" stroke-width="3" stroke-linejoin="round"/>
-        <circle cx="0" cy="-3" r="5" fill="#c9f43a"/>
+        <circle r="52" fill="#002233" stroke="url(#gRim)" stroke-width="5"/>
+        <path d="M0 -26 L22 -18 V3 C22 17 12 25 0 31 C-12 25 -22 17 -22 3 V-18 Z" fill="rgba(164,77,255,.18)" stroke="url(#gRim)" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="0" cy="-3" r="5" fill="#D9FF65"/>
       </svg>
     </div>
   </section>
@@ -250,7 +259,7 @@
     <div id="state" aria-live="polite"></div>
   </section>
 </main>
-<footer id="foot"></footer>
+<main id="org" hidden aria-label="Organização"></main>
 <div id="modal" class="modal" role="dialog" aria-modal="true" hidden></div>
 <div id="pin" class="modal" role="dialog" aria-modal="true" hidden></div>
 <div class="hot" id="hot" aria-hidden="true"></div>
@@ -258,27 +267,26 @@
 <script>
 /* ============================================================
    CONFIGURAÇÃO — ajuste aqui sem mexer no resto do código
+   O estoque (total de brindes e de prêmios) NÃO fica aqui: a organização informa na
+   página roleta.html#organizacao antes de começar, e pode alterar durante o evento.
    ============================================================ */
 const CONFIG = {
-  domain: 'totvs.com.br',             // o e-mail digitado vira nome@domain
-  logoUrl: 'totvs-logo.svg',
-  stockSouvenirs: 110,                // brindes (100 + ~10 de folga para quem também ganha prêmio)
-  stockPrizes: 10,                    // prêmios (sorteados via Proteção Total)
-  cooldownMinutes: 60,                // cada e-mail só gira de novo depois deste tempo
-  pointsPerScene: 100,                // pontos ao cair numa cena de incidente
-  pointsPerChallengeItem: 200,        // pontos por item correto no Proteção Total (3 itens = até 600)
-  maxPremiumsPerHour: 0,              // 0 = sem limite; ex.: 3 libera no máximo 3 prêmios por hora
+  prizeStockUsedOn: 'landing',        // 'landing': cada queda em Proteção Total reserva 1 prêmio do estoque (abandono devolve;
+                                      //            desafios reprovados voltam pelo painel da organização)
+                                      // 'win': o estoque só baixa quando a pessoa acerta o desafio
+  maxChallengesPerHour: 0,            // 0 = sem limite; ex.: 3 permite no máximo 3 quedas em Proteção Total por hora
   spinSeconds: 6,
   idleSeconds: 45,                    // volta ao início se ninguém tocar
-  idleChallengeSeconds: 120,          // idem, durante o desafio
-  adminPin: '2468',                   // PROTÓTIPO: PIN no cliente não é segurança real
-  storageKey: 'sp-roleta-v1',
+  idleChallengeSeconds: 120,          // idem, durante o quiz e o desafio (abandono não gera brinde nem prêmio)
+  adminPin: '2468',                   // o mesmo PIN do quiz (PROTÓTIPO: PIN no cliente não é segurança real)
+  storageKey: 'sp-roleta-v3',
 };
 
-/* MODO TESTE: abrir com ?teste (ex.: roleta.html?teste). Sem espera entre giros,
-   dados guardados à parte, e um atalho para forçar o Proteção Total. */
+/* MODO TESTE: abrir com ?teste (ex.: roleta.html?teste). Dados guardados à parte, estoque de teste
+   preenchido sozinho e um atalho para forçar o Proteção Total. */
 const TEST = /[?&]teste(=|&|$)/.test(location.search);
-if (TEST) Object.assign(CONFIG, { cooldownMinutes: 0, storageKey: 'sp-roleta-v1-teste' });
+const TEST_STOCK = { souvenirs: 110, prizes: 10 };
+if (TEST) Object.assign(CONFIG, { storageKey: 'sp-roleta-v3-teste' });
 
 /* ============================================================
    CONTEÚDO: fatias, cenas e desafios
@@ -391,56 +399,125 @@ const JUDGE = [
   { kind: 'p', t: 'Planilhas temporárias com dados de clientes são excluídas quando o projeto termina.', risk: false, why: 'Cópias esquecidas viram risco sem utilidade.' },
 ];
 
+/* Quiz de cada situação: a pessoa só ganha o brinde se acertar. A regra de ouro (scene.lesson) só aparece depois da resposta. */
+const SCENE_QUIZ = {
+  phishing: [
+    { q: 'Depois de clicar no link do e-mail falso e digitar sua senha, qual deve ser a primeira atitude?', correct: 'Avisar a segurança na hora e trocar a senha',
+      wrong: ['Esperar para ver se algo estranho acontece', 'Apagar o e-mail e não comentar com ninguém', 'Encaminhar o e-mail aos colegas como alerta'] },
+    { q: 'Qual destes sinais mais indica que o e-mail do "RH" era falso?', correct: 'Urgência para agir e um link para atualizar a senha',
+      wrong: ['Ter sido enviado em um dia útil', 'Vir com a assinatura da equipe de Pessoas', 'Estar escrito em português correto'] },
+  ],
+  ia: [
+    { q: 'O que fazer antes de usar uma ferramenta de IA com dados de clientes?', correct: 'Conferir se ela foi aprovada pela empresa',
+      wrong: ['Remover só o nome da empresa do texto', 'Usar a conta pessoal na ferramenta', 'Testar primeiro com um documento menos importante'] },
+    { q: 'Por que não se deve colar dados de clientes numa IA pública?', correct: 'O texto pode ser guardado e reutilizado por terceiros',
+      wrong: ['A ferramenta pode ficar mais lenta', 'A IA pode se recusar a responder', 'Os dados são sempre apagados na hora'] },
+  ],
+  senha: [
+    { q: 'Como evitar que o vazamento de um site exponha suas outras contas?', correct: 'Usar uma senha diferente em cada serviço',
+      wrong: ['Trocar a mesma senha uma vez por ano', 'Usar a senha do trabalho só em sites seguros', 'Adicionar um número no final da senha'] },
+    { q: 'Qual ferramenta ajuda a ter uma senha única para cada serviço?', correct: 'Um gerenciador de senhas aprovado pela empresa',
+      wrong: ['Um bloco de notas guardado no desktop', 'Uma planilha compartilhada com a equipe', 'Um papel colado no monitor'] },
+  ],
+  destino: [
+    { q: 'Você enviou uma planilha de clientes à pessoa errada. O que fazer?', correct: 'Avisar na hora a segurança ou a privacidade',
+      wrong: ['Pedir que apague e não avisar ninguém', 'Torcer para ela ignorar o e-mail', 'Apagar o e-mail dos itens enviados'] },
+    { q: 'Qual hábito evita enviar dados ao destinatário errado?', correct: 'Conferir o endereço de cada destinatário antes de enviar',
+      wrong: ['Confiar no preenchimento automático do e-mail', 'Enviar a planilha para um grupo grande', 'Colocar todos os destinatários em cópia'] },
+  ],
+  ransomware: [
+    { q: 'Seus arquivos foram sequestrados e pedem um resgate. O que fazer primeiro?', correct: 'Desconectar da rede e avisar a segurança',
+      wrong: ['Pagar o resgate para recuperar rápido', 'Reiniciar o computador várias vezes', 'Apagar os arquivos afetados'] },
+    { q: 'Qual prática ajuda a se recuperar de um ransomware sem pagar?', correct: 'Manter backups atualizados, inclusive um fora da rede',
+      wrong: ['Guardar as cópias na mesma pasta dos originais', 'Confiar apenas no antivírus instalado', 'Desativar as atualizações do sistema'] },
+  ],
+  selfie: [
+    { q: 'Antes de postar uma foto no trabalho, o que conferir?', correct: 'Se aparecem crachá, telas ou documentos ao fundo',
+      wrong: ['Se a foto está com boa iluminação', 'Se a postagem é feita no horário comercial', 'Se há mais de uma pessoa na imagem'] },
+    { q: 'Por que crachás e telas em fotos são um risco?', correct: 'Revelam nomes e sistemas usados em golpes direcionados',
+      wrong: ['Deixam a foto com baixa qualidade', 'Fazem a rede social bloquear a conta', 'Aumentam o tamanho do arquivo enviado'] },
+  ],
+  wifi: [
+    { q: 'Você precisa trabalhar numa rede Wi-Fi pública. O que protege seus dados?', correct: 'Conectar a VPN da empresa antes de acessar sistemas',
+      wrong: ['Usar a aba anônima do navegador', 'Escolher a rede com o sinal mais forte', 'Desligar o antivírus para ganhar velocidade'] },
+    { q: 'Como saber se uma rede Wi-Fi do local é a oficial?', correct: 'Perguntar o nome da rede à organização do local',
+      wrong: ['Escolher a que tiver o nome mais parecido', 'Conectar na que não pede senha', 'Usar a primeira que aparecer na lista'] },
+  ],
+  demais: [
+    { q: 'Para um cadastro simples de evento, quais dados pedir?', correct: 'Só os necessários, como nome e e-mail',
+      wrong: ['Também CPF e data de nascimento', 'Endereço completo, por precaução', 'Todos os dados do cadastro de clientes'] },
+    { q: 'Qual princípio da LGPD diz para coletar só o necessário?', correct: 'O princípio da necessidade',
+      wrong: ['O princípio da gratuidade', 'O princípio da rapidez', 'O princípio da publicidade'] },
+  ],
+  pendrive: [
+    { q: 'Você encontrou um pendrive no estacionamento. Qual a atitude certa?', correct: 'Entregar à TI ou à segurança, sem plugar',
+      wrong: ['Plugar em um computador antigo para testar', 'Plugar no seu para achar o dono', 'Deixar no mesmo lugar para o dono procurar'] },
+    { q: 'Por que um pendrive desconhecido é perigoso?', correct: 'Pode instalar um programa malicioso ao ser conectado',
+      wrong: ['Ele sempre contém arquivos pessoais de alguém', 'Ele deixa a internet mais lenta', 'Ele consome muita bateria do computador'] },
+  ],
+  base: [
+    { q: 'Outra área pediu a base completa de clientes. O que fazer?', correct: 'Enviar só os campos de que ela precisa',
+      wrong: ['Enviar a base inteira, é a mesma empresa', 'Enviar tudo e pedir que apaguem depois', 'Enviar pelo e-mail pessoal, que é mais rápido'] },
+    { q: 'Por que limitar o fluxo de dados entre áreas?', correct: 'Quanto mais cópias circulam, maior o risco de vazamento',
+      wrong: ['Para a base ficar mais leve nos computadores', 'Porque outras áreas nunca precisam de dados', 'Para evitar que o arquivo mude de nome'] },
+  ],
+};
+
 /* ============================================================
    UTILITÁRIOS E ARMAZENAMENTO (um único computador: localStorage)
+   Nenhum dado pessoal é coletado: o jogo só controla estoque e histórico de giros.
+   Estoque = total informado pela organização − baixas (brindes entregues e prêmios reservados).
    ============================================================ */
 const $ = id => document.getElementById(id);
+/* ícones desenhados em SVG (as fontes do jogo são só TOTVS e Verdana) */
+const CHK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const XIC = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const pick = a => a[Math.floor(Math.random() * a.length)];
-const maskEmail = e => { const [u, d] = e.split('@'); return (u[0] || '') + '***@' + d; };
 const hhmm = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 const csvCell = v => { let s = String(v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const freshDb = () => ({ people: {}, log: [], stock: { souvenirs: CONFIG.stockSouvenirs, prizes: CONFIG.stockPrizes } });
+/* total: null = a organização ainda não informou; used = baixas de estoque */
+const freshDb = () => ({ log: [], total: { souvenirs: null, prizes: null }, used: { souvenirs: 0, prizes: 0 } });
 function readDb() {
-  try { const d = JSON.parse(localStorage.getItem(CONFIG.storageKey)); if (d && d.people && d.log && d.stock) return d; } catch { /* sem dados */ }
+  try { const d = JSON.parse(localStorage.getItem(CONFIG.storageKey)); if (d && Array.isArray(d.log) && d.total && d.used) return d; } catch { /* sem dados */ }
   return freshDb();
 }
 let db = readDb();
 const save = () => { try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(db)); } catch { /* armazenamento indisponível */ } };
-const person = email => db.people[email] || (db.people[email] = { email, spins: 0, points: 0, souvenir: false, prizes: 0, challenge: null, lastSpinAt: 0 });
-const cooldownLeft = p => Math.max(0, p.lastSpinAt + CONFIG.cooldownMinutes * 60000 - Date.now());
+if (TEST && db.total.souvenirs === null && db.total.prizes === null) { db.total = { ...TEST_STOCK }; save(); }
+const configured = () => db.total.souvenirs !== null && db.total.prizes !== null;
+const left = k => Math.max(0, (db.total[k] === null ? 0 : db.total[k]) - db.used[k]);
 function newCode() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   let code;
   do { code = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join(''); } while (db.log.some(l => l.code === code));
   return code;
 }
-function giveSouvenir(p) {
-  if (p.souvenir) return 'already';
-  if (db.stock.souvenirs <= 0) return 'none';
-  db.stock.souvenirs--; p.souvenir = true;
+function giveSouvenir() {
+  if (left('souvenirs') <= 0) return 'none';
+  db.used.souvenirs++;
   return 'given';
 }
-function premiumsLastHour() { return db.log.filter(l => l.type === 'prize' && l.at > Date.now() - 3600000).length; }
+const challengesLastHour = () => db.log.filter(l => l.type === 'spin' && l.kind === 'challenge' && l.at > Date.now() - 3600000).length;
 
 /* ============================================================
    ESTADO E RODA
    ============================================================ */
-let ui = { mode: 'attract', email: null, local: '', challenge: null };
-let rot = 0, idleRaf = 0, idleT = 0, forceGold = false;
+let ui = { mode: 'attract', challenge: null, quiz: null };
+let rot = 0, idleRaf = 0, idleT = 0, forceGold = false, orgOk = false;
 const R = 290;
 const pt = (deg, r) => { const a = deg * Math.PI / 180; return [(r * Math.sin(a)).toFixed(2), (-r * Math.cos(a)).toFixed(2)]; };
 
 function drawWheel() {
-  const out = db.stock.prizes <= 0;
+  const out = configured() && left('prizes') <= 0;
   $('slices').innerHTML = SLICES.map((s, i) => {
     const c = i * 30, [x1, y1] = pt(c - 15, R), [x2, y2] = pt(c + 15, R);
     const cls = s.gold ? (out ? 'sd' : 'sg') : (s.kind === 'p' ? 'sp' : 'ss');
     const tcls = s.gold ? (out ? 'ld' : 'lg') : 'ls';
-    return `<g><path class="${cls}" d="M0 0 L${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2} Z" stroke="rgba(34,216,240,.55)" stroke-width="2"/>
+    return `<g><path class="${cls}" d="M0 0 L${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2} Z" stroke="rgba(164,77,255,.55)" stroke-width="2"/>
       <text class="${tcls}" transform="rotate(${c - 90}) translate(${R - 20},0)" text-anchor="end" dominant-baseline="central">${esc(s.gold && out ? 'ENCERRADO' : s.label)}</text></g>`;
   }).join('');
 }
@@ -456,24 +533,22 @@ function idleSpin() {
   idleRaf = requestAnimationFrame(step);
 }
 
-/* Sorteio da fatia: Proteção Total só se a pessoa ainda não fez o desafio e há prêmios. */
-function pickSlice(p) {
-  const goldOk = !p.challenge && db.stock.prizes > 0 && (!CONFIG.maxPremiumsPerHour || premiumsLastHour() < CONFIG.maxPremiumsPerHour);
+/* Sorteio da fatia: Proteção Total só cai enquanto houver prêmio em estoque (e dentro do limite por hora, se houver). */
+function pickSlice() {
+  const goldOk = left('prizes') > 0 && (!CONFIG.maxChallengesPerHour || challengesLastHour() < CONFIG.maxChallengesPerHour);
   const idxs = SLICES.map((_, i) => i).filter(i => !SLICES[i].gold || goldOk);
   if (TEST && forceGold && goldOk) { forceGold = false; renderTestBar(); return pick(idxs.filter(i => SLICES[i].gold)); }
   return pick(idxs);
 }
 
 function startSpin() {
-  if (ui.mode !== 'ready') return;
-  const p = person(ui.email);
-  if (cooldownLeft(p) > 0) return showReady();
+  if (ui.mode !== 'attract' || !configured()) return;
   ui.mode = 'spin'; clearTimeout(idleT);
-  const idx = pickSlice(p);
-  p.spins++; p.lastSpinAt = Date.now();
-  if (SLICES[idx].gold) p.challenge = { pending: true, at: Date.now() };
+  const idx = pickSlice(), gold = !!SLICES[idx].gold;
+  db.log.push({ at: Date.now(), type: 'spin', slice: SLICES[idx].id, kind: gold ? 'challenge' : SLICES[idx].kind });
+  if (gold && CONFIG.prizeStockUsedOn === 'landing') db.used.prizes++;      // reserva o prêmio para este desafio
   save();
-  $('state').innerHTML = `<p class="lead">Girando<span class="caret">…</span></p><p class="note">&gt; descobrindo o que o destino reservou</p>`;
+  $('state').innerHTML = `<p class="lead">Girando…</p><p class="note">&gt; descobrindo o que o destino reservou</p>`;
   cancelAnimationFrame(idleRaf);
   const ms = reduceMotion ? 1200 : CONFIG.spinSeconds * 1000;
   const target = Math.ceil(rot / 360) * 360 + 360 * (5 + Math.floor(Math.random() * 2)) - idx * 30 + (Math.random() - .5) * 18;
@@ -483,26 +558,68 @@ function startSpin() {
 }
 
 function settle(idx) {
-  const s = SLICES[idx], p = person(ui.email);
+  const s = SLICES[idx];
+  drawWheel();
   if (s.gold) return startChallenge();
-  const souv = giveSouvenir(p);
-  p.points += CONFIG.pointsPerScene;
-  db.log.push({ at: Date.now(), email: p.email, type: 'scene', slice: s.id, points: CONFIG.pointsPerScene, souvenir: souv });
-  save();
-  const brinde = { given: ['lime', 'Retire seu brinde com a equipe'], already: ['', 'Seu brinde já foi retirado'], none: ['', 'Brindes esgotados'] }[souv];
-  openModal(`<div class="box panel">
+  startSceneQuiz(s);
+}
+
+/* ============================================================
+   QUIZ DA SITUAÇÃO (segurança ou privacidade): acertou = brinde; errou = sem brinde
+   ============================================================ */
+function startSceneQuiz(s) {
+  const base = pick(SCENE_QUIZ[s.id]);
+  const qz = ui.quiz = { slice: s, q: base.q, opts: shuffle([{ t: base.correct, ok: true }, ...base.wrong.map(t => ({ t, ok: false }))]), sel: null };
+  openModal(`<div class="box tight panel">
     <div class="tag bad">Alerta de ${s.kind === 'p' ? 'privacidade' : 'segurança'}</div>
     <h2><span class="grad">${esc(s.scene.title)}</span></h2>
     <p class="story">${esc(s.scene.story)}</p>
-    <div class="lesson"><span>Para não repetir</span>${esc(s.scene.lesson)}</div>
-    <div class="chips"><span class="chip"><b>+${CONFIG.pointsPerScene}</b> pontos</span><span class="chip ${brinde[0]}">${brinde[1]}</span></div>
-    <button class="btn primary" id="done" type="button">Concluir</button></div>`);
-  $('done').onclick = finishTurn;
+    <div class="qbox"><span>Quiz da situação · acerte e leve um brinde</span>${esc(qz.q)}</div>
+    <div class="opts two">${qz.opts.map((o, i) => `<button class="it" type="button" data-i="${i}"><span class="n">${'ABCD'[i]}</span><span>${esc(o.t)}</span></button>`).join('')}</div>
+    <button class="btn primary" id="confirm" type="button" disabled>Confirmar</button></div>`);
+  const box = $('modal'), confirm = $('confirm');
+  box.querySelectorAll('.it').forEach(b => b.onclick = () => {
+    qz.sel = +b.dataset.i;
+    box.querySelectorAll('.it').forEach(x => x.classList.toggle('sel', +x.dataset.i === qz.sel));
+    confirm.disabled = false; bumpIdle();
+  });
+  confirm.onclick = () => { if (qz.sel !== null) answerSceneQuiz(); };
   ui.mode = 'modal'; bumpIdle();
 }
-function finishTurn() {
-  closeModal();
-  if (cooldownLeft(person(ui.email)) > 0) showAttract(); else showReady();
+function answerSceneQuiz() {
+  const qz = ui.quiz; ui.quiz = null;
+  const right = qz.opts[qz.sel].ok, s = qz.slice;
+  const souv = right ? giveSouvenir() : '';
+  const last = db.log[db.log.length - 1];
+  if (last && last.type === 'spin') { last.quiz = right ? 'pass' : 'fail'; last.souvenir = souv; }
+  save(); drawWheel();
+  const lesson = `<div class="lesson"><span>Para não repetir</span>${esc(s.scene.lesson)}</div>`;
+  if (right) {
+    const brinde = souv === 'given' ? ['lime', 'Retire seu brinde com a equipe'] : ['', 'Brindes esgotados'];
+    openModal(`<div class="box panel">
+      <div class="tag ok">Resposta certa</div>
+      <h2><span class="grad">Boa! Você sabe se proteger</span></h2>
+      ${lesson}
+      <div class="chips"><span class="chip ${brinde[0]}">${brinde[1]}</span></div>
+      <button class="btn primary" id="done" type="button">Concluir</button></div>`);
+  } else {
+    const correct = qz.opts.find(o => o.ok).t;
+    openModal(`<div class="box panel">
+      <div class="tag bad">Resposta errada</div>
+      <h2><span class="grad">Não foi dessa vez</span></h2>
+      <p class="story">A resposta certa era: <b>${esc(correct)}</b></p>
+      ${lesson}
+      <div class="chips"><span class="chip">Sem brinde desta vez</span></div>
+      <button class="btn primary" id="done" type="button">Concluir</button></div>`);
+  }
+  $('done').onclick = showAttract;
+  ui.mode = 'modal'; bumpIdle();
+}
+/* Quiz abandonado (ninguém tocou): sem brinde e sem baixa de estoque. */
+function abandonQuiz() {
+  ui.quiz = null;
+  const last = db.log[db.log.length - 1];
+  if (last && last.type === 'spin' && !last.quiz) { last.quiz = 'abandon'; last.souvenir = ''; save(); }
 }
 
 /* ============================================================
@@ -524,7 +641,7 @@ function startChallenge() {
   const ch = ui.challenge = makeChallenge();
   const body = {
     spot: () => `<div class="opts two">${ch.items.map((it, i) => `<button class="it" type="button" data-i="${i}"><span class="n">+</span><span>${esc(it.t)}</span></button>`).join('')}</div>`,
-    order: () => `<div class="opts two">${ch.shown.map((pw, i) => `<button class="it" type="button" data-i="${i}"><span class="n">&nbsp;</span><span${ch.mono ? ' style="font-family:var(--mono)"' : ''}>${esc(pw)}</span></button>`).join('')}</div>
+    order: () => `<div class="opts two">${ch.shown.map((pw, i) => `<button class="it" type="button" data-i="${i}"><span class="n">&nbsp;</span><span${ch.mono ? ' style="font-family:var(--sans)"' : ''}>${esc(pw)}</span></button>`).join('')}</div>
       <button class="linkish" id="redo" type="button">Refazer a ordem</button>`,
     judge: () => ch.items.map((it, i) => `<div class="jbox"><p>${esc(it.t)}</p><div class="row"><button class="it" type="button" data-i="${i}" data-v="1">Risco</button><button class="it" type="button" data-i="${i}" data-v="0">Tudo certo</button></div></div>`).join(''),
   }[ch.kind]();
@@ -537,10 +654,10 @@ function startChallenge() {
   const confirm = $('confirm'), box = $('modal');
   const update = () => {
     if (ch.kind === 'spot') {
-      box.querySelectorAll('.it').forEach((b, i) => { const on = ch.sel.has(i); b.classList.toggle('sel', on); b.querySelector('.n').textContent = on ? '✓' : '+'; });
+      box.querySelectorAll('.it').forEach((b, i) => { const on = ch.sel.has(i); b.classList.toggle('sel', on); b.querySelector('.n').innerHTML = on ? CHK : '+'; });
       confirm.disabled = ch.sel.size === 0;
     } else if (ch.kind === 'order') {
-      box.querySelectorAll('.it').forEach((b, i) => { const k = ch.chosen.indexOf(i); b.classList.toggle('sel', k >= 0); b.querySelector('.n').textContent = k >= 0 ? k + 1 : ' '; });
+      box.querySelectorAll('.it').forEach((b, i) => { const k = ch.chosen.indexOf(i); b.classList.toggle('sel', k >= 0); b.querySelector('.n').textContent = k >= 0 ? k + 1 : ' '; });
       confirm.disabled = ch.chosen.length < 4;
     } else {
       box.querySelectorAll('.it').forEach(b => b.classList.toggle('sel', ch.ans[+b.dataset.i] === +b.dataset.v));
@@ -575,195 +692,244 @@ function evaluate(ch) {
   return { score: review.filter(r => r.ok).length, review };
 }
 function finishChallenge(res) {
-  const p = person(ui.email), ch = ui.challenge; ui.challenge = null;
-  const pts = res.score * CONFIG.pointsPerChallengeItem, won = res.score === 3 && db.stock.prizes > 0;
-  p.points += pts;
-  p.challenge = { pending: false, score: res.score, pass: won, at: Date.now(), format: ch ? ch.kind : '' };
-  let code = '', souv = '';
-  if (won) {
-    db.stock.prizes--; p.prizes++; code = newCode();
-    if (!p.souvenir) p.souvenir = true;         // o prêmio já conta como o brinde da pessoa
-    db.log.push({ at: Date.now(), email: p.email, type: 'prize', code, delivered: false, points: pts });
-  } else souv = giveSouvenir(p);                 // consolo: quem ainda não tem brinde recebe um
-  db.log.push({ at: Date.now(), email: p.email, type: 'challenge', format: p.challenge.format, score: res.score, pass: won, points: pts });
+  const ch = ui.challenge; ui.challenge = null;
+  const landing = CONFIG.prizeStockUsedOn === 'landing';
+  let won = res.score === 3, code = '', souv = '';
+  if (won && !landing) { if (left('prizes') > 0) db.used.prizes++; else won = false; }
+  if (won) { code = newCode(); db.log.push({ at: Date.now(), type: 'prize', code, delivered: false }); }
+  else souv = giveSouvenir();                      // consolo: quem não conquista o prêmio leva um brinde
+  db.log.push({ at: Date.now(), type: 'challenge', format: ch ? ch.kind : '', score: res.score, result: won ? 'pass' : 'fail', souvenir: souv, returned: false });
   save(); drawWheel();
-  const review = res.review ? `<div class="rv">${res.review.map(r => `<div class="${r.ok ? '' : 'no'}">${r.ok ? '✓' : '✗'} ${esc(r.t)}<small>${esc(r.why)}</small></div>`).join('')}</div>` : '';
+  const review = res.review ? `<div class="rv">${res.review.map(r => `<div class="${r.ok ? '' : 'no'}">${r.ok ? CHK : XIC} ${esc(r.t)}<small>${esc(r.why)}</small></div>`).join('')}</div>` : '';
   if (won) {
-    openModal(`<div class="box panel" style="--c:var(--gold)">
+    openModal(`<div class="box panel" style="--c:var(--lime)">
       <div class="tag ok">Proteção Total concluída</div>
       <h2 class="prizeh">Você ganhou um prêmio!</h2>
       <p class="story">Mostre esta tela à equipe para retirar.</p>
       <div class="code">${esc(code)}</div>
-      <div class="chips"><span class="chip"><b>+${pts}</b> pontos</span><span class="chip lime">Prêmio</span></div>
       <button class="btn primary" id="done" type="button">Concluir</button>
       <div style="text-align:center"><button class="linkish" id="staff" type="button">Equipe: confirmar entrega</button></div></div>`);
     $('staff').onclick = () => askPin(() => {
       const l = db.log.find(x => x.code === code); if (l) { l.delivered = true; save(); }
-      $('staff').textContent = 'Entrega registrada ✓'; $('staff').disabled = true;
+      $('staff').innerHTML = 'Entrega registrada ' + CHK; $('staff').disabled = true;
     });
   } else {
-    const brinde = { given: ['lime', 'Retire seu brinde com a equipe'], already: ['', 'Seu brinde já foi retirado'], none: ['', 'Brindes esgotados'], '': ['', ''] }[souv];
+    const brinde = souv === 'given' ? ['lime', 'Retire seu brinde com a equipe'] : ['', 'Brindes esgotados'];
     openModal(`<div class="box tight panel">
       <div class="tag bad">Proteção Total</div>
       <h2><span class="grad">${res.score === 3 ? 'Perfeito, mas os prêmios acabaram' : 'Quase!'}</span></h2>
       <p class="story">Você acertou ${res.score} de 3. Veja o gabarito:</p>${review}
-      <div class="chips"><span class="chip"><b>+${pts}</b> pontos</span>${brinde[1] ? `<span class="chip ${brinde[0]}">${brinde[1]}</span>` : ''}</div>
+      <div class="chips"><span class="chip ${brinde[0]}">${brinde[1]}</span></div>
       <button class="btn primary" id="done" type="button">Concluir</button></div>`);
   }
-  $('done').onclick = finishTurn;
+  $('done').onclick = showAttract;
   ui.mode = 'modal'; bumpIdle();
+}
+/* Desafio abandonado (ninguém tocou): não gera brinde nem prêmio, e o prêmio reservado volta ao estoque. */
+function abandonChallenge() {
+  const ch = ui.challenge; ui.challenge = null;
+  if (CONFIG.prizeStockUsedOn === 'landing') db.used.prizes = Math.max(0, db.used.prizes - 1);
+  db.log.push({ at: Date.now(), type: 'challenge', format: ch ? ch.kind : '', score: 0, result: 'abandon', souvenir: '', returned: true });
+  save(); drawWheel();
 }
 
 /* ============================================================
-   TELAS DO PAINEL LATERAL
+   TELA PRINCIPAL
    ============================================================ */
 function showAttract() {
   clearTimeout(idleT); closeModal();
-  ui = { mode: 'attract', email: null, local: '', challenge: null };
-  $('state').innerHTML = `
-    <p class="lead">Gire a roda, enfrente uma situação de segurança ou de privacidade, aprenda a se proteger e concorra a prêmios.</p>
-    <ul class="steps"><li><b>1</b>Informe seu e-mail corporativo</li><li><b>2</b>Gire a roda</li><li><b>3</b>Aprenda com a cena e some pontos no ranking</li></ul>
-    <p class="note">&gt; Caiu numa fatia dourada (PROTEÇÃO TOTAL)? Passe no desafio e você ganha um prêmio!</p>
-    <button class="btn primary pulse" id="go" type="button">Toque para começar</button>`;
-  $('go').onclick = showId;
-  idleSpin();
-}
-const KB = ['1234567890', 'qwertyuiop', 'asdfghjkl'];
-function showId() {
-  ui.mode = 'id'; ui.local = ''; cancelAnimationFrame(idleRaf);
-  const key = k => `<button class="key" type="button" data-k="${esc(k)}">${esc(k)}</button>`;
-  $('state').innerHTML = `<div class="idform">
-    <p class="note">&gt; digite seu e-mail corporativo</p>
-    <div class="emailbox" id="eb"></div>
-    <div class="err" id="err" role="alert"></div>
-    <div class="kb">
-      ${KB.map(r => `<div class="kbrow">${[...r].map(key).join('')}</div>`).join('')}
-      <div class="kbrow">${[...'zxcvbnm'].map(key).join('')}${key('.')}${key('-')}${key('_')}<button class="key wide" type="button" data-k="⌫" aria-label="Apagar">⌫</button></div>
-    </div>
-    <div class="btns cols"><button class="btn secondary" id="back" type="button">Voltar</button><button class="btn primary" id="ok" type="button" disabled>Continuar</button></div></div>`;
-  const paint = () => {
-    $('eb').innerHTML = `<span class="typed">${esc(ui.local)}</span><span class="caret"></span><span class="suf">@${esc(CONFIG.domain)}</span>`;
-    $('ok').disabled = !validLocal(ui.local);
-  };
-  const press = k => {
-    if (k === '⌫') ui.local = ui.local.slice(0, -1);
-    else if (ui.local.length < 40) ui.local += k;
-    $('err').textContent = ''; paint(); bumpIdle();
-  };
-  $('state').querySelectorAll('[data-k]').forEach(b => b.onclick = () => press(b.dataset.k));
-  $('back').onclick = showAttract;
-  $('ok').onclick = () => { if (!validLocal(ui.local)) return; ui.email = ui.local + '@' + CONFIG.domain; showReady(); };
-  paint(); bumpIdle();
-}
-const validLocal = s => /^[a-z0-9][a-z0-9._-]*$/.test(s) && s.length >= 2 && !/[._-]$/.test(s);
-addEventListener('keydown', e => {          // teclado físico (útil nos testes)
-  if (ui.mode !== 'id' || e.ctrlKey || e.metaKey || e.altKey) return;
-  const b = e.key === 'Backspace' ? $('state').querySelector('[data-k="⌫"]')
-    : e.key === 'Enter' ? $('ok') : $('state').querySelector(`[data-k="${CSS.escape(e.key.toLowerCase())}"]`);
-  if (b && !b.disabled) b.click();
-});
-
-function showReady() {
-  ui.mode = 'ready'; cancelAnimationFrame(idleRaf);
-  const p = person(ui.email), left = cooldownLeft(p);
-  const info = p.spins ? `<div class="stats"><div><b>${p.spins}</b><span>giros</span></div><div><b>${p.points}</b><span>pontos</span></div><div><b>${p.challenge ? '✓' : '—'}</b><span>desafio</span></div></div>` : '';
-  if (left > 0) {
-    const mins = Math.ceil(left / 60000);
+  ui = { mode: 'attract', challenge: null, quiz: null };
+  if (!configured()) {
     $('state').innerHTML = `
-      <p class="hello">${esc(maskEmail(ui.email))}</p>${info}
-      <div class="panel"><p class="lead" style="margin:0">Você já girou. Volte a partir das <b style="color:var(--lime)">${hhmm(p.lastSpinAt + CONFIG.cooldownMinutes * 60000)}</b> (faltam ${mins} min) para girar de novo.</p></div>
-      <button class="btn secondary" id="bye" type="button">Concluir</button>`;
-    $('bye').onclick = showAttract;
+      <p class="lead">A roleta ainda não foi iniciada.</p>
+      <p class="note">&gt; A organização precisa informar o total de brindes e de prêmios para liberar o jogo.</p>
+      <button class="btn primary" id="go" type="button" disabled>Girar</button>`;
   } else {
     $('state').innerHTML = `
-      <p class="hello">${esc(maskEmail(ui.email))}</p>${info}
-      <p class="lead">${p.challenge ? 'Seu desafio Proteção Total já foi feito. Cada giro soma pontos no ranking.' : 'Pronto! Gire a roda e descubra o que o destino reservou.'}</p>
-      <div class="btns"><button class="btn primary pulse" id="spin" type="button">Girar</button>
-      <button class="btn secondary" id="other" type="button">Trocar e-mail</button></div>`;
-    $('spin').onclick = startSpin; $('other').onclick = showId;
+      <p class="lead">Gire a roda, enfrente uma situação de segurança ou de privacidade e responda ao quiz para levar um brinde.</p>
+      <ul class="steps"><li><b>1</b>Toque em Girar</li><li><b>2</b>Conheça a situação e responda ao quiz</li><li><b>3</b>Acertou? Retire seu brinde com a equipe</li></ul>
+      <p class="note">&gt; Caiu na fatia PROTEÇÃO TOTAL? Passe no desafio e você ganha um prêmio!</p>
+      <button class="btn primary pulse" id="go" type="button">Girar</button>`;
+    $('go').onclick = startSpin;
   }
-  bumpIdle();
+  idleSpin();
 }
 
 /* ============================================================
-   POPUPS, INATIVIDADE, PIN E ÁREA DA EQUIPE
+   POPUPS, INATIVIDADE E TECLADO NUMÉRICO (PIN e quantidades)
    ============================================================ */
 function openModal(html) { const m = $('modal'); m.innerHTML = html; m.hidden = false; const b = m.querySelector('.box'); if (b) b.scrollTop = 0; }
 function closeModal() { $('modal').hidden = true; $('modal').innerHTML = ''; }
 
 function bumpIdle() {
   clearTimeout(idleT);
-  if (ui.mode === 'attract' || ui.mode === 'spin' || !$('pin').hidden) return;
-  idleT = setTimeout(endSession, (ui.challenge ? CONFIG.idleChallengeSeconds : CONFIG.idleSeconds) * 1000);
+  if (ui.mode === 'attract' || ui.mode === 'spin' || !$('pin').hidden || !$('org').hidden) return;
+  idleT = setTimeout(endSession, ((ui.challenge || ui.quiz) ? CONFIG.idleChallengeSeconds : CONFIG.idleSeconds) * 1000);
 }
 ['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, bumpIdle, true));
 function endSession() {
-  if (ui.challenge) finishChallenge({ score: 0, review: null }), closeModal();   // desafio abandonado vale 0
+  if (ui.challenge) abandonChallenge();
+  if (ui.quiz) abandonQuiz();
   showAttract();
 }
 
-function askPin(onOk) {
-  const m = $('pin'); let v = '';
+/* teclado numérico na tela: opts = { tag, label, mask, initial, max }; onSubmit(valor, falhar) devolve true para fechar */
+function keypad(opts, onSubmit, onCancel) {
+  const m = $('pin'); let v = opts.initial || '';
   m.hidden = false; clearTimeout(idleT);
+  const close = () => { m.hidden = true; m.innerHTML = ''; bumpIdle(); };
   const paint = () => {
-    m.innerHTML = `<div class="box panel pinbox"><div class="tag">Equipe</div><p class="lead">Digite o PIN</p><div class="dots">${'●'.repeat(v.length) || '&nbsp;'}</div><div class="err" id="perr"></div>
-      <div class="pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button class="key" type="button" data-n="${n}">${n}</button>`).join('')}<button class="key" type="button" data-n="x">⌫</button><button class="key" type="button" data-n="0">0</button><button class="key" type="button" data-n="ok">OK</button></div>
+    m.innerHTML = `<div class="box panel pinbox"><div class="tag">${esc(opts.tag)}</div><p class="lead">${esc(opts.label)}</p><div class="dots">${opts.mask ? '●'.repeat(v.length) : esc(v)}${v ? '' : '&nbsp;'}</div><div class="err" id="perr"></div>
+      <div class="pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button class="key" type="button" data-n="${n}">${n}</button>`).join('')}<button class="key" type="button" data-n="x">apagar</button><button class="key" type="button" data-n="0">0</button><button class="key" type="button" data-n="ok">OK</button></div>
       <button class="linkish" id="pc" type="button">Cancelar</button></div>`;
     m.querySelectorAll('[data-n]').forEach(b => b.onclick = () => {
       const n = b.dataset.n;
       if (n === 'x') v = v.slice(0, -1);
-      else if (n === 'ok') { if (v === CONFIG.adminPin) { m.hidden = true; m.innerHTML = ''; bumpIdle(); return onOk(); } v = ''; paint(); $('perr').textContent = '> PIN incorreto'; return; }
-      else if (v.length < 8) v += n;
+      else if (n === 'ok') {
+        const fail = msg => { v = ''; paint(); $('perr').textContent = msg; };
+        if (onSubmit(v, fail) === true) close();
+        return;
+      }
+      else if (v.length < (opts.max || 8)) v += n;
       paint();
     });
-    $('pc').onclick = () => { m.hidden = true; m.innerHTML = ''; bumpIdle(); };
+    $('pc').onclick = () => { close(); if (onCancel) onCancel(); };
   };
   paint();
 }
+function askPin(onOk, onCancel) {
+  keypad({ tag: 'Organização', label: 'Digite o PIN', mask: true }, (v, fail) => {
+    if (v === CONFIG.adminPin) { onOk(); return true; }
+    fail('> PIN incorreto'); return false;
+  }, onCancel);
+}
+function askNumber(label, initial, onOk) {
+  keypad({ tag: 'Organização', label, mask: false, initial: initial === null ? '' : String(initial), max: 5 }, (v, fail) => {
+    if (v === '') { fail('> informe um número'); return false; }
+    onOk(+v); return true;
+  });
+}
 
-function rankingRows() {
-  return Object.values(db.people).filter(p => p.spins > 0).sort((a, b) => b.points - a.points || b.spins - a.spins);
+/* ============================================================
+   PÁGINA DA ORGANIZAÇÃO (roleta.html#organizacao, protegida pelo PIN)
+   ============================================================ */
+function summary() {
+  const L = db.log, spins = L.filter(l => l.type === 'spin'), ch = L.filter(l => l.type === 'challenge'), prizes = L.filter(l => l.type === 'prize');
+  return {
+    spins: spins.length,
+    sec: spins.filter(l => l.kind === 's').length, priv: spins.filter(l => l.kind === 'p').length, chal: spins.filter(l => l.kind === 'challenge').length,
+    quizPass: spins.filter(l => l.quiz === 'pass').length, quizFail: spins.filter(l => l.quiz === 'fail').length,
+    pass: ch.filter(c => c.result === 'pass').length, fail: ch.filter(c => c.result === 'fail').length,
+    abandon: ch.filter(c => c.result === 'abandon').length + spins.filter(l => l.quiz === 'abandon').length,
+    souvDelivered: spins.filter(l => l.souvenir === 'given').length + ch.filter(c => c.souvenir === 'given').length,
+    prizesDelivered: prizes.filter(p => p.delivered).length, prizesPending: prizes.filter(p => !p.delivered),
+    toReturn: ch.filter(c => c.result === 'fail' && !c.returned).length,
+  };
+}
+const sliceById = id => SLICES.find(s => s.id === id);
+/* uma linha de histórico, legível: [tipo, detalhe, resultado, código, entregue] */
+function describe(l) {
+  if (l.type === 'spin') {
+    const s = sliceById(l.slice);
+    if (l.kind === 'challenge') return ['Giro', 'Proteção Total', '', '', ''];
+    const res = { pass: 'acertou o quiz · ' + (l.souvenir === 'given' ? 'brinde entregue' : 'brindes esgotados'), fail: 'errou o quiz · sem brinde', abandon: 'abandonado' }[l.quiz] || '';
+    return ['Giro', `${s ? s.label : l.slice} (${l.kind === 'p' ? 'privacidade' : 'segurança'})`, res, '', ''];
+  }
+  if (l.type === 'challenge') return ['Desafio', `${l.format} · ${l.score}/3`, { pass: 'aprovado', fail: 'reprovado', abandon: 'abandonado' }[l.result] + (l.souvenir === 'given' ? ' · brinde entregue' : ''), '', ''];
+  if (l.type === 'prize') return ['Prêmio', 'voucher gerado', '', l.code, l.delivered ? 'sim' : 'não'];
+  return ['Estoque', `total de ${l.what === 'souvenirs' ? 'brindes' : 'prêmios'}: ${l.from === null ? 'não informado' : l.from} → ${l.to}`, '', '', ''];
 }
 function download(name, rows) {
   const blob = new Blob(['﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-function openAdmin() {
-  clearTimeout(idleT);
-  const people = rankingRows(), pend = db.log.filter(l => l.type === 'prize' && !l.delivered);
-  const delivered = db.log.filter(l => l.type === 'prize' && l.delivered).length;
-  const stock = (k, label) => `<div class="stock"><span>${label}</span><button class="key" data-s="${k}" data-d="-1" type="button">−</button><b>${db.stock[k]}</b><button class="key" data-s="${k}" data-d="1" type="button">+</button></div>`;
-  openModal(`<div class="box tight panel">
-    <div class="tag">Equipe</div><h2><span class="grad">Painel da roleta</span></h2>
-    <div class="adm">${stock('souvenirs', 'Brindes restantes')}${stock('prizes', 'Prêmios restantes')}</div>
-    <p class="note" style="margin-top:12px">${people.length} pessoas · ${people.reduce((s, p) => s + p.spins, 0)} giros · ${db.log.filter(l => l.type === 'challenge').length} desafios · prêmios entregues: ${delivered} · pendentes: ${pend.length}</p>
-    ${pend.length ? `<table><thead><tr><th>Código</th><th>E-mail</th><th>Hora</th><th></th></tr></thead><tbody>${pend.map(l => `<tr><td>${esc(l.code)}</td><td>${esc(l.email)}</td><td>${hhmm(l.at)}</td><td><button class="key wide" data-dv="${esc(l.code)}" type="button">Entregue</button></td></tr>`).join('')}</tbody></table>` : '<p class="note">Nenhum prêmio pendente de entrega.</p>'}
-    <div class="btns two"><button class="btn secondary" id="x1" type="button">Exportar ranking</button><button class="btn secondary" id="x2" type="button">Exportar giros</button><button class="btn danger" id="zero" type="button">Zerar tudo</button><button class="btn primary" id="close" type="button">Fechar</button></div></div>`);
-  const m = $('modal');
-  m.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { db.stock[b.dataset.s] = Math.max(0, db.stock[b.dataset.s] + +b.dataset.d); save(); drawWheel(); openAdmin(); });
-  m.querySelectorAll('[data-dv]').forEach(b => b.onclick = () => { const l = db.log.find(x => x.code === b.dataset.dv); if (l) { l.delivered = true; save(); } openAdmin(); });
-  $('x1').onclick = () => download('roleta-ranking.csv', [['email', 'giros', 'pontos_roleta', 'desafio_acertos', 'desafio_aprovado', 'brinde', 'premios', 'ultimo_giro'],
-    ...people.map(p => [p.email, p.spins, p.points, p.challenge ? p.challenge.score : '', p.challenge ? (p.challenge.pass ? 'sim' : 'nao') : '', p.souvenir ? 'sim' : 'nao', p.prizes, new Date(p.lastSpinAt).toISOString()])]);
-  $('x2').onclick = () => download('roleta-giros.csv', [['data', 'email', 'tipo', 'detalhe', 'pontos', 'codigo_premio', 'entregue'],
-    ...db.log.map(l => [new Date(l.at).toISOString(), l.email, l.type, l.slice || (l.type === 'challenge' ? `${l.format} ${l.score}/3` : ''), l.points || 0, l.code || '', l.type === 'prize' ? (l.delivered ? 'sim' : 'nao') : ''])]);
-  $('zero').onclick = () => { if (confirm('Apagar TODOS os dados e restaurar o estoque inicial? Esta ação não pode ser desfeita.')) { db = freshDb(); save(); drawWheel(); showAttract(); } };
-  $('close').onclick = () => { closeModal(); ui.mode === 'attract' ? showAttract() : bumpIdle(); };
-  ui.mode = 'modal';
+/* A organização informa (ou altera) o TOTAL; as baixas continuam contadas e o restante é total − baixas. */
+function setTotal(what, n) {
+  const from = db.total[what];
+  db.total[what] = Math.max(0, Math.round(n));
+  db.log.push({ at: Date.now(), type: 'adjust', what, from, to: db.total[what] });
+  save(); drawWheel();
 }
+function resetGame() {      // zera as baixas, o total informado e o histórico
+  db = freshDb(); save(); drawWheel();
+}
+function renderOrg() {
+  const S = summary();
+  const card = (k, label, extra) => `<section class="panel stockcard">
+      <div class="tag">${label}</div><div class="bignum">${db.total[k] === null ? '—' : left(k)}</div>
+      <p class="note">${db.total[k] === null ? 'total ainda não informado' : 'restantes'}${extra || ''}</p>
+      <div class="stats two"><div><b>${db.total[k] === null ? '—' : db.total[k]}</b><span>total informado</span></div><div><b>${db.used[k]}</b><span>baixas</span></div></div>
+      <div class="adjust"><button class="btn secondary" data-set="${k}" type="button">${db.total[k] === null ? 'Informar total' : 'Alterar total'}</button>
+        ${db.total[k] === null ? '' : [-10, -1, 1, 10].map(d => `<button class="key" data-s="${k}" data-d="${d}" type="button">${d > 0 ? '+' : '−'}${Math.abs(d)}</button>`).join('')}</div></section>`;
+  const tile = (n, label) => `<div><b>${n}</b><span>${label}</span></div>`;
+  const recent = db.log.slice(-15).reverse().map(l => { const d = describe(l); return `<tr><td>${hhmm(l.at)}</td><td>${esc(d[0])}</td><td>${esc(d[1])}</td><td>${esc(d[2] || (d[3] ? 'código ' + d[3] : ''))}</td></tr>`; }).join('');
+  $('org').innerHTML = `<div class="org-wrap">
+    <div class="org-head">
+      <div><div class="tag">Organização</div><h1><span class="grad">Painel da roleta</span></h1></div>
+      <button class="btn secondary" id="back" type="button">Voltar à roleta</button>
+    </div>
+    ${configured() ? '' : `<section class="panel" style="--c:var(--orange)"><div class="tag bad">Estoque não informado</div>
+      <p class="story" style="margin:12px 0 0">Informe o total de brindes e de prêmios para liberar a roleta. O total informado vale até alguém da organização alterá-lo.</p></section>`}
+    <div class="org-grid">${card('souvenirs', 'Brindes')}${card('prizes', 'Prêmios', ' · o estoque de prêmios limita quantas vezes a roda cai em Proteção Total')}</div>
+    <section class="panel"><div class="tag">Resumo</div>
+      <div class="stats wide" style="margin-top:12px">${tile(S.spins, 'giros')}${tile(S.sec, 'segurança')}${tile(S.priv, 'privacidade')}${tile(S.chal, 'proteção total')}
+        ${tile(S.quizPass, 'quiz: acertos')}${tile(S.quizFail, 'quiz: erros')}${tile(S.pass, 'desafio: aprovados')}${tile(S.fail, 'desafio: reprovados')}
+        ${tile(S.abandon, 'abandonados')}${tile(S.souvDelivered, 'brindes entregues')}${tile(S.prizesDelivered, 'prêmios entregues')}${tile(S.prizesPending.length, 'prêmios pendentes')}</div></section>
+    <section class="panel"><div class="tag">Prêmios pendentes de entrega</div>
+      ${S.prizesPending.length ? `<table><thead><tr><th>Código</th><th>Hora</th><th></th></tr></thead><tbody>${S.prizesPending.map(p => `<tr><td>${esc(p.code)}</td><td>${hhmm(p.at)}</td><td><button class="key wide" data-dv="${esc(p.code)}" type="button">Entregue</button></td></tr>`).join('')}</tbody></table>` : '<p class="note" style="margin-top:12px">Nenhum prêmio pendente de entrega.</p>'}</section>
+    ${CONFIG.prizeStockUsedOn === 'landing' ? `<section class="panel"><div class="tag">Prêmios reservados e não conquistados</div>
+      <p class="story" style="margin:12px 0">${S.toReturn} ${S.toReturn === 1 ? 'desafio foi reprovado' : 'desafios foram reprovados'}: o prêmio reservado nesses giros não foi entregue e pode voltar ao estoque (as baixas diminuem).</p>
+      <button class="btn secondary" id="ret" type="button" ${S.toReturn ? '' : 'disabled'}>Devolver ${S.toReturn} ao estoque</button></section>` : ''}
+    <section class="panel"><div class="tag">Últimos registros</div>
+      ${recent ? `<div class="table-wrap"><table><thead><tr><th>Hora</th><th>Tipo</th><th>Detalhe</th><th>Resultado</th></tr></thead><tbody>${recent}</tbody></table></div>` : '<p class="note" style="margin-top:12px">Ainda não há giros.</p>'}</section>
+    <div class="btns cols"><button class="btn secondary" id="csv" type="button">Exportar histórico</button><button class="btn danger" id="zero" type="button">Zerar o jogo</button></div>
+  </div>`;
+  $('back').onclick = () => { location.hash = ''; };
+  document.querySelectorAll('#org [data-set]').forEach(b => b.onclick = () => {
+    const k = b.dataset.set, nome = k === 'souvenirs' ? 'Total de brindes' : 'Total de prêmios';
+    askNumber(nome, db.total[k], n => { setTotal(k, n); renderOrg(); });
+  });
+  document.querySelectorAll('#org [data-s]').forEach(b => b.onclick = () => { setTotal(b.dataset.s, db.total[b.dataset.s] + +b.dataset.d); renderOrg(); });
+  document.querySelectorAll('#org [data-dv]').forEach(b => b.onclick = () => { const l = db.log.find(x => x.code === b.dataset.dv); if (l) { l.delivered = true; save(); } renderOrg(); });
+  if ($('ret')) $('ret').onclick = () => {
+    const n = S.toReturn; db.log.filter(c => c.type === 'challenge' && c.result === 'fail' && !c.returned).forEach(c => { c.returned = true; });
+    db.used.prizes = Math.max(0, db.used.prizes - n); save(); drawWheel(); renderOrg();
+  };
+  $('csv').onclick = () => download('roleta-historico.csv', [['data', 'hora', 'tipo', 'detalhe', 'resultado', 'codigo_premio', 'entregue'],
+    ...db.log.map(l => { const d = describe(l); return [new Date(l.at).toLocaleDateString('pt-BR'), new Date(l.at).toLocaleTimeString('pt-BR'), d[0], d[1], d[2], d[3], d[4]]; })]);
+  $('zero').onclick = () => { if (confirm('Zerar o jogo? Isso apaga as baixas de estoque, o total informado de brindes e de prêmios e o histórico. Exporte o histórico antes, se precisar.')) { resetGame(); renderOrg(); } };
+}
+/* rotas: vazio = roleta; #organizacao = página da organização (pede o PIN) */
+function route() {
+  const org = location.hash === '#organizacao';
+  $('stage').hidden = org; $('org').hidden = !org;
+  if (org) {
+    clearTimeout(idleT); closeModal();
+    if (ui.challenge) abandonChallenge();
+    if (ui.quiz) abandonQuiz();
+    if (orgOk) renderOrg();
+    else { $('org').innerHTML = ''; askPin(() => { orgOk = true; renderOrg(); }, () => { location.hash = ''; }); }
+  } else {
+    orgOk = false;
+    if (ui.mode !== 'spin') showAttract();
+  }
+}
+addEventListener('hashchange', route);
 let taps = [];
-$('hot').addEventListener('pointerdown', () => {
+$('hot').addEventListener('pointerdown', () => {            // 3 toques no canto inferior esquerdo abrem a organização
   const now = Date.now(); taps = taps.filter(t => now - t < 1500); taps.push(now);
-  if (taps.length >= 3) { taps = []; askPin(openAdmin); }
+  if (taps.length >= 3) { taps = []; location.hash = 'organizacao'; }
 });
 
 /* ---------- modo teste ---------- */
 function renderTestBar() {
   const bar = $('testbar'); bar.hidden = false;
-  bar.innerHTML = `<span>Modo teste</span><button type="button" id="tbGold">${forceGold ? 'Próximo giro: Proteção Total ✓' : 'Forçar Proteção Total no próximo giro'}</button><button type="button" id="tbAdmin">Painel</button><button type="button" id="tbZero">Zerar</button><button type="button" id="tbExit">Sair</button>`;
+  bar.innerHTML = `<span>Modo teste</span><button type="button" id="tbGold">${forceGold ? 'Próximo giro: Proteção Total (ativado)' : 'Forçar Proteção Total no próximo giro'}</button><button type="button" id="tbAdmin">Organização</button><button type="button" id="tbStock">Estoque 110/10</button><button type="button" id="tbZero">Zerar</button><button type="button" id="tbExit">Sair</button>`;
   $('tbGold').onclick = () => { forceGold = !forceGold; renderTestBar(); };
-  $('tbAdmin').onclick = openAdmin;
-  $('tbZero').onclick = () => { if (confirm('Apagar os dados de teste?')) { db = freshDb(); save(); drawWheel(); showAttract(); } };
+  $('tbAdmin').onclick = () => { location.hash = 'organizacao'; };
+  $('tbStock').onclick = () => { resetGame(); db.total = { ...TEST_STOCK }; save(); drawWheel(); showAttract(); };
+  $('tbZero').onclick = () => { if (confirm('Zerar os dados de teste?')) { resetGame(); showAttract(); } };
   $('tbExit').onclick = () => { location.href = location.pathname; };
 }
 
@@ -788,10 +954,9 @@ function renderTestBar() {
 })();
 
 /* ---------- início ---------- */
-if (CONFIG.logoUrl) $('foot').innerHTML = `<img src="${esc(CONFIG.logoUrl)}" alt="TOTVS">`;
 if (TEST) renderTestBar();
 drawWheel();
-showAttract();
+route();
 </script>
 </body>
 </html>
