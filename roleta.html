@@ -272,7 +272,7 @@
    ============================================================ */
 const CONFIG = {
   // Cole aqui a URL do Google Apps Script publicado como Web App.
-  sheetsEndpoint: 'https://script.google.com/a/macros/totvs.com.br/s/AKfycby_5sB6e9rgywYWByZvz7lttzH-GtbvoJOMDS04xARgR6LbTQPf-uwAtMpoCG7G9fqo/exec',
+  sheetsEndpoint: 'https://script.google.com/a/macros/totvs.com.br/s/AKfycbywfhNDG9P0ArKTrWV2L70dgIW80LV80x8WHOaPx_ugRX0Xhh54r1TrZydkNI1KQa2d/exec',
   prizeStockUsedOn: 'landing',        // 'landing': cada queda em Proteção Total reserva 1 prêmio do estoque (abandono devolve;
                                       //            desafios reprovados voltam pelo painel da organização)
                                       // 'win': o estoque só baixa quando a pessoa acerta o desafio
@@ -494,11 +494,15 @@ function currentPlayer() {
 }
 function syncSpinToSheet(entry) {
   if (!CONFIG.sheetsEndpoint || !entry) return;
-  const payload = {
-    resposta_roleta: entry.resposta_roleta || entry.slice || '',
+  const params = new URLSearchParams({
     data_hora: new Date(entry.at || Date.now()).toISOString(),
-  };
-  fetch(CONFIG.sheetsEndpoint, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).catch(() => {});
+    resposta_roleta: entry.resposta_usuario || entry.resposta_roleta || entry.slice || '',
+  });
+  // Usa uma imagem para disparar o GET com as credenciais do navegador.
+  const url = `${CONFIG.sheetsEndpoint}?${params.toString()}&t=${Date.now()}`;
+  const beacon = new Image();
+  beacon.onload = beacon.onerror = () => { beacon.src = ''; };
+  beacon.src = url;
 }
 if (TEST && db.total.souvenirs === null && db.total.prizes === null) { db.total = { ...TEST_STOCK }; save(); }
 const configured = () => db.total.souvenirs !== null && db.total.prizes !== null;
@@ -572,9 +576,6 @@ function startSpin() {
 
 function settle(idx) {
   const s = SLICES[idx];
-  // Registra imediatamente o e-mail e a resposta em que a roleta parou.
-  const spin = [...db.log].reverse().find(x => x.type === 'spin');
-  if (spin) syncSpinToSheet({ ...spin, resposta_roleta: s.label });
   drawWheel();
   if (s.gold) return startChallenge();
   startSceneQuiz(s);
@@ -607,7 +608,11 @@ function answerSceneQuiz() {
   const right = qz.opts[qz.sel].ok, s = qz.slice;
   const souv = right ? giveSouvenir() : '';
   const last = db.log[db.log.length - 1];
-  if (last && last.type === 'spin') { last.quiz = right ? 'pass' : 'fail'; last.souvenir = souv; }
+  if (last && last.type === 'spin') {
+    last.quiz = right ? 'pass' : 'fail';
+    last.souvenir = souv;
+    syncSpinToSheet({ ...last, resposta_usuario: qz.opts[qz.sel].t });
+  }
   save(); drawWheel();
   const lesson = `<div class="lesson"><span>Para não repetir</span>${esc(s.scene.lesson)}</div>`;
   if (right) {
