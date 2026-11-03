@@ -578,6 +578,8 @@ function screenRegister(prefill = {}) {
     if (used >= CONFIG.attemptsPerEmail)
       return err.textContent = `> acesso negado: você já usou suas ${CONFIG.attemptsPerEmail} tentativas. Confira sua posição no ranking!`;
     player = { name, email };
+    // Compartilha a identidade da sessão com a roleta na mesma origem.
+    localStorage.setItem('sp-current-player', JSON.stringify({ name, email, at: Date.now() }));
     startGame();
   };
 }

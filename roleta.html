@@ -271,6 +271,8 @@
    página roleta.html#organizacao antes de começar, e pode alterar durante o evento.
    ============================================================ */
 const CONFIG = {
+  // Cole aqui a URL do Google Apps Script publicado como Web App.
+  sheetsEndpoint: 'https://script.google.com/a/macros/totvs.com.br/s/AKfycby_5sB6e9rgywYWByZvz7lttzH-GtbvoJOMDS04xARgR6LbTQPf-uwAtMpoCG7G9fqo/exec',
   prizeStockUsedOn: 'landing',        // 'landing': cada queda em Proteção Total reserva 1 prêmio do estoque (abandono devolve;
                                       //            desafios reprovados voltam pelo painel da organização)
                                       // 'win': o estoque só baixa quando a pessoa acerta o desafio
@@ -487,6 +489,17 @@ function readDb() {
 }
 let db = readDb();
 const save = () => { try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(db)); } catch { /* armazenamento indisponível */ } };
+function currentPlayer() {
+  try { return JSON.parse(localStorage.getItem('sp-current-player')) || {}; } catch { return {}; }
+}
+function syncSpinToSheet(entry) {
+  if (!CONFIG.sheetsEndpoint || !entry) return;
+  const payload = {
+    resposta_roleta: entry.resposta_roleta || entry.slice || '',
+    data_hora: new Date(entry.at || Date.now()).toISOString(),
+  };
+  fetch(CONFIG.sheetsEndpoint, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).catch(() => {});
+}
 if (TEST && db.total.souvenirs === null && db.total.prizes === null) { db.total = { ...TEST_STOCK }; save(); }
 const configured = () => db.total.souvenirs !== null && db.total.prizes !== null;
 const left = k => Math.max(0, (db.total[k] === null ? 0 : db.total[k]) - db.used[k]);
@@ -559,6 +572,9 @@ function startSpin() {
 
 function settle(idx) {
   const s = SLICES[idx];
+  // Registra imediatamente o e-mail e a resposta em que a roleta parou.
+  const spin = [...db.log].reverse().find(x => x.type === 'spin');
+  if (spin) syncSpinToSheet({ ...spin, resposta_roleta: s.label });
   drawWheel();
   if (s.gold) return startChallenge();
   startSceneQuiz(s);
