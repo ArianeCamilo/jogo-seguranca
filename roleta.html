@@ -271,8 +271,6 @@
    página roleta.html#organizacao antes de começar, e pode alterar durante o evento.
    ============================================================ */
 const CONFIG = {
-  // Cole aqui a URL do Google Apps Script publicado como Web App.
-  sheetsEndpoint: 'https://script.google.com/a/macros/totvs.com.br/s/AKfycbywfhNDG9P0ArKTrWV2L70dgIW80LV80x8WHOaPx_ugRX0Xhh54r1TrZydkNI1KQa2d/exec',
   prizeStockUsedOn: 'landing',        // 'landing': cada queda em Proteção Total reserva 1 prêmio do estoque (abandono devolve;
                                       //            desafios reprovados voltam pelo painel da organização)
                                       // 'win': o estoque só baixa quando a pessoa acerta o desafio
@@ -282,6 +280,7 @@ const CONFIG = {
   idleChallengeSeconds: 120,          // idem, durante o quiz e o desafio (abandono não gera brinde nem prêmio)
   adminPin: '2468',                   // o mesmo PIN do quiz (PROTÓTIPO: PIN no cliente não é segurança real)
   storageKey: 'sp-roleta-v3',
+  sheetsEndpoint: 'https://script.google.com/a/macros/totvs.com.br/s/AKfycbywfhNDG9P0ArKTrWV2L70dgIW80LV80x8WHOaPx_ugRX0Xhh54r1TrZydkNI1KQa2d/exec',   // planilha do Google (vazio = não envia)
 };
 
 /* MODO TESTE: abrir com ?teste (ex.: roleta.html?teste). Dados guardados à parte, estoque de teste
@@ -489,24 +488,88 @@ function readDb() {
 }
 let db = readDb();
 const save = () => { try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(db)); } catch { /* armazenamento indisponível */ } };
-function currentPlayer() {
-  try { return JSON.parse(localStorage.getItem('sp-current-player')) || {}; } catch { return {}; }
-}
-function syncSpinToSheet(entry) {
-  if (!CONFIG.sheetsEndpoint || !entry) return;
-  const params = new URLSearchParams({
-    data_hora: new Date(entry.at || Date.now()).toISOString(),
-    resposta_roleta: entry.resposta_usuario || entry.resposta_roleta || entry.slice || '',
-  });
-  // Usa uma imagem para disparar o GET com as credenciais do navegador.
-  const url = `${CONFIG.sheetsEndpoint}?${params.toString()}&t=${Date.now()}`;
-  const beacon = new Image();
-  beacon.onload = beacon.onerror = () => { beacon.src = ''; };
-  beacon.src = url;
-}
 if (TEST && db.total.souvenirs === null && db.total.prizes === null) { db.total = { ...TEST_STOCK }; save(); }
+
+function currentPlayer() { try { return JSON.parse(localStorage.getItem('sp-current-player')) || {}; } catch { return {}; } }
+
+/* Planilha do Google (Apps Script). Duas mãos:
+   - ENVIO: cada registro entra numa fila guardada no navegador e só sai dela quando o Apps Script confirma a gravação
+     (resposta JSONP); se falhar, tenta de novo sozinho.
+   - ESTOQUE: a planilha é a fonte da verdade dos prêmios (brinde top). A equipe preenche "brinde_entregue" lá; o jogo consulta
+     a contagem em segundo plano e, se não houver conexão ou a resposta estiver velha, usa a contagem local.
+   No modo teste nada é enviado nem consultado. Sem dados pessoais: só horário, situação, pergunta, resposta e resultado. */
+const SHEET = (() => {
+  const KEY = 'sp-roleta-fila', TIMEOUT = 15000, MAX_QUEUE = 500, MAX_LEN = 300, FRESH_MS = 120000, POLL_MS = 30000;
+  let busy = false, retryT = 0, fails = 0, lastOk = 0, lastFail = 0;
+  let stock = null, stockAt = 0, stockBusy = false, stale = true;
+  const active = () => !TEST && !!CONFIG.sheetsEndpoint;
+  const read = () => { try { const q = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(q) ? q : []; } catch { return []; } };
+  const write = q => { try { localStorage.setItem(KEY, JSON.stringify(q.slice(-MAX_QUEUE))); } catch { /* armazenamento indisponível */ } };
+  const changed = () => {
+    if (typeof renderSync === 'function') renderSync();
+    if (typeof drawWheel === 'function' && configured() && (left('prizes') <= 0) !== wheelOut) drawWheel();   // a roda marca ENCERRADO sozinha
+  };
+  /* chama o Apps Script e entrega (ok, resposta); ok só é verdadeiro se o callback JSONP rodou com { ok: true } */
+  function call(params, done) {
+    const cb = '__spAck' + Math.random().toString(36).slice(2), s = document.createElement('script');
+    let over = false, timer = 0;
+    const end = (ok, r) => { if (over) return; over = true; clearTimeout(timer); delete window[cb]; s.remove(); done(ok, r); };
+    timer = setTimeout(() => end(false), TIMEOUT);
+    window[cb] = r => end(!!(r && r.ok), r);
+    s.onerror = s.onload = () => end(false);             // o callback roda antes do onload; sem ele, a resposta não era a esperada (ex.: tela de login)
+    s.src = `${CONFIG.sheetsEndpoint}?${new URLSearchParams({ ...params, callback: cb, t: Date.now() })}`;
+    document.head.appendChild(s);
+  }
+  function refreshStock() {
+    if (!active() || stockBusy) return;
+    stockBusy = true;
+    call({ acao: 'estoque' }, (ok, r) => {
+      stockBusy = false;
+      if (ok) { stock = r; stockAt = Date.now(); stale = false; }
+      changed();
+    });
+  }
+  function flush(force) {
+    if (!active() || busy) return;
+    const q = read();
+    if (!q.length) { if (stale) refreshStock(); changed(); return; }
+    if (force) { fails = 0; clearTimeout(retryT); }
+    busy = true; clearTimeout(retryT);
+    call(q[0], ok => {
+      busy = false;
+      if (ok) { lastOk = Date.now(); fails = 0; stale = true; write(read().filter(x => x.id !== q[0].id)); flush(); }   // a contagem da planilha mudou: consulta de novo
+      else { lastFail = Date.now(); fails++; retryT = setTimeout(flush, Math.min(60000, 5000 * 2 ** (fails - 1))); }
+      changed();
+    });
+    changed();
+  }
+  function push(ev) {
+    if (!active()) return;
+    const clean = {}; for (const k in ev) clean[k] = String(ev[k] ?? '').slice(0, MAX_LEN);
+    const q = read();
+    q.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), data_hora: new Date().toISOString(), ...clean });
+    write(q); flush();
+  }
+  /* Prêmios top já comprometidos segundo a planilha + os que ainda estão na fila de envio; null = sem contagem confiável (usa a local).
+     Não é confiável quando a resposta é velha, quando acabou de chegar uma gravação ainda não recontada ou quando há um "zerar" na fila. */
+  function topUsed() {
+    if (!active() || !stock || stale || Date.now() - stockAt > FRESH_MS) return null;
+    const q = read();
+    if (q.some(x => x.evento === 'zerar')) return null;
+    return (+stock.top_usados || 0) + q.filter(x => x.direito === 'top').length;
+  }
+  addEventListener('online', () => flush(true));
+  setInterval(refreshStock, POLL_MS);
+  setTimeout(flush, 1500);                                  // reenvia o que sobrou de uma sessão anterior e consulta o estoque
+  return { push, flush, topUsed, state: () => ({ on: active(), pending: read().length, fails, lastOk, lastFail, busy, stock: stock && !stale ? stock : null }) };
+})();
 const configured = () => db.total.souvenirs !== null && db.total.prizes !== null;
-const left = k => Math.max(0, (db.total[k] === null ? 0 : db.total[k]) - db.used[k]);
+/* Baixas de prêmios: com a planilha confiável, vale a contagem dela (mais o desafio em andamento); senão, a contagem local. */
+const usedOf = k => {
+  const sheet = k === 'prizes' ? SHEET.topUsed() : null;
+  return sheet === null ? db.used[k] : sheet + (ui.challenge ? 1 : 0);
+};
+const left = k => Math.max(0, (db.total[k] === null ? 0 : db.total[k]) - usedOf(k));
 function newCode() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   let code;
@@ -524,12 +587,12 @@ const challengesLastHour = () => db.log.filter(l => l.type === 'spin' && l.kind 
    ESTADO E RODA
    ============================================================ */
 let ui = { mode: 'attract', challenge: null, quiz: null };
-let rot = 0, idleRaf = 0, idleT = 0, forceGold = false, orgOk = false;
+let rot = 0, idleRaf = 0, idleT = 0, forceGold = false, orgOk = false, wheelOut = false;
 const R = 290;
 const pt = (deg, r) => { const a = deg * Math.PI / 180; return [(r * Math.sin(a)).toFixed(2), (-r * Math.cos(a)).toFixed(2)]; };
 
 function drawWheel() {
-  const out = configured() && left('prizes') <= 0;
+  const out = wheelOut = configured() && left('prizes') <= 0;
   $('slices').innerHTML = SLICES.map((s, i) => {
     const c = i * 30, [x1, y1] = pt(c - 15, R), [x2, y2] = pt(c + 15, R);
     const cls = s.gold ? (out ? 'sd' : 'sg') : (s.kind === 'p' ? 'sp' : 'ss');
@@ -608,12 +671,11 @@ function answerSceneQuiz() {
   const right = qz.opts[qz.sel].ok, s = qz.slice;
   const souv = right ? giveSouvenir() : '';
   const last = db.log[db.log.length - 1];
-  if (last && last.type === 'spin') {
-    last.quiz = right ? 'pass' : 'fail';
-    last.souvenir = souv;
-    syncSpinToSheet({ ...last, resposta_usuario: qz.opts[qz.sel].t });
-  }
+  if (last && last.type === 'spin') { last.quiz = right ? 'pass' : 'fail'; last.souvenir = souv; }
   save(); drawWheel();
+  SHEET.push({ evento: 'quiz', fatia: s.label, tema: s.kind === 'p' ? 'privacidade' : 'segurança', pergunta: qz.q, resposta_roleta: qz.opts[qz.sel].t,
+    resposta_correta: qz.opts.find(o => o.ok).t, acertou: right ? 'sim' : 'não',
+    direito: souv === 'given' ? 'simples' : '', detalhe: right ? (souv === 'given' ? 'brinde a entregar' : 'brindes esgotados') : 'sem brinde' });
   const lesson = `<div class="lesson"><span>Para não repetir</span>${esc(s.scene.lesson)}</div>`;
   if (right) {
     const brinde = souv === 'given' ? ['lime', 'Retire seu brinde com a equipe'] : ['', 'Brindes esgotados'];
@@ -638,9 +700,12 @@ function answerSceneQuiz() {
 }
 /* Quiz abandonado (ninguém tocou): sem brinde e sem baixa de estoque. */
 function abandonQuiz() {
-  ui.quiz = null;
+  const qz = ui.quiz; ui.quiz = null;
   const last = db.log[db.log.length - 1];
-  if (last && last.type === 'spin' && !last.quiz) { last.quiz = 'abandon'; last.souvenir = ''; save(); }
+  if (last && last.type === 'spin' && !last.quiz) {
+    last.quiz = 'abandon'; last.souvenir = ''; save();
+    if (qz) SHEET.push({ evento: 'quiz_abandonado', fatia: qz.slice.label, tema: qz.slice.kind === 'p' ? 'privacidade' : 'segurança', pergunta: qz.q, detalhe: 'abandonado' });
+  }
 }
 
 /* ============================================================
@@ -721,6 +786,9 @@ function finishChallenge(res) {
   else souv = giveSouvenir();                      // consolo: quem não conquista o prêmio leva um brinde
   db.log.push({ at: Date.now(), type: 'challenge', format: ch ? ch.kind : '', score: res.score, result: won ? 'pass' : 'fail', souvenir: souv, returned: false });
   save(); drawWheel();
+  SHEET.push({ evento: 'protecao_total', fatia: 'PROTEÇÃO TOTAL', tema: 'proteção total', pergunta: ch ? `${ch.kind}: ${ch.title}` : '', resposta_roleta: `${res.score} de 3`,
+    acertou: res.score === 3 ? 'sim' : 'não', direito: won ? 'top' : souv === 'given' ? 'simples' : '',
+    detalhe: (won ? `prêmio gerado · código ${code}` : res.score === 3 ? 'prêmios esgotados' : 'reprovado') + (!won && souv === 'given' ? ' · brinde a entregar' : '') });
   const review = res.review ? `<div class="rv">${res.review.map(r => `<div class="${r.ok ? '' : 'no'}">${r.ok ? CHK : XIC} ${esc(r.t)}<small>${esc(r.why)}</small></div>`).join('')}</div>` : '';
   if (won) {
     openModal(`<div class="box panel" style="--c:var(--lime)">
@@ -731,7 +799,7 @@ function finishChallenge(res) {
       <button class="btn primary" id="done" type="button">Concluir</button>
       <div style="text-align:center"><button class="linkish" id="staff" type="button">Equipe: confirmar entrega</button></div></div>`);
     $('staff').onclick = () => askPin(() => {
-      const l = db.log.find(x => x.code === code); if (l) { l.delivered = true; save(); }
+      deliver(code);
       $('staff').innerHTML = 'Entrega registrada ' + CHK; $('staff').disabled = true;
     });
   } else {
@@ -752,6 +820,7 @@ function abandonChallenge() {
   if (CONFIG.prizeStockUsedOn === 'landing') db.used.prizes = Math.max(0, db.used.prizes - 1);
   db.log.push({ at: Date.now(), type: 'challenge', format: ch ? ch.kind : '', score: 0, result: 'abandon', souvenir: '', returned: true });
   save(); drawWheel();
+  SHEET.push({ evento: 'protecao_abandonada', fatia: 'PROTEÇÃO TOTAL', tema: 'proteção total', pergunta: ch ? `${ch.kind}: ${ch.title}` : '', detalhe: 'abandonado' });
 }
 
 /* ============================================================
@@ -872,15 +941,42 @@ function setTotal(what, n) {
   db.log.push({ at: Date.now(), type: 'adjust', what, from, to: db.total[what] });
   save(); drawWheel();
 }
+function deliver(code) {
+  const l = db.log.find(x => x.code === code);
+  if (!l || l.delivered) return;
+  l.delivered = true; save();
+  SHEET.push({ evento: 'premio_entregue', fatia: 'PROTEÇÃO TOTAL', tema: 'proteção total', detalhe: `código ${code}` });
+}
 function resetGame() {      // zera as baixas, o total informado e o histórico
   db = freshDb(); save(); drawWheel();
+  SHEET.push({ evento: 'zerar', detalhe: 'jogo zerado: a contagem de estoque recomeça daqui' });   // a planilha só conta as linhas depois desta marca
+}
+/* Situação do envio à planilha do Google (atualiza sozinha enquanto a página da organização está aberta) */
+function renderSync() {
+  const box = $('sync'); if (!box || $('org').hidden) return;
+  const st = SHEET.state(), when = t => t ? hhmm(t) : '';
+  let tag = ['', 'Planilha do Google'], msg = '', btn = false;
+  if (TEST) msg = 'Modo teste: nada é enviado à planilha.';
+  else if (!st.on) msg = 'Envio desativado: não há endereço da planilha configurado.';
+  else if (!st.pending) msg = 'Tudo enviado.' + (st.lastOk ? ` Último envio às ${when(st.lastOk)}.` : '');
+  else if (st.fails) {
+    tag = ['bad', 'Planilha do Google · envio pendente'];
+    msg = `${st.pending} ${st.pending === 1 ? 'registro aguarda' : 'registros aguardam'} envio. A última tentativa falhou às ${when(st.lastFail)}. Confira a internet e se o navegador está logado na conta TOTVS; o envio é tentado de novo sozinho. O histórico completo continua disponível em "Exportar histórico".`;
+    btn = true;
+  } else msg = `Enviando… ${st.pending} ${st.pending === 1 ? 'registro' : 'registros'} na fila.`;
+  if (st.on && st.stock) {
+    const k = st.stock;
+    msg += ` Contagem da planilha: ${k.top_entregues} prêmios top entregues e ${k.top_pendentes} aguardando entrega (${k.top_cancelados} cancelados); ${k.simples_entregues} brindes simples entregues.`;
+  } else if (st.on && !TEST) msg += ' A contagem de prêmios da planilha não está disponível agora; o jogo usa a contagem deste computador.';
+  box.innerHTML = `<div class="tag ${tag[0]}">${tag[1]}</div><p class="story" style="margin:12px 0${btn ? '' : ' 0'}">${esc(msg)}</p>${btn ? '<button class="btn secondary" id="syncNow" type="button">Reenviar agora</button>' : ''}`;
+  if (btn) $('syncNow').onclick = () => SHEET.flush(true);
 }
 function renderOrg() {
   const S = summary();
   const card = (k, label, extra) => `<section class="panel stockcard">
       <div class="tag">${label}</div><div class="bignum">${db.total[k] === null ? '—' : left(k)}</div>
       <p class="note">${db.total[k] === null ? 'total ainda não informado' : 'restantes'}${extra || ''}</p>
-      <div class="stats two"><div><b>${db.total[k] === null ? '—' : db.total[k]}</b><span>total informado</span></div><div><b>${db.used[k]}</b><span>baixas</span></div></div>
+      <div class="stats two"><div><b>${db.total[k] === null ? '—' : db.total[k]}</b><span>total informado</span></div><div><b>${usedOf(k)}</b><span>baixas</span></div></div>
       <div class="adjust"><button class="btn secondary" data-set="${k}" type="button">${db.total[k] === null ? 'Informar total' : 'Alterar total'}</button>
         ${db.total[k] === null ? '' : [-10, -1, 1, 10].map(d => `<button class="key" data-s="${k}" data-d="${d}" type="button">${d > 0 ? '+' : '−'}${Math.abs(d)}</button>`).join('')}</div></section>`;
   const tile = (n, label) => `<div><b>${n}</b><span>${label}</span></div>`;
@@ -892,27 +988,29 @@ function renderOrg() {
     </div>
     ${configured() ? '' : `<section class="panel" style="--c:var(--orange)"><div class="tag bad">Estoque não informado</div>
       <p class="story" style="margin:12px 0 0">Informe o total de brindes e de prêmios para liberar a roleta. O total informado vale até alguém da organização alterá-lo.</p></section>`}
-    <div class="org-grid">${card('souvenirs', 'Brindes')}${card('prizes', 'Prêmios', ' · o estoque de prêmios limita quantas vezes a roda cai em Proteção Total')}</div>
+    <div class="org-grid">${card('souvenirs', 'Brindes')}${card('prizes', 'Prêmios', ' · o estoque de prêmios limita quantas vezes a roda cai em Proteção Total' + (SHEET.topUsed() === null ? '' : ' · contado pela planilha'))}</div>
     <section class="panel"><div class="tag">Resumo</div>
       <div class="stats wide" style="margin-top:12px">${tile(S.spins, 'giros')}${tile(S.sec, 'segurança')}${tile(S.priv, 'privacidade')}${tile(S.chal, 'proteção total')}
         ${tile(S.quizPass, 'quiz: acertos')}${tile(S.quizFail, 'quiz: erros')}${tile(S.pass, 'desafio: aprovados')}${tile(S.fail, 'desafio: reprovados')}
         ${tile(S.abandon, 'abandonados')}${tile(S.souvDelivered, 'brindes entregues')}${tile(S.prizesDelivered, 'prêmios entregues')}${tile(S.prizesPending.length, 'prêmios pendentes')}</div></section>
     <section class="panel"><div class="tag">Prêmios pendentes de entrega</div>
       ${S.prizesPending.length ? `<table><thead><tr><th>Código</th><th>Hora</th><th></th></tr></thead><tbody>${S.prizesPending.map(p => `<tr><td>${esc(p.code)}</td><td>${hhmm(p.at)}</td><td><button class="key wide" data-dv="${esc(p.code)}" type="button">Entregue</button></td></tr>`).join('')}</tbody></table>` : '<p class="note" style="margin-top:12px">Nenhum prêmio pendente de entrega.</p>'}</section>
-    ${CONFIG.prizeStockUsedOn === 'landing' ? `<section class="panel"><div class="tag">Prêmios reservados e não conquistados</div>
+    ${CONFIG.prizeStockUsedOn === 'landing' && SHEET.topUsed() === null ? `<section class="panel"><div class="tag">Prêmios reservados e não conquistados</div>
       <p class="story" style="margin:12px 0">${S.toReturn} ${S.toReturn === 1 ? 'desafio foi reprovado' : 'desafios foram reprovados'}: o prêmio reservado nesses giros não foi entregue e pode voltar ao estoque (as baixas diminuem).</p>
       <button class="btn secondary" id="ret" type="button" ${S.toReturn ? '' : 'disabled'}>Devolver ${S.toReturn} ao estoque</button></section>` : ''}
+    <section class="panel" id="sync"></section>
     <section class="panel"><div class="tag">Últimos registros</div>
       ${recent ? `<div class="table-wrap"><table><thead><tr><th>Hora</th><th>Tipo</th><th>Detalhe</th><th>Resultado</th></tr></thead><tbody>${recent}</tbody></table></div>` : '<p class="note" style="margin-top:12px">Ainda não há giros.</p>'}</section>
     <div class="btns cols"><button class="btn secondary" id="csv" type="button">Exportar histórico</button><button class="btn danger" id="zero" type="button">Zerar o jogo</button></div>
   </div>`;
   $('back').onclick = () => { location.hash = ''; };
+  renderSync();
   document.querySelectorAll('#org [data-set]').forEach(b => b.onclick = () => {
     const k = b.dataset.set, nome = k === 'souvenirs' ? 'Total de brindes' : 'Total de prêmios';
     askNumber(nome, db.total[k], n => { setTotal(k, n); renderOrg(); });
   });
   document.querySelectorAll('#org [data-s]').forEach(b => b.onclick = () => { setTotal(b.dataset.s, db.total[b.dataset.s] + +b.dataset.d); renderOrg(); });
-  document.querySelectorAll('#org [data-dv]').forEach(b => b.onclick = () => { const l = db.log.find(x => x.code === b.dataset.dv); if (l) { l.delivered = true; save(); } renderOrg(); });
+  document.querySelectorAll('#org [data-dv]').forEach(b => b.onclick = () => { deliver(b.dataset.dv); renderOrg(); });
   if ($('ret')) $('ret').onclick = () => {
     const n = S.toReturn; db.log.filter(c => c.type === 'challenge' && c.result === 'fail' && !c.returned).forEach(c => { c.returned = true; });
     db.used.prizes = Math.max(0, db.used.prizes - n); save(); drawWheel(); renderOrg();
