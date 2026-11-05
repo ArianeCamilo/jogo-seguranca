@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#002233">
+<meta name="robots" content="noindex,nofollow">
+<title>Shield Spin · Chamada · Cyber Shield Game</title>
+<style>
+  @font-face { font-family: 'TOTVS'; font-weight: 300; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Light.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 400; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Regular.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 600; font-style: normal; font-display: swap; src: url('fonts/TOTVS-SemiBold.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Bold.ttf') format('truetype'); }
+  @font-face { font-family: 'TOTVS'; font-weight: 800; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraBold.ttf') format('truetype'); }
+  :root {
+    --bg0: #002233; --bg1: #002233;
+    /* paleta do jogo: apenas estas cores, mais branco */
+    --purple: #A44DFF; --pink: #FF009E; --cyan: #00DBFF; --mint: #00FFD4; --lime: #D9FF65; --orange: #FF8900;
+    --line: rgba(164,77,255,.45); --text: #FFFFFF; --muted: rgba(255,255,255,.72);
+    --grad: linear-gradient(90deg, #A44DFF, #FF009E);   /* único gradiente do jogo */
+    --label: 'TOTVS', Verdana, sans-serif;
+    --sans: Verdana, sans-serif;
+    --display: 'TOTVS', Verdana, sans-serif;
+    --u: min(1vw, 1.65vh);   /* unidade fluida: tudo se ajusta ao tamanho da tela, de notebook a TV 4K */
+  }
+  @media (max-aspect-ratio: 7/5) { :root { --u: min(1.7vw, 1.1vh); } }   /* telas "em pé": layout empilhado */
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden; color: var(--text); font: calc(var(--u) * 1.5)/1.45 var(--sans);
+    user-select: none; -webkit-user-select: none;
+    /* mesmo fundo do quiz e da roleta */
+    background:
+      radial-gradient(calc(var(--u) * 61) calc(var(--u) * 31) at 50% -12%, rgba(164,77,255,.42), transparent 62%),
+      radial-gradient(calc(var(--u) * 39) calc(var(--u) * 27) at 100% 100%, rgba(255,0,158,.16), transparent 60%),
+      radial-gradient(calc(var(--u) * 33) calc(var(--u) * 23) at 0% 70%, rgba(164,77,255,.12), transparent 60%),
+      linear-gradient(180deg, var(--bg0), var(--bg1));
+    background-attachment: fixed;
+  }
+  h1, p { margin: 0; }
+  h1 { font-family: var(--display); line-height: 1.05; letter-spacing: -.02em; }
+  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(164,77,255,.35)); }
+  .tag { font: 700 calc(var(--u) * 1.3)/1 var(--label); letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); }
+  .tag::before { content: "// "; color: var(--muted); }
+
+  /* ---------- cenário ---------- */
+  .scene { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .floor { position: absolute; left: -50%; right: -50%; bottom: -2%; height: 46vh;
+    background: repeating-linear-gradient(90deg, rgba(164,77,255,.35) 0 1px, transparent 1px 64px), repeating-linear-gradient(0deg, rgba(164,77,255,.35) 0 1px, transparent 1px 48px);
+    transform: perspective(420px) rotateX(62deg); transform-origin: 50% 100%;
+    -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 92%); mask-image: linear-gradient(to top, #000 10%, transparent 92%);
+    opacity: .42; animation: run 2.4s linear infinite; }
+  @keyframes run { to { background-position: 0 0, 0 48px; } }
+  .rain { position: absolute; top: 0; font: calc(var(--u) * .62)/1.7 var(--sans); color: var(--purple); opacity: .06; white-space: pre; animation: fall linear infinite; }
+  @keyframes fall { from { transform: translateY(-60%); } to { transform: translateY(100vh); } }
+  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,34,51,.45)); }
+  @keyframes blink { 50% { opacity: .25; } }
+
+  /* ---------- palco ---------- */
+  #stage { position: relative; z-index: 1; height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: center; grid-template-rows: minmax(0, 1fr); gap: calc(var(--u) * 3);
+    padding: calc(var(--u) * 3) calc(var(--u) * 4); }
+  .wheelbox { display: grid; place-items: center; min-height: 0; min-width: 0; }
+  .wheelwrap { position: relative; width: min(100%, calc(100vh - var(--u) * 8), calc(100dvh - var(--u) * 8)); aspect-ratio: 1; filter: drop-shadow(0 0 40px rgba(164,77,255,.25)); }
+  .wheelwrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .pointer { position: absolute; top: 0; left: 50%; width: 8%; aspect-ratio: 1; transform: translate(-50%, 2%); background: var(--lime);
+    clip-path: polygon(0 0, 100% 0, 50% 100%); filter: drop-shadow(0 0 10px var(--lime)); z-index: 2; }
+  #rot { transform-origin: 0 0; will-change: transform; }
+  .ss { fill: rgba(0,219,255,.24); } .sp { fill: rgba(217,255,101,.2); } .sg { fill: url(#gGold); }
+  .ls { font: 700 21px var(--display); fill: #FFFFFF; letter-spacing: .01em; }
+  .lg { font: 800 20px var(--display); fill: #FFFFFF; letter-spacing: .05em; }
+  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 1) calc(var(--u) * 2.4); margin-top: calc(var(--u) * 1.8); font: 700 calc(var(--u) * 1.35) var(--label); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: calc(var(--u) * .8); }
+  .sw { display: inline-block; width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); border: 1px solid rgba(164,77,255,.6); border-radius: 3px; }
+  .sw.ss { background: rgba(0,219,255,.24); } .sw.sp { background: rgba(217,255,101,.2); } .sw.sg { background: linear-gradient(180deg, #A44DFF, #FF009E); border-color: #FFFFFF; }
+
+  /* ---------- chamada ---------- */
+  .side { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--u) * 2.2); }
+  .side h1 { font-size: calc(var(--u) * 5.2); font-weight: 800; text-transform: uppercase; }
+  .call { font: 800 calc(var(--u) * 2.5)/1.2 var(--display); letter-spacing: -.01em; }
+  .lead { font-size: calc(var(--u) * 1.65); line-height: 1.4; color: var(--text); }
+  .lead b { color: var(--lime); font-weight: 700; }
+
+  .panel { --c: var(--purple); --s: calc(var(--u) * 1.6); --t: 3px; position: relative; display: grid; gap: calc(var(--u) * 2); padding: calc(var(--u) * 2.2) calc(var(--u) * 2.8); border: 1px solid var(--line); border-radius: 4px;
+    background:
+      linear-gradient(var(--c), var(--c)) top left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top left / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top right / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom left / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom right / var(--t) var(--s) no-repeat,
+      rgba(0,34,51,.92);
+    box-shadow: 0 0 40px rgba(164,77,255,.18); }
+  .info { display: grid; gap: calc(var(--u) * .7); }
+  .info + .info { padding-top: calc(var(--u) * 2); border-top: 1px solid var(--line); }
+  .live { display: inline-flex; align-items: center; gap: calc(var(--u) * .9); color: var(--pink); }
+  .live::after { content: ""; width: calc(var(--u) * 1.1); height: calc(var(--u) * 1.1); border-radius: 50%; background: var(--pink); box-shadow: 0 0 12px var(--pink); animation: blink 1.4s ease-in-out infinite; }
+  .when { font: 800 calc(var(--u) * 5)/1 var(--display); letter-spacing: -.02em; }
+  .where { font: 800 calc(var(--u) * 3.3)/1.1 var(--display); letter-spacing: -.01em; }
+
+  /* telas "em pé": roda em cima, chamada embaixo */
+  @media (max-aspect-ratio: 7/5) {
+    #stage { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: center; justify-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3); }
+    .wheelbox { width: 100%; }
+    .wheelwrap { width: min(100%, 40vh, 40dvh); }
+    .side { width: 100%; }
+    .side h1 { font-size: calc(var(--u) * 5.6); }
+    .when { font-size: calc(var(--u) * 5.4); } .where { font-size: calc(var(--u) * 3.6); } .call { font-size: calc(var(--u) * 2.8); }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="scene" aria-hidden="true"><div class="floor"></div><div id="rain"></div><div class="vignette"></div></div>
+<main id="stage">
+  <section class="wheelbox" aria-label="Roleta">
+    <div class="wheelwrap">
+      <div class="pointer" aria-hidden="true"></div>
+      <svg viewBox="-310 -310 620 620" role="img" aria-label="Shield Spin, roleta com 12 fatias: 5 de segurança, 5 de privacidade e 2 de Proteção Total">
+        <defs>
+          <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A44DFF"/><stop offset="1" stop-color="#FF009E"/></linearGradient>
+          <linearGradient id="gRim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A44DFF"/><stop offset="1" stop-color="#FF009E"/></linearGradient>
+        </defs>
+        <circle r="304" fill="none" stroke="url(#gRim)" stroke-width="8"/>
+        <g id="rot"><g id="slices"></g></g>
+        <circle r="52" fill="#002233" stroke="url(#gRim)" stroke-width="5"/>
+        <path d="M0 -26 L22 -18 V3 C22 17 12 25 0 31 C-12 25 -22 17 -22 3 V-18 Z" fill="rgba(164,77,255,.18)" stroke="url(#gRim)" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="0" cy="-3" r="5" fill="#D9FF65"/>
+      </svg>
+    </div>
+  </section>
+  <section class="side">
+    <div>
+      <div class="tag">Cyber Shield Game</div>
+      <h1><span class="grad">Shield Spin</span></h1>
+      <div class="legend" aria-hidden="true"><span><i class="sw ss"></i>Segurança</span><span><i class="sw sp"></i>Privacidade</span><span><i class="sw sg"></i>Proteção Total</span></div>
+    </div>
+    <p class="call">Aceita o desafio de proteger a TOTVS?</p>
+    <p class="lead">Gire a roda, enfrente uma situação de segurança ou de privacidade e <b>acerte o quiz para levar um brinde</b>. Caiu em Proteção Total? Passe no desafio e leve um prêmio!</p>
+    <div class="panel">
+      <div class="info"><div class="tag live">Acontecendo hoje</div><div class="when"><span class="grad">11h às 15h</span></div></div>
+      <div class="info"><div class="tag">Onde</div><div class="where">Corredor do 1º andar</div></div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* Mesma roda do jogo (roleta.html), só para exibir: gira sozinha, sem toque e sem registro de dados. */
+const $ = id => document.getElementById(id);
+const SLICES = [   // mesma ordem da roleta: segurança e privacidade alternadas, com 2 fatias de Proteção Total
+  { gold: true, label: 'PROTEÇÃO TOTAL' }, { kind: 's', label: 'Caiu no phishing' }, { kind: 'p', label: 'Dados na IA' }, { kind: 's', label: 'Senha vazada' },
+  { kind: 'p', label: 'Destino errado' }, { kind: 's', label: 'Ransomware' }, { gold: true, label: 'PROTEÇÃO TOTAL' }, { kind: 'p', label: 'Selfie reveladora' },
+  { kind: 's', label: 'Wi-Fi falso' }, { kind: 'p', label: 'Dados demais' }, { kind: 's', label: 'Pendrive-isca' }, { kind: 'p', label: 'Base aberta' },
+];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const R = 290;
+const pt = (deg, r) => { const a = deg * Math.PI / 180; return [(r * Math.sin(a)).toFixed(2), (-r * Math.cos(a)).toFixed(2)]; };
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+$('slices').innerHTML = SLICES.map((s, i) => {
+  const c = i * 30, [x1, y1] = pt(c - 15, R), [x2, y2] = pt(c + 15, R);
+  const cls = s.gold ? 'sg' : (s.kind === 'p' ? 'sp' : 'ss');
+  return `<g><path class="${cls}" d="M0 0 L${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2} Z" stroke="rgba(164,77,255,.55)" stroke-width="2"/>
+    <text class="${s.gold ? 'lg' : 'ls'}" transform="rotate(${c - 90}) translate(${R - 20},0)" text-anchor="end" dominant-baseline="central">${esc(s.label)}</text></g>`;
+}).join('');
+
+/* Gira devagar o tempo todo e, de tempos em tempos, dá um giro completo que desacelera como no jogo. */
+let rot = 0, raf = 0;
+const setRot = (deg, ms) => {
+  const g = $('rot');
+  g.style.transition = ms ? `transform ${ms}ms cubic-bezier(.12,.6,.1,1)` : 'none';
+  g.style.transform = `rotate(${deg}deg)`;
+};
+function drift() {
+  cancelAnimationFrame(raf);
+  const step = () => { rot += .06; setRot(rot, 0); raf = requestAnimationFrame(step); };
+  raf = requestAnimationFrame(step);
+}
+function spin() {
+  cancelAnimationFrame(raf);
+  const ms = 6000, target = Math.ceil(rot / 360) * 360 + 360 * (5 + Math.floor(Math.random() * 2)) - Math.floor(Math.random() * 12) * 30 + (Math.random() - .5) * 18;
+  setRot(rot, 0); void $('rot').getBoundingClientRect();
+  setRot(target, ms);
+  setTimeout(() => { rot = target % 360; setRot(rot, 0); drift(); setTimeout(spin, 7000); }, ms + 300);
+}
+if (!reduceMotion) { drift(); setTimeout(spin, 2500); }
+
+/* fundo: colunas de código caindo, como no quiz */
+(function initRain() {
+  const snippets = [
+    "if (link.suspicious) report();", "const mfa = true;", "hash(password, salt);", "while (alive) { scan(); }",
+    "lgpd.consent(user);", "firewall.allow(trusted);", "token.rotate();", "if (!verified) deny();",
+    "encrypt(data, key);", "audit.log(event);", "return 'threat_blocked';", "session.expire(15);",
+    "patch(vuln.cve);", "const zeroTrust = 1;", "phishing.detect(mail);", "vpn.connect();",
+  ];
+  const rain = $('rain');
+  for (let c = 0; c < 6; c++) {
+    const col = document.createElement('div');
+    col.className = 'rain';
+    col.style.left = (c * 17 + Math.random() * 6) + '%';
+    col.style.animationDuration = (45 + Math.random() * 40) + 's';
+    col.style.animationDelay = (-Math.random() * 60) + 's';
+    col.textContent = shuffle(snippets).concat(shuffle(snippets)).join('\n');
+    rain.appendChild(col);
+  }
+})();
+
+/* o ponteiro do mouse aparece ao mexer e some depois de 3 segundos parado (tela de exibição) */
+(function cursorAuto() {
+  let t = 0;
+  const hide = () => { document.body.style.cursor = 'none'; };
+  const show = () => { document.body.style.cursor = ''; clearTimeout(t); t = setTimeout(hide, 3000); };
+  addEventListener('mousemove', show); show();
+})();</script>
+</body>
+</html>
