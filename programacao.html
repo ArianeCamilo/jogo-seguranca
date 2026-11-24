@@ -74,22 +74,42 @@
   .day.is-today { border-color: var(--limao); }
   @keyframes blink { 50% { opacity: .45; } }
 
+  /* ---------- animações leves ---------- */
+  /* brilho que percorre o contorno de cada cartão, na cor da atividade (cada um num ritmo, para não andarem juntos) */
+  @property --a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  .day::after { content: ""; position: absolute; inset: -1px; border-radius: 4px; padding: max(2px, calc(var(--u) * .14)); pointer-events: none;
+    background: conic-gradient(from var(--a), transparent 0 70%, var(--c) 86%, #FFFFFF 88%, var(--c) 90%, transparent 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+    opacity: .9; animation: orbit 7s linear infinite; }
+  .day.garra::after { animation-duration: 8s; animation-delay: -3s; }
+  .day.palestra::after { animation-duration: 6s; animation-delay: -1.5s; }
+  @keyframes orbit { to { --a: 360deg; } }
+  /* entrada: quando a tela aparece na chamada, o título e os cartões entram um depois do outro */
+  .side > div, .day, .qrside > * { animation: rise .8s cubic-bezier(.2,.7,.2,1) both; }
+  .day:nth-child(1) { animation-delay: .25s; } .day:nth-child(2) { animation-delay: .4s; } .day:nth-child(3) { animation-delay: .55s; }
+  .qrside > :nth-child(2) { animation-delay: .2s; } .qrside > :nth-child(3) { animation-delay: .35s; } .qrside > :nth-child(4) { animation-delay: .45s; } .qrside > :nth-child(5) { animation-delay: .55s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(calc(var(--u) * 1.5)); } }
+  @keyframes linkpulse { 50% { box-shadow: 0 0 calc(var(--u) * 1.6) rgba(0,219,255,.55); } }
+
   /* ---------- QR code: o destaque da tela; fundo branco (necessário para a leitura) dentro de cantoneiras neon ---------- */
   .qrside { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 1.5); text-align: center; }
   .qrhead { font: 800 calc(var(--u) * 3)/1.1 var(--fonte); letter-spacing: -.01em; }
   .qrhead span { color: var(--azul); }
-  .qrframe { --k: var(--azul); --s: calc(var(--u) * 4.5); --t: calc(var(--u) * .55); position: relative; padding: calc(var(--u) * 2);
-    width: min(100%, calc(100vh - var(--u) * 32), calc(100dvh - var(--u) * 32)); aspect-ratio: 1;
+  .qrframe { position: relative; padding: calc(var(--u) * 2);
+    width: min(100%, calc(100vh - var(--u) * 32), calc(100dvh - var(--u) * 32)); aspect-ratio: 1; }
+  /* cantoneiras numa camada própria: elas "respiram" (abrem e fecham de leve) e o QR code fica parado, para não atrapalhar a leitura */
+  .qrframe::before { --k: var(--azul); --s: calc(var(--u) * 4.5); --t: calc(var(--u) * .55); content: ""; position: absolute; inset: 0; pointer-events: none;
     background:
       linear-gradient(var(--k), var(--k)) top left / var(--s) var(--t) no-repeat, linear-gradient(var(--k), var(--k)) top left / var(--t) var(--s) no-repeat,
       linear-gradient(var(--k), var(--k)) top right / var(--s) var(--t) no-repeat, linear-gradient(var(--k), var(--k)) top right / var(--t) var(--s) no-repeat,
       linear-gradient(var(--k), var(--k)) bottom left / var(--s) var(--t) no-repeat, linear-gradient(var(--k), var(--k)) bottom left / var(--t) var(--s) no-repeat,
       linear-gradient(var(--k), var(--k)) bottom right / var(--s) var(--t) no-repeat, linear-gradient(var(--k), var(--k)) bottom right / var(--t) var(--s) no-repeat;
-    filter: drop-shadow(0 0 22px rgba(0,219,255,.4)); animation: glow 2.6s ease-in-out infinite; }
-  @keyframes glow { 50% { filter: drop-shadow(0 0 8px rgba(0,219,255,.2)); } }
+    filter: drop-shadow(0 0 22px rgba(0,219,255,.45)); animation: breathe 3.2s ease-in-out infinite; }
+  @keyframes breathe { 50% { inset: calc(var(--u) * -.8); filter: drop-shadow(0 0 8px rgba(0,219,255,.2)); } }
+  .qrframe svg { box-shadow: 0 0 calc(var(--u) * 3) rgba(0,219,255,.25); }
   .qrframe svg { display: block; width: 100%; height: 100%; background: #FFFFFF; border-radius: 4px; }
   .scan { font: 700 calc(var(--u) * 1.8)/1.3 var(--fonte); }
-  .short { display: inline-block; margin-left: calc(var(--u) * .4); padding: calc(var(--u) * .2) calc(var(--u) * .9); border: 2px solid var(--azul); border-radius: 4px; color: var(--azul); font-weight: 800; font-size: calc(var(--u) * 2.3); letter-spacing: .02em; vertical-align: middle; }
+  .short { animation: linkpulse 2.4s ease-in-out infinite; display: inline-block; margin-left: calc(var(--u) * .4); padding: calc(var(--u) * .2) calc(var(--u) * .9); border: 2px solid var(--azul); border-radius: 4px; color: var(--azul); font-weight: 800; font-size: calc(var(--u) * 2.3); letter-spacing: .02em; vertical-align: middle; }
   .remind { display: inline-flex; align-items: center; gap: calc(var(--u) * 1); padding: calc(var(--u) * .8) calc(var(--u) * 1.6); border: 2px solid var(--limao); border-radius: 4px; background: rgba(217,255,101,.08); font: 700 calc(var(--u) * 1.65)/1.3 var(--fonte); text-align: left; }
   .remind svg { width: calc(var(--u) * 2.4); height: calc(var(--u) * 2.4); flex: none; color: var(--limao); }
   .remind b { color: var(--limao); }
