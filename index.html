@@ -505,11 +505,12 @@ function currentPlayer() { try { return JSON.parse(localStorage.getItem('sp-curr
 /* Planilha do Google (Apps Script). Duas mãos:
    - ENVIO: cada registro entra numa fila guardada no navegador e só sai dela quando o Apps Script confirma a gravação
      (resposta JSONP); se falhar, tenta de novo sozinho.
-   - ESTOQUE: a planilha é a fonte da verdade dos prêmios (brinde top). A equipe preenche "brinde_entregue" lá; o jogo consulta
-     a contagem em segundo plano e, se não houver conexão ou a resposta estiver velha, usa a contagem local.
+   - ESTOQUE: a planilha é a fonte da verdade. Os TOTAIS de brindes e prêmios ficam na aba "Estoque" (editável direto na planilha
+     ou pelo painel da organização de qualquer aparelho); as BAIXAS são contadas na aba "Respostas" (coluna "direito").
+     O jogo consulta em segundo plano e guarda a última resposta no navegador; sem conexão, usa a contagem local.
    No modo teste nada é enviado nem consultado. Sem dados pessoais: só horário, situação, pergunta, resposta e resultado. */
 const SHEET = (() => {
-  const KEY = 'sp-roleta-fila', TIMEOUT = 15000, MAX_QUEUE = 500, MAX_LEN = 300, FRESH_MS = 120000, POLL_MS = 30000;
+  const KEY = 'sp-roleta-fila', TIMEOUT = 15000, MAX_QUEUE = 500, MAX_LEN = 300, FRESH_MS = 120000, POLL_MS = 20000;
   let busy = false, retryT = 0, fails = 0, lastOk = 0, lastFail = 0, lastWhy = '';
   let stock = null, stockAt = 0, stockBusy = false, stale = true;
   const active = () => !TEST && !!CONFIG.sheetsEndpoint;
@@ -535,9 +536,31 @@ const SHEET = (() => {
     stockBusy = true;
     call({ acao: 'estoque' }, (ok, r) => {
       stockBusy = false;
-      if (ok) { stock = r; stockAt = Date.now(); stale = false; }
+      if (ok) { stock = r; stockAt = Date.now(); stale = false; applyTotals(r); }
       changed();
+      if (ok && typeof onSheetStock === 'function') onSheetStock();
     });
+  }
+  /* Copia os totais da planilha para este navegador (vale também sem conexão, até a próxima consulta).
+     Célula vazia na planilha não apaga o total local. Se este aparelho tem uma alteração de total ainda não enviada, ela prevalece. */
+  function applyTotals(r) {
+    const q = read(), num = v => (v === null || v === undefined || v === '' || !isFinite(+v)) ? null : Math.max(0, Math.round(+v));
+    const sheet = { souvenirs: num(r.total_brindes), prizes: num(r.total_premios) };
+    let diff = false;
+    for (const k of ['souvenirs', 'prizes']) {
+      if (sheet[k] === null || sheet[k] === db.total[k] || q.some(x => x.acao === 'total' && x.item === ITEM[k])) continue;
+      db.log.push({ at: Date.now(), type: 'adjust', what: k, from: db.total[k], to: sheet[k], via: 'planilha' });
+      db.total[k] = sheet[k]; diff = true;
+    }
+    if (diff) save();
+  }
+  const ITEM = { souvenirs: 'brindes', prizes: 'premios' };
+  /* grava o total na aba "Estoque"; só a alteração mais recente de cada item fica na fila */
+  function setTotal(k, n) {
+    if (!active()) return;
+    const q = read().filter(x => !(x.acao === 'total' && x.item === ITEM[k]));
+    q.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), acao: 'total', item: ITEM[k], valor: String(n) });
+    write(q); flush(true);
   }
   function flush(force) {
     if (!active() || busy) return;
@@ -562,23 +585,34 @@ const SHEET = (() => {
   }
   /* Prêmios top já comprometidos segundo a planilha + os que ainda estão na fila de envio; null = sem contagem confiável (usa a local).
      Não é confiável quando a resposta é velha, quando acabou de chegar uma gravação ainda não recontada ou quando há um "zerar" na fila. */
-  function topUsed() {
+  function used(k) {
     if (!active() || !stock || stale || Date.now() - stockAt > FRESH_MS) return null;
     const q = read();
     if (q.some(x => x.evento === 'zerar')) return null;
-    return (+stock.top_usados || 0) + q.filter(x => x.direito === 'top').length;
+    if (k === 'prizes') return (+stock.top_usados || 0) + q.filter(x => x.direito === 'top').length;
+    return (+stock.simples_entregues || 0) + (+stock.simples_pendentes || 0) + q.filter(x => x.direito === 'simples').length;
   }
+  const topUsed = () => used('prizes');
   addEventListener('online', () => flush(true));
   setInterval(refreshStock, POLL_MS);
   setTimeout(flush, 1500);                                  // reenvia o que sobrou de uma sessão anterior e consulta o estoque
-  return { push, flush, topUsed, state: () => ({ on: active(), pending: read().length, fails, lastOk, lastFail, lastWhy, busy, stock: stock && !stale ? stock : null }) };
+  return { push, flush, used, topUsed, setTotal, state: () => ({ on: active(), pending: read().length, fails, lastOk, lastFail, lastWhy, busy, stock: stock && !stale ? stock : null }) };
 })();
 const configured = () => db.total.souvenirs !== null && db.total.prizes !== null;
-/* Baixas de prêmios: com a planilha confiável, vale a contagem dela (mais o desafio em andamento); senão, a contagem local. */
+/* Baixas: com a planilha confiável, vale a contagem dela (mais o desafio em andamento); senão, a contagem local. */
 const usedOf = k => {
-  const sheet = k === 'prizes' ? SHEET.topUsed() : null;
-  return sheet === null ? db.used[k] : sheet + (ui.challenge ? 1 : 0);
+  const sheet = SHEET.used(k);
+  return sheet === null ? db.used[k] : sheet + (k === 'prizes' && ui.challenge ? 1 : 0);
 };
+/* Nova consulta à planilha: atualiza a tela que estiver aberta, só quando algum número mudou. */
+let lastStockSig = '';
+function onSheetStock() {
+  const sig = JSON.stringify([db.total, usedOf('souvenirs'), usedOf('prizes')]);
+  if (sig === lastStockSig) return;
+  lastStockSig = sig;
+  if (!$('org').hidden) { if (orgOk && $('pin').hidden) renderOrg(); }
+  else if (ui.mode === 'attract') showAttract();
+}
 const left = k => Math.max(0, (db.total[k] === null ? 0 : db.total[k]) - usedOf(k));
 function newCode() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -617,7 +651,7 @@ function drawWheel() {
 function idleSpin() {
   cancelAnimationFrame(idleRaf);
   if (reduceMotion) return;
-  const step = () => { if (ui.mode !== 'attract') return; rot += .06; setRot(rot, 0); idleRaf = requestAnimationFrame(step); };
+  const step = () => { if (ui.mode !== 'attract') return; rot += .3; setRot(rot, 0); idleRaf = requestAnimationFrame(step); };
   idleRaf = requestAnimationFrame(step);
 }
 
@@ -713,7 +747,6 @@ function answerSceneQuiz() {
       <h2><span class="grad">Não foi dessa vez!</span></h2>
       <p class="story">A resposta certa era: <b>${esc(correct)}</b></p>
       ${lesson}
-      <div class="chips"><span class="chip">Sem brinde dessa vez</span></div>
       <button class="btn primary" id="done" type="button">Concluir</button></div>`);
   }
   $('done').onclick = showAttract;
@@ -964,6 +997,7 @@ function setTotal(what, n) {
   db.total[what] = Math.max(0, Math.round(n));
   db.log.push({ at: Date.now(), type: 'adjust', what, from, to: db.total[what] });
   save(); drawWheel();
+  SHEET.setTotal(what, db.total[what]);      // grava na aba "Estoque": a TV e os outros aparelhos recebem na próxima consulta
 }
 function deliver(code) {
   const l = db.log.find(x => x.code === code);
@@ -996,8 +1030,9 @@ function renderSync() {
   } else msg = `Enviando… ${st.pending} ${st.pending === 1 ? 'registro' : 'registros'} na fila.`;
   if (st.on && st.stock) {
     const k = st.stock;
+    if (k.total_brindes != null || k.total_premios != null) msg += ` Totais na aba Estoque: ${k.total_brindes ?? '—'} brindes e ${k.total_premios ?? '—'} prêmios.`;
     msg += ` Contagem da planilha: ${k.top_entregues} prêmios top entregues e ${k.top_pendentes} aguardando entrega (${k.top_cancelados} cancelados); ${k.simples_entregues} brindes simples entregues.`;
-  } else if (st.on && !TEST) msg += ' A contagem de prêmios da planilha não está disponível agora; o jogo usa a contagem deste computador.';
+  } else if (st.on && !TEST) msg += ' A planilha não respondeu agora; o jogo usa os totais e a contagem guardados neste aparelho.';
   box.innerHTML = `<div class="tag ${tag[0]}">${tag[1]}</div><p class="story" style="margin:12px 0${btn ? '' : ' 0'}">${esc(msg)}</p>${btn ? '<button class="btn secondary" id="syncNow" type="button">Reenviar agora</button>' : ''}`;
   if (btn) $('syncNow').onclick = () => SHEET.flush(true);
 }
@@ -1047,7 +1082,7 @@ function renderOrg() {
   };
   $('csv').onclick = () => download('roleta-historico.csv', [['data', 'hora', 'tipo', 'detalhe', 'resultado', 'codigo_premio', 'entregue'],
     ...db.log.map(l => { const d = describe(l); return [new Date(l.at).toLocaleDateString('pt-BR'), new Date(l.at).toLocaleTimeString('pt-BR'), d[0], d[1], d[2], d[3], d[4]]; })]);
-  $('zero').onclick = () => { if (confirm('Zerar o jogo? Isso apaga as baixas de estoque, o total informado de brindes e de prêmios e o histórico. Exporte o histórico antes, se precisar.')) { resetGame(); renderOrg(); } };
+  $('zero').onclick = () => { if (confirm('Zerar o jogo? Isso apaga as baixas de estoque e o histórico deste aparelho e recomeça a contagem na planilha. Os totais continuam os da aba Estoque. Exporte o histórico antes, se precisar.')) { resetGame(); renderOrg(); } };
 }
 /* rotas: vazio = roleta; #organizacao = página da organização (pede o PIN) */
 function route() {

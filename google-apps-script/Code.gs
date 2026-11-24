@@ -1,6 +1,7 @@
 const SHEET_ID = '1Xm_EC4PS4I_kRQ2ucuVxBR-BDL31xj-Q16DJJZ7EBKk';
 const TAB_NAME = 'Respostas';
 const TARGET_GID = 1308743066;
+const STOCK_TAB = 'Estoque';   // aba com os TOTAIS: coluna A = item (brindes / premios), coluna B = total. Criada sozinha se não existir.
 
 // As colunas A e B continuam as mesmas de antes (data_hora, resposta_roleta); as demais são novas.
 // O jogo preenche "direito" (simples ou top) e "resposta_correta". A equipe preenche só "brinde_entregue".
@@ -26,6 +27,7 @@ function doPost(e) {
 function doGet(e) {
   const p = (e && e.parameter) || {};
   if (p.acao === 'estoque') return reply_(estoque_(), p.callback);
+  if (p.acao === 'total') return reply_(setTotal_(p), p.callback);
   if (p.resposta_roleta || p.evento) return reply_(save_(p), p.callback);
   return reply_({ ok: true, service: 'roleta' }, p.callback);
 }
@@ -97,7 +99,9 @@ function format_(sheet) {
 // Conta só as linhas depois da última marca "zerar". Um prêmio top vale como usado assim que o jogo o gera;
 // vira "entregue" quando a equipe preenche brinde_entregue, e volta ao estoque se a equipe digitar CANCELADO.
 function estoque_() {
-  const out = { ok: true, top_usados: 0, top_entregues: 0, top_pendentes: 0, top_cancelados: 0, simples_entregues: 0, simples_pendentes: 0 };
+  const totals = readTotals_();
+  const out = { ok: true, total_brindes: totals.brindes, total_premios: totals.premios,
+    top_usados: 0, top_entregues: 0, top_pendentes: 0, top_cancelados: 0, simples_entregues: 0, simples_pendentes: 0 };
   const sheet = getSheet_();
   const last = sheet.getLastRow();
   if (last < 2) return out;
@@ -117,6 +121,58 @@ function estoque_() {
     }
   }
   return out;
+}
+
+// Aba "Estoque": a equipe pode editar a coluna B direto na planilha; o painel da organização do jogo também grava aqui.
+function stockSheet_() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sh = ss.getSheetByName(STOCK_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(STOCK_TAB);
+    sh.getRange(1, 1, 3, 2).setValues([['item', 'total'], ['brindes', ''], ['premios', '']]);
+    sh.getRange(1, 2).setNote('Total de cada item (número inteiro). O jogo consulta esta aba a cada 20 segundos. ' +
+      'Restante = total - baixas contadas na aba Respostas (coluna "direito", depois da última linha "zerar").');
+  }
+  return sh;
+}
+
+function readTotals_() {
+  const out = { brindes: null, premios: null };
+  const sh = stockSheet_();
+  const last = sh.getLastRow();
+  if (last < 2) return out;
+  sh.getRange(2, 1, last - 1, 2).getValues().forEach(function (r) {
+    const k = norm_(r[0]);
+    if (k in out && out[k] === null) out[k] = int_(r[1]);
+  });
+  return out;
+}
+
+function setTotal_(p) {
+  const item = norm_(p.item), n = int_(p.valor);
+  // valor inválido é descartado (ok: true) para não travar a fila de envio do jogo
+  if ((item !== 'brindes' && item !== 'premios') || n === null) return { ok: true, saved: false, error: 'valor inválido' };
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(20000); } catch (err) { return { ok: false, error: 'ocupado' }; }
+  try {
+    const sh = stockSheet_();
+    const last = sh.getLastRow();
+    const names = last >= 2 ? sh.getRange(2, 1, last - 1, 1).getValues().map(function (r) { return norm_(r[0]); }) : [];
+    const i = names.indexOf(item);
+    if (i >= 0) sh.getRange(i + 2, 2).setValue(n);
+    else sh.appendRow([item, n]);
+    return { ok: true, saved: true };
+  } catch (err) {
+    return { ok: false, error: 'falha ao gravar' };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function int_(value) {
+  if (value === '' || value == null) return null;
+  const n = Number(String(value).replace(',', '.'));
+  return isFinite(n) && n >= 0 ? Math.round(n) : null;
 }
 
 function norm_(value) {
