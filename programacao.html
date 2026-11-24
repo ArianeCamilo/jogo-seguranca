@@ -44,11 +44,13 @@
 
 
   /* ---------- palco: programação à esquerda, QR code em destaque à direita (pensado para TV de 70": leitura a vários metros) ---------- */
-  #stage { position: relative; z-index: 1; height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; gap: calc(var(--u) * 5);
+  #stage { position: relative; z-index: 1; height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; gap: calc(var(--u) * 4);
     padding: calc(var(--u) * 2) calc(var(--u) * 5) calc(var(--u) * 7.5); }
   .side { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--u) * 1.6); }
-  .eyebrow { display: block; margin-bottom: calc(var(--u) * .8); letter-spacing: .1em; white-space: nowrap; }
-  h1 { font-size: calc(var(--u) * 3.8); }
+  /* título da semana em destaque (grande); "Programação" vira a etiqueta pequena logo abaixo */
+  h1 { font-size: calc(var(--u) * 3); line-height: 1.08; }
+  h1 span { white-space: nowrap; }
+  .sub { display: block; margin-top: calc(var(--u) * 1); font-size: calc(var(--u) * 1.6); }
 
   /* um cartão por dia: data à esquerda, atividade à direita; a cor da barra identifica a atividade */
   .days { display: grid; gap: calc(var(--u) * 1.1); margin: 0; padding: 0; list-style: none; }
@@ -73,11 +75,11 @@
   @keyframes blink { 50% { opacity: .45; } }
 
   /* ---------- QR code: o destaque da tela; fundo branco (necessário para a leitura) dentro de cantoneiras neon ---------- */
-  .qrside { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 2); text-align: center; }
+  .qrside { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 1.5); text-align: center; }
   .qrhead { font: 800 calc(var(--u) * 3)/1.1 var(--fonte); letter-spacing: -.01em; }
   .qrhead span { color: var(--azul); }
   .qrframe { --k: var(--azul); --s: calc(var(--u) * 4.5); --t: calc(var(--u) * .55); position: relative; padding: calc(var(--u) * 2);
-    width: min(100%, calc(100vh - var(--u) * 24), calc(100dvh - var(--u) * 24)); aspect-ratio: 1;
+    width: min(100%, calc(100vh - var(--u) * 32), calc(100dvh - var(--u) * 32)); aspect-ratio: 1;
     background:
       linear-gradient(var(--k), var(--k)) top left / var(--s) var(--t) no-repeat, linear-gradient(var(--k), var(--k)) top left / var(--t) var(--s) no-repeat,
       linear-gradient(var(--k), var(--k)) top right / var(--s) var(--t) no-repeat, linear-gradient(var(--k), var(--k)) top right / var(--t) var(--s) no-repeat,
@@ -87,7 +89,11 @@
   @keyframes glow { 50% { filter: drop-shadow(0 0 8px rgba(0,219,255,.2)); } }
   .qrframe svg { display: block; width: 100%; height: 100%; background: #FFFFFF; border-radius: 4px; }
   .scan { font: 700 calc(var(--u) * 1.8)/1.3 var(--fonte); }
-  .scan small { display: block; margin-top: calc(var(--u) * .6); font: 400 calc(var(--u) * 1.5)/1.4 var(--fonte); color: var(--muted); }
+  .short { display: inline-block; margin-left: calc(var(--u) * .4); padding: calc(var(--u) * .2) calc(var(--u) * .9); border: 2px solid var(--azul); border-radius: 4px; color: var(--azul); font-weight: 800; font-size: calc(var(--u) * 2.3); letter-spacing: .02em; vertical-align: middle; }
+  .remind { display: inline-flex; align-items: center; gap: calc(var(--u) * 1); padding: calc(var(--u) * .8) calc(var(--u) * 1.6); border: 2px solid var(--limao); border-radius: 4px; background: rgba(217,255,101,.08); font: 700 calc(var(--u) * 1.65)/1.3 var(--fonte); text-align: left; }
+  .remind svg { width: calc(var(--u) * 2.4); height: calc(var(--u) * 2.4); flex: none; color: var(--limao); }
+  .remind b { color: var(--limao); }
+  .note { font: 400 calc(var(--u) * 1.4)/1.4 var(--fonte); color: var(--muted); }
   .hl { color: #002233; background: var(--limao); padding: 0 calc(var(--u) * .5); border-radius: 3px; font-weight: 700; }
 
   /* assinatura oficial TOTVS, branca, centralizada no fim da tela, sem efeitos */
@@ -97,8 +103,10 @@
   @media (max-aspect-ratio: 7/5) {
     #stage { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3) calc(var(--u) * 3) calc(var(--u) * 9); }
     .qrside { order: -1; }
-    .qrframe { width: min(70%, 32vh, 32dvh); }
-    h1 { font-size: calc(var(--u) * 4); }
+    .qrframe { width: min(70%, 27vh, 27dvh); }
+    .qrside { gap: calc(var(--u) * 1.2); }
+    h1 { font-size: calc(var(--u) * 3); }
+    h1 span { white-space: normal; }
   }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
@@ -108,8 +116,8 @@
 <main id="stage">
   <section class="side">
     <div>
-      <div class="tag eyebrow">Semana da Segurança da Informação e Privacidade 2026</div>
-      <h1>Programação</h1>
+      <h1><span>Semana da Segurança da</span> <span>Informação e Privacidade 2026</span></h1>
+      <div class="tag sub">Programação</div>
     </div>
     <ol class="days">
       <li class="day roleta" data-date="2026-11-24">
@@ -132,7 +140,6 @@
         <div class="date"><span class="wd">Quinta</span><span class="dm">26/11</span></div>
         <div class="act">
           <div class="name">Palestra Online<span class="today">HOJE</span><small>A arte da defesa digital</small></div>
-          <p class="desc">Protegendo sua identidade, seu dinheiro e sua vida no mundo digital.</p>
           <div class="meta"><span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>15h</span><span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M2 20h20"/></svg>Online</span><span class="go">Inscrição pelo QR code →</span></div>
         </div>
       </li>
@@ -141,11 +148,13 @@
   <section class="qrside" aria-label="Inscrição na palestra">
     <p class="qrhead">Inscreva-se na <span>palestra</span></p>
     <div class="qrframe">
-      <!-- QR code de https://totvs.zoom.us/webinar/register/WN_27Q4CcP2TXSgx3ojY5zHhQ#/registration (37×37 módulos + margem de 4) -->
+      <!-- link curto equivalente: https://is.gd/g2h9fm · QR code de https://totvs.zoom.us/webinar/register/WN_27Q4CcP2TXSgx3ojY5zHhQ#/registration (37×37 módulos + margem de 4) -->
       <svg viewBox="-4 -4 45 45" role="img" aria-label="QR code para a inscrição na palestra" shape-rendering="crispEdges"><path fill="#002233" d="M0 0h7v1h-7zM9 0h1v1h-1zM11 0h4v1h-4zM16 0h6v1h-6zM23 0h1v1h-1zM25 0h4v1h-4zM30 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM10 1h2v1h-2zM13 1h1v1h-1zM16 1h1v1h-1zM18 1h1v1h-1zM20 1h1v1h-1zM24 1h4v1h-4zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h1v1h-1zM11 2h1v1h-1zM14 2h1v1h-1zM16 2h1v1h-1zM21 2h1v1h-1zM23 2h2v1h-2zM26 2h1v1h-1zM30 2h1v1h-1zM32 2h3v1h-3zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h4v1h-4zM13 3h1v1h-1zM16 3h2v1h-2zM19 3h1v1h-1zM22 3h1v1h-1zM24 3h3v1h-3zM30 3h1v1h-1zM32 3h3v1h-3zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM10 4h1v1h-1zM12 4h3v1h-3zM17 4h1v1h-1zM19 4h3v1h-3zM23 4h1v1h-1zM25 4h1v1h-1zM28 4h1v1h-1zM30 4h1v1h-1zM32 4h3v1h-3zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h2v1h-2zM11 5h2v1h-2zM14 5h4v1h-4zM20 5h3v1h-3zM27 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h7v1h-7zM8 7h2v1h-2zM11 7h4v1h-4zM19 7h4v1h-4zM26 7h1v1h-1zM0 8h1v1h-1zM2 8h5v1h-5zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h2v1h-2zM22 8h1v1h-1zM25 8h1v1h-1zM30 8h5v1h-5zM0 9h1v1h-1zM4 9h2v1h-2zM8 9h2v1h-2zM13 9h1v1h-1zM15 9h1v1h-1zM18 9h3v1h-3zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h4v1h-4zM33 9h1v1h-1zM35 9h1v1h-1zM1 10h1v1h-1zM3 10h1v1h-1zM6 10h4v1h-4zM14 10h5v1h-5zM21 10h1v1h-1zM25 10h6v1h-6zM35 10h2v1h-2zM0 11h3v1h-3zM4 11h2v1h-2zM9 11h2v1h-2zM14 11h2v1h-2zM20 11h4v1h-4zM26 11h1v1h-1zM28 11h1v1h-1zM30 11h2v1h-2zM33 11h1v1h-1zM36 11h1v1h-1zM0 12h1v1h-1zM4 12h1v1h-1zM6 12h4v1h-4zM11 12h2v1h-2zM15 12h3v1h-3zM22 12h5v1h-5zM28 12h5v1h-5zM34 12h3v1h-3zM0 13h1v1h-1zM2 13h2v1h-2zM9 13h3v1h-3zM14 13h4v1h-4zM19 13h3v1h-3zM23 13h1v1h-1zM28 13h1v1h-1zM31 13h1v1h-1zM35 13h2v1h-2zM2 14h1v1h-1zM4 14h1v1h-1zM6 14h2v1h-2zM12 14h1v1h-1zM14 14h2v1h-2zM17 14h1v1h-1zM20 14h1v1h-1zM22 14h1v1h-1zM26 14h2v1h-2zM31 14h3v1h-3zM35 14h2v1h-2zM0 15h3v1h-3zM5 15h1v1h-1zM9 15h2v1h-2zM13 15h2v1h-2zM16 15h1v1h-1zM18 15h1v1h-1zM20 15h4v1h-4zM26 15h1v1h-1zM28 15h1v1h-1zM30 15h3v1h-3zM35 15h1v1h-1zM0 16h1v1h-1zM3 16h4v1h-4zM9 16h1v1h-1zM11 16h3v1h-3zM18 16h1v1h-1zM20 16h1v1h-1zM22 16h1v1h-1zM24 16h3v1h-3zM29 16h3v1h-3zM34 16h3v1h-3zM4 17h1v1h-1zM8 17h1v1h-1zM10 17h2v1h-2zM15 17h2v1h-2zM18 17h3v1h-3zM23 17h4v1h-4zM28 17h4v1h-4zM35 17h1v1h-1zM0 18h4v1h-4zM6 18h1v1h-1zM8 18h1v1h-1zM20 18h1v1h-1zM22 18h1v1h-1zM26 18h4v1h-4zM32 18h2v1h-2zM35 18h2v1h-2zM0 19h1v1h-1zM2 19h4v1h-4zM9 19h2v1h-2zM13 19h2v1h-2zM16 19h1v1h-1zM18 19h1v1h-1zM21 19h1v1h-1zM23 19h2v1h-2zM26 19h1v1h-1zM29 19h1v1h-1zM36 19h1v1h-1zM2 20h2v1h-2zM6 20h1v1h-1zM9 20h4v1h-4zM17 20h1v1h-1zM22 20h1v1h-1zM25 20h1v1h-1zM27 20h1v1h-1zM29 20h2v1h-2zM32 20h2v1h-2zM0 21h1v1h-1zM3 21h1v1h-1zM5 21h1v1h-1zM7 21h3v1h-3zM11 21h3v1h-3zM15 21h6v1h-6zM23 21h1v1h-1zM25 21h1v1h-1zM29 21h1v1h-1zM33 21h1v1h-1zM35 21h1v1h-1zM0 22h3v1h-3zM6 22h2v1h-2zM12 22h1v1h-1zM15 22h3v1h-3zM21 22h1v1h-1zM25 22h1v1h-1zM27 22h2v1h-2zM30 22h4v1h-4zM36 22h1v1h-1zM2 23h2v1h-2zM5 23h1v1h-1zM7 23h2v1h-2zM10 23h2v1h-2zM13 23h2v1h-2zM16 23h4v1h-4zM21 23h3v1h-3zM29 23h1v1h-1zM31 23h2v1h-2zM0 24h2v1h-2zM4 24h1v1h-1zM6 24h11v1h-11zM22 24h3v1h-3zM26 24h7v1h-7zM34 24h1v1h-1zM36 24h1v1h-1zM0 25h1v1h-1zM5 25h1v1h-1zM7 25h4v1h-4zM12 25h1v1h-1zM14 25h2v1h-2zM18 25h8v1h-8zM33 25h1v1h-1zM0 26h1v1h-1zM4 26h4v1h-4zM9 26h1v1h-1zM13 26h4v1h-4zM21 26h1v1h-1zM25 26h3v1h-3zM29 26h2v1h-2zM34 26h3v1h-3zM0 27h1v1h-1zM3 27h2v1h-2zM8 27h2v1h-2zM11 27h2v1h-2zM14 27h2v1h-2zM19 27h1v1h-1zM21 27h2v1h-2zM24 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM0 28h1v1h-1zM5 28h2v1h-2zM9 28h1v1h-1zM11 28h1v1h-1zM13 28h5v1h-5zM20 28h1v1h-1zM22 28h1v1h-1zM24 28h3v1h-3zM28 28h8v1h-8zM8 29h2v1h-2zM15 29h2v1h-2zM19 29h8v1h-8zM28 29h1v1h-1zM32 29h2v1h-2zM35 29h1v1h-1zM0 30h7v1h-7zM9 30h1v1h-1zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h2v1h-2zM18 30h1v1h-1zM20 30h1v1h-1zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM34 30h1v1h-1zM36 30h1v1h-1zM0 31h1v1h-1zM6 31h1v1h-1zM8 31h4v1h-4zM13 31h2v1h-2zM16 31h1v1h-1zM19 31h6v1h-6zM28 31h1v1h-1zM32 31h2v1h-2zM35 31h1v1h-1zM0 32h1v1h-1zM2 32h3v1h-3zM6 32h1v1h-1zM8 32h1v1h-1zM11 32h1v1h-1zM18 32h3v1h-3zM22 32h1v1h-1zM25 32h8v1h-8zM34 32h2v1h-2zM0 33h1v1h-1zM2 33h3v1h-3zM6 33h1v1h-1zM8 33h1v1h-1zM11 33h1v1h-1zM13 33h1v1h-1zM15 33h2v1h-2zM19 33h4v1h-4zM27 33h4v1h-4zM32 33h2v1h-2zM36 33h1v1h-1zM0 34h1v1h-1zM2 34h3v1h-3zM6 34h1v1h-1zM8 34h2v1h-2zM12 34h1v1h-1zM14 34h1v1h-1zM17 34h2v1h-2zM24 34h1v1h-1zM26 34h1v1h-1zM29 34h1v1h-1zM34 34h3v1h-3zM0 35h1v1h-1zM6 35h1v1h-1zM11 35h2v1h-2zM16 35h1v1h-1zM18 35h1v1h-1zM20 35h2v1h-2zM24 35h1v1h-1zM26 35h1v1h-1zM28 35h3v1h-3zM32 35h1v1h-1zM36 35h1v1h-1zM0 36h7v1h-7zM8 36h4v1h-4zM14 36h1v1h-1zM17 36h2v1h-2zM23 36h1v1h-1zM25 36h2v1h-2zM29 36h1v1h-1zM32 36h1v1h-1zM35 36h2v1h-2z"/></svg>
     </div>
-    <p class="scan">Aponte a câmera do celular e use seu e-mail corporativo da TOTVS
-      <small>É rápido e simples! E, para participar da <span class="hl">roleta interativa</span>, é necessário se inscrever.</small></p>
+    <p class="scan">Aponte a câmera ou acesse <span class="short">is.gd/g2h9fm</span></p>
+    <p class="remind"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/></svg>
+      <span>Cadastre-se com seu <b>e-mail corporativo da TOTVS</b></span></p>
+    <p class="note">É rápido e simples! E, para participar da <span class="hl">roleta interativa</span>, é necessário se inscrever.</p>
   </section>
 </main>
 <svg class="logo" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 302 92" role="img" aria-label="TOTVS">
