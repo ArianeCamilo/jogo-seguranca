@@ -30,6 +30,7 @@
   @media (max-width: 760px) { :root { --u: min(1.7vw, 1.1vh); } }   /* só telas realmente pequenas (celular): layout empilhado. TV e notebook ficam sempre no layout horizontal */
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
+  html { background: #002233; }   /* fundo chapado em azul escuro TOTVS, sem efeitos */
   body {
     margin: 0; overflow: hidden; color: var(--text); font: calc(var(--u) * 1.5)/1.45 var(--sans);
     user-select: none; -webkit-user-select: none; touch-action: manipulation;
@@ -49,14 +50,13 @@
   /* ---------- cenário ---------- */
   .scene { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
   .floor { position: absolute; left: -50%; right: -50%; bottom: -2%; height: 46vh;
-    background: repeating-linear-gradient(90deg, rgba(164,77,255,.35) 0 1px, transparent 1px 64px), repeating-linear-gradient(0deg, rgba(164,77,255,.35) 0 1px, transparent 1px 48px);
-    transform: perspective(420px) rotateX(62deg); transform-origin: 50% 100%;
+    background: repeating-linear-gradient(90deg, rgba(164,77,255,.35) 0 max(1px, calc(var(--u) * .08)), transparent max(1px, calc(var(--u) * .08)) calc(var(--u) * 3.6)), repeating-linear-gradient(0deg, rgba(164,77,255,.35) 0 max(1px, calc(var(--u) * .08)), transparent max(1px, calc(var(--u) * .08)) calc(var(--u) * 2.7));
+    transform: perspective(calc(var(--u) * 23.6)) rotateX(62deg); transform-origin: 50% 100%;
     -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 92%); mask-image: linear-gradient(to top, #000 10%, transparent 92%);
     opacity: .42; animation: run 2.4s linear infinite; }
-  @keyframes run { to { background-position: 0 0, 0 48px; } }
+  @keyframes run { to { background-position: 0 0, 0 calc(var(--u) * 2.7); } }
   .rain { position: absolute; top: 0; font: calc(var(--u) * .62)/1.7 var(--sans); color: var(--purple); opacity: .06; white-space: pre; animation: fall linear infinite; }
   @keyframes fall { from { transform: translateY(-60%); } to { transform: translateY(100vh); } }
-  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,34,51,.45)); }
   @keyframes blink { 50% { opacity: .25; } }
 
   /* ---------- palco ---------- */
@@ -221,7 +221,7 @@
 </style>
 </head>
 <body>
-<div class="scene" aria-hidden="true"><div class="floor"></div><div id="rain"></div><div class="vignette"></div></div>
+<div class="scene" aria-hidden="true"><div class="floor"></div><div id="rain"></div></div>
 <div id="testbar" hidden></div>
 <main id="stage">
   <section class="wheelbox" aria-label="Roleta">
@@ -332,47 +332,47 @@ const SLICES = [   // kind: 's' = segurança, 'p' = privacidade (5 de cada, alte
 /* Proteção Total: 3 itens por desafio, 3 formatos, com temas de segurança e de privacidade.
    Passar = acertar os 3. */
 const SPOT = [
-  { title: 'Caça ao golpe', intro: 'Você recebeu este e-mail. Toque nos 3 sinais de golpe.', items: [
+  { title: 'Caça ao golpe', intro: 'Você recebeu este e-mail. Clique nos 3 sinais de golpe.', items: [
     { t: 'De: rh@totvs-beneficios.com', bad: true, why: 'Domínio parecido com o oficial, mas não é o da empresa.' },
     { t: 'Assunto: URGENTE: atualize sua senha em 1 hora', bad: true, why: 'Urgência e ameaça são marcas de phishing.' },
     { t: 'Link: http://totvs-senha.top/login', bad: true, why: 'O link leva a um endereço que não é da empresa.' },
     { t: 'Saudação: "Olá, tudo bem?"' }, { t: 'Enviado numa terça-feira, às 10h' },
     { t: 'Assinatura: "Equipe de Pessoas"' }, { t: 'Texto em português correto' } ] },
-  { title: 'Caça ao golpe', intro: 'Você recebeu este SMS. Toque nos 3 sinais de golpe.', items: [
+  { title: 'Caça ao golpe', intro: 'Você recebeu este SMS. Clique nos 3 sinais de golpe.', items: [
     { t: 'Remetente: número desconhecido', bad: true, why: 'Empresas de verdade se identificam, não usam números aleatórios.' },
     { t: 'Cobrança surpresa de R$ 4,90 para liberar a encomenda', bad: true, why: 'Valor baixo para você baixar a guarda e entregar o cartão.' },
     { t: 'Link encurtado: bit.ly/x9Qa2', bad: true, why: 'Link encurtado esconde para onde você vai.' },
     { t: 'Texto em português correto' }, { t: 'Enviado às 14h' }, { t: 'Mensagem curta e objetiva' } ] },
-  { title: 'Mesa com erros', intro: 'Observe esta mesa de trabalho. Toque nos 3 erros de segurança.', items: [
+  { title: 'Mesa com erros', intro: 'Observe esta mesa de trabalho. Clique nos 3 erros de segurança.', items: [
     { t: 'Post-it com a senha colado no monitor', bad: true, why: 'Senha à vista é senha exposta.' },
     { t: 'Computador destravado e ninguém na mesa', bad: true, why: 'Quem passa pode usar suas contas. Bloqueie a tela (Win + L).' },
     { t: 'Pendrive desconhecido plugado no notebook', bad: true, why: 'Dispositivo desconhecido pode instalar malware.' },
     { t: 'Crachá guardado no bolso' }, { t: 'Gaveta trancada com documentos' },
     { t: 'Notebook preso por cabo de segurança' }, { t: 'Garrafa de água ao lado do teclado' } ] },
-  { title: 'Home office com erros', intro: 'Observe este trabalho remoto. Toque nos 3 erros.', items: [
+  { title: 'Home office com erros', intro: 'Observe este trabalho remoto. Clique nos 3 erros.', items: [
     { t: 'Reunião com cliente no Wi-Fi aberto do café, sem VPN', bad: true, why: 'Rede pública pode ser monitorada. Use a VPN.' },
     { t: 'Tela inteira compartilhada, com e-mails abertos', bad: true, why: 'Compartilhe só a janela necessária, para não expor dados.' },
     { t: 'Planilha de clientes enviada ao e-mail pessoal', bad: true, why: 'Dados de clientes só circulam em canais aprovados.' },
     { t: 'VPN da empresa ativa em casa' }, { t: 'Notebook bloqueado ao sair da mesa' },
     { t: 'Atualizações do sistema em dia' }, { t: 'Autenticação em dois fatores ativada' } ] },
-  { title: 'Dados expostos', intro: 'Observe este escritório. Toque nos 3 erros de privacidade.', items: [
+  { title: 'Dados expostos', intro: 'Observe este escritório. Clique nos 3 erros de privacidade.', items: [
     { t: 'Planilha com o CPF dos clientes numa pasta aberta a todos', bad: true, why: 'Dado pessoal só para quem precisa dele para trabalhar.' },
     { t: 'Base completa de clientes enviada a outra área que só precisa do e-mail', bad: true, why: 'Compartilhe só o necessário e limite o fluxo de dados entre áreas.' },
     { t: 'Foto de tela com dados de clientes enviada num grupo pessoal', bad: true, why: 'Dados de clientes só circulam em canais aprovados.' },
     { t: 'Relatório só com números agregados, sem nomes' }, { t: 'Documentos pessoais em armário trancado' },
     { t: 'Acesso ao sistema limitado por perfil' }, { t: 'Planilha protegida, em ambiente aprovado pela empresa' } ] },
-  { title: 'Cadastro cheio demais', intro: 'Este formulário é só para receber uma newsletter por e-mail. Toque nos 3 campos que NÃO precisam ser coletados.', items: [
+  { title: 'Cadastro cheio demais', intro: 'Este formulário é só para receber uma newsletter por e-mail. Clique nos 3 campos que NÃO precisam ser coletados.', items: [
     { t: 'CPF', bad: true, why: 'Não é necessário para receber uma newsletter.' },
     { t: 'Data de nascimento completa', bad: true, why: 'Não é necessária para esta finalidade.' },
     { t: 'Endereço residencial', bad: true, why: 'Colete só o necessário para a finalidade informada.' },
     { t: 'Nome' }, { t: 'E-mail corporativo' }, { t: 'Aceite do termo de participação' } ] },
 ];
 const ORDER = [
-  { title: 'Senha na ordem', intro: 'Toque nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['senha123', 'Maria1990', 'M@ria1990#', 'onibus-lua-pipoca-sino-92'], why: 'Quanto mais longa e imprevisível, mais forte. Frases com palavras soltas vencem os truques previsíveis.' },
-  { title: 'Senha na ordem', intro: 'Toque nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['abc12345', 'Futebol2023', 'F8tebol#2023', 'trem-janela-estrela-bolo-33-azul'], why: 'Trocar letras por números e símbolos ajuda pouco. O tamanho e o acaso é que fortalecem a senha.' },
-  { title: 'Senha na ordem', intro: 'Toque nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['admin', 'admin2024', 'Adm1n@2024!', 'peixe-lanterna-cobre-nuvem-58'], why: 'Palavras óbvias com data são as primeiras a serem testadas por um atacante.' },
-  { title: 'Dados em ordem', intro: 'Toque nos dados do MENOS sensível para o MAIS sensível.', pw: ['Cargo na empresa', 'Nome completo', 'CPF', 'Exame médico'], why: 'Dados de saúde, biometria e crenças são sensíveis na LGPD e pedem proteção reforçada.' },
-  { title: 'Dados em ordem', intro: 'Toque nos dados do MENOS sensível para o MAIS sensível.', pw: ['Cidade onde mora', 'Telefone pessoal', 'CPF', 'Impressão digital (biometria)'], why: 'Biometria é dado pessoal sensível: se vazar, não dá para trocar como uma senha.' },
+  { title: 'Senha na ordem', intro: 'Clique nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['senha123', 'Maria1990', 'M@ria1990#', 'onibus-lua-pipoca-sino-92'], why: 'Quanto mais longa e imprevisível, mais forte. Frases com palavras soltas vencem os truques previsíveis.' },
+  { title: 'Senha na ordem', intro: 'Clique nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['abc12345', 'Futebol2023', 'F8tebol#2023', 'trem-janela-estrela-bolo-33-azul'], why: 'Trocar letras por números e símbolos ajuda pouco. O tamanho e o acaso é que fortalecem a senha.' },
+  { title: 'Senha na ordem', intro: 'Clique nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['admin', 'admin2024', 'Adm1n@2024!', 'peixe-lanterna-cobre-nuvem-58'], why: 'Palavras óbvias com data são as primeiras a serem testadas por um atacante.' },
+  { title: 'Dados em ordem', intro: 'Clique nos dados do MENOS sensível para o MAIS sensível.', pw: ['Cargo na empresa', 'Nome completo', 'CPF', 'Exame médico'], why: 'Dados de saúde, biometria e crenças são sensíveis na LGPD e pedem proteção reforçada.' },
+  { title: 'Dados em ordem', intro: 'Clique nos dados do MENOS sensível para o MAIS sensível.', pw: ['Cidade onde mora', 'Telefone pessoal', 'CPF', 'Impressão digital (biometria)'], why: 'Biometria é dado pessoal sensível: se vazar, não dá para trocar como uma senha.' },
 ];
 /* Risco ou tudo certo? Cada partida sorteia 3 situações, sempre com ao menos uma de segurança e uma de privacidade. */
 const JUDGE = [
@@ -833,7 +833,7 @@ function showAttract() {
   } else {
     $('state').innerHTML = `
       <p class="lead">Gire a roda, enfrente uma situação de segurança ou de privacidade e responda ao quiz para levar um brinde.</p>
-      <ul class="steps"><li><b>1</b>Toque em Girar</li><li><b>2</b>Conheça a situação e responda ao quiz</li><li><b>3</b>Acertou? Leve um brinde</li></ul>
+      <ul class="steps"><li><b>1</b>Clique em Girar</li><li><b>2</b>Conheça a situação e responda ao quiz</li><li><b>3</b>Acertou? Leve um brinde</li></ul>
       <p class="note">&gt; Caiu na fatia PROTEÇÃO TOTAL? Passe no desafio e você ganha um prêmio!</p>
       <button class="btn primary pulse" id="go" type="button">Girar</button>`;
     $('go').onclick = startSpin;
@@ -1048,7 +1048,7 @@ function route() {
 }
 addEventListener('hashchange', route);
 let taps = [];
-$('hot').addEventListener('pointerdown', () => {            // 3 toques no canto inferior esquerdo abrem a organização
+$('hot').addEventListener('pointerdown', () => {            // 3 cliques no canto inferior esquerdo abrem a organização
   const now = Date.now(); taps = taps.filter(t => now - t < 1500); taps.push(now);
   if (taps.length >= 3) { taps = []; location.hash = 'organizacao'; }
 });
