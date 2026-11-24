@@ -69,13 +69,9 @@
   .meta svg { width: calc(var(--u) * 1.7); height: calc(var(--u) * 1.7); flex: none; color: var(--c); }
   .go { color: var(--azul); }
   /* "Hoje": marcado sozinho pela data do computador */
-  .today { display: none; margin-left: calc(var(--u) * .8); padding: calc(var(--u) * .25) calc(var(--u) * .7); border-radius: 3px; background: var(--c); color: #002233; font: 800 calc(var(--u) * 1.05)/1 var(--fonte); letter-spacing: .12em; vertical-align: middle; animation: blink 1.4s ease-in-out infinite; }
+  .today { display: none; margin-left: calc(var(--u) * .8); padding: calc(var(--u) * .25) calc(var(--u) * .7); border-radius: 3px; background: var(--limao); color: #002233; font: 800 calc(var(--u) * 1.05)/1 var(--fonte); letter-spacing: .12em; vertical-align: middle; animation: blink 1.4s ease-in-out infinite; }
   .day.is-today .today { display: inline-block; }
-  .day.garra .today { color: #FFFFFF; }   /* "HOJE" na cor da atividade: rosa na garra */
-  .day.is-today { border-color: var(--c); box-shadow: 0 0 40px color-mix(in srgb, var(--c) 22%, transparent); }
-  /* dia que já passou: cartão opaco e sem o brilho na borda */
-  .day.is-past { opacity: .38; filter: grayscale(.5); }
-  .day.is-past::after { display: none; }
+  .day.is-today { border-color: var(--limao); }
   @keyframes blink { 50% { opacity: .45; } }
 
   /* ---------- animações leves ---------- */
@@ -200,15 +196,9 @@
 <script>
 /* Tela só de exibição: fundo animado como no jogo, sem clique e sem registro de dados. */
 /* marca "HOJE" no dia da atividade, pela data do computador */
-/* HOJE fixo para a exibição (formato AAAA-MM-DD). Vazio ('') = usa a data do computador.
-   O dia marcado ganha o selo "HOJE" piscando na cor da atividade; os dias anteriores ficam opacos. */
-const HOJE = '2026-11-25';
 (function markToday() {
-  const d = new Date(), iso = HOJE || `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  document.querySelectorAll('.day').forEach(el => {
-    el.classList.toggle('is-today', el.dataset.date === iso);
-    el.classList.toggle('is-past', el.dataset.date < iso);
-  });
+  const d = new Date(), iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  document.querySelectorAll('.day').forEach(el => el.classList.toggle('is-today', el.dataset.date === iso));
 })();
 const $ = id => document.getElementById(id);
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
