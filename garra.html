@@ -14,122 +14,141 @@
   @font-face { font-family: 'TOTVS'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Bold.ttf') format('truetype'); }
   @font-face { font-family: 'TOTVS'; font-weight: 800; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraBold.ttf') format('truetype'); }
   :root {
-    /* paleta TOTVS, sempre em cor chapada (100% de opacidade) */
+    /* paleta TOTVS */
     --azul-escuro: #002233; --azul: #00DBFF; --roxo: #A44DFF; --rosa: #FF009E; --verde: #00FFD4; --limao: #D9FF65; --laranja: #FF8900; --branco: #FFFFFF;
-    --fonte: 'TOTVS', sans-serif;     /* a tipografia TOTVS vale para tudo: títulos, subtítulos e texto corrido */
-    --u: min(1vw, 1.65vh);            /* unidade fluida: tudo se ajusta ao tamanho da tela, de notebook a TV 4K */
+    --fonte: 'TOTVS', Verdana, sans-serif;     /* TOTVS em todo o texto; Verdana só se a TOTVS não carregar */
+    --u: min(1vw, 1.65vh);                      /* unidade fluida: tudo se ajusta ao tamanho da tela, de notebook a TV 4K */
   }
   @media (max-aspect-ratio: 7/5) { :root { --u: min(1.7vw, 1.1vh); } }   /* telas "em pé": layout empilhado */
   * { box-sizing: border-box; }
   html, body { height: 100%; }
-  body {
-    margin: 0; overflow: hidden; color: var(--branco); font: 400 calc(var(--u) * 1.55)/1.4 var(--fonte);
-    user-select: none; -webkit-user-select: none;
-    /* gradiente do manual (tipo 1): azul escuro + cor adicional (azul), nas pontas, com 100% de opacidade; só no fundo.
-       Aqui a cor adicional fica atrás da arte, o inverso da roleta, para diferenciar os dois dias. */
-    background: linear-gradient(45deg, var(--azul) 0%, var(--azul-escuro) 65%);
-    background-attachment: fixed;
-  }
+  html { background: #002233; }
+  body { margin: 0; overflow: hidden; color: var(--branco); font: 400 calc(var(--u) * 1.5)/1.45 var(--fonte); user-select: none; -webkit-user-select: none; background: #002233; }
   h1, p { margin: 0; }
-  h1 { font: 700 calc(var(--u) * 3.8)/1.05 var(--fonte); letter-spacing: -.02em; text-transform: uppercase; }
-  .hl { color: var(--rosa); }       /* cor de destaque em um trecho do título (uso pontual) */
+  h1 { font: 700 calc(var(--u) * 4)/1.05 var(--fonte); letter-spacing: -.02em; text-transform: uppercase; color: var(--rosa); }
+  .tag { font: 700 calc(var(--u) * 1.25)/1.3 var(--fonte); letter-spacing: .16em; text-transform: uppercase; color: var(--rosa); }
+
+  /* ---------- fundo: rede e código animados (o mesmo da roleta) ---------- */
+  .scene { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .floor { position: absolute; left: -50%; right: -50%; bottom: -2%; height: 46vh;
+    background: repeating-linear-gradient(90deg, rgba(164,77,255,.35) 0 max(1px, calc(var(--u) * .08)), transparent max(1px, calc(var(--u) * .08)) calc(var(--u) * 3.6)), repeating-linear-gradient(0deg, rgba(164,77,255,.35) 0 max(1px, calc(var(--u) * .08)), transparent max(1px, calc(var(--u) * .08)) calc(var(--u) * 2.7));
+    transform: perspective(calc(var(--u) * 23.6)) rotateX(62deg); transform-origin: 50% 100%;
+    -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 92%); mask-image: linear-gradient(to top, #000 10%, transparent 92%);
+    opacity: .42; animation: run 2.4s linear infinite; }
+  @keyframes run { to { background-position: 0 0, 0 calc(var(--u) * 2.7); } }
+  .rain { position: absolute; top: 0; font: calc(var(--u) * .62)/1.7 var(--fonte); color: var(--roxo); opacity: .06; white-space: pre; animation: fall linear infinite; }
+  @keyframes fall { from { transform: translateY(-60%); } to { transform: translateY(100vh); } }
 
   /* ---------- palco ---------- */
-  #stage { position: relative; height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; gap: calc(var(--u) * 3);
-    padding: calc(var(--u) * 3) calc(var(--u) * 4); }
+  #stage { position: relative; z-index: 1; height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; gap: calc(var(--u) * 3);
+    padding: calc(var(--u) * 3) calc(var(--u) * 4) calc(var(--u) * 9); }
   .artbox { display: grid; place-items: center; min-height: 0; min-width: 0; }
-  .art { position: relative; width: min(100%, calc(100vh - var(--u) * 8), calc(100dvh - var(--u) * 8)); aspect-ratio: 1; }
+  .art { width: min(100%, calc(100vh - var(--u) * 12)); aspect-ratio: 1; }
   .art svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .spin { transform-origin: 310px 330px; animation: turn 70s linear infinite; }
   @keyframes turn { to { transform: rotate(360deg); } }
   .flow { stroke-dasharray: 3 11; animation: flow .9s linear infinite; }
   @keyframes flow { to { stroke-dashoffset: -14; } }
 
-  /* ---------- chamada: um cartão de azul escuro chapado, onde todas as cores da paleta têm bom contraste ---------- */
-  .card { --c: var(--rosa); --s: calc(var(--u) * 1.8); --t: 4px; position: relative; min-width: 0; display: flex; flex-direction: column; gap: calc(var(--u) * 1); padding: calc(var(--u) * 2) calc(var(--u) * 3.4);
+  /* ---------- chamada ---------- */
+  .side { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--u) * 1.6); }
+  .call { font: 800 calc(var(--u) * 2.5)/1.2 var(--fonte); letter-spacing: -.01em; }
+  .lead { font-size: calc(var(--u) * 1.65); line-height: 1.4; }
+  .lead b { color: var(--azul); font-weight: 700; }
+  .how { display: grid; gap: calc(var(--u) * .9); }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(var(--u) * .8); font: 600 calc(var(--u) * 1.5) var(--fonte); }
+  .steps b { color: var(--verde); margin-right: .6em; }
+  .note { font: 400 calc(var(--u) * 1.4) var(--fonte); color: var(--verde); }
+
+  .panel { --c: var(--azul); --s: calc(var(--u) * 1.6); --t: 3px; position: relative; display: grid; gap: calc(var(--u) * 1.2); padding: calc(var(--u) * 1.9) calc(var(--u) * 2.8); border: 1px solid rgba(0,219,255,.45); border-radius: 4px;
     background:
       linear-gradient(var(--c), var(--c)) top left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top left / var(--t) var(--s) no-repeat,
       linear-gradient(var(--c), var(--c)) top right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top right / var(--t) var(--s) no-repeat,
       linear-gradient(var(--c), var(--c)) bottom left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom left / var(--t) var(--s) no-repeat,
       linear-gradient(var(--c), var(--c)) bottom right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom right / var(--t) var(--s) no-repeat,
-      var(--azul-escuro); }
-  .top { display: flex; align-items: flex-start; justify-content: space-between; gap: calc(var(--u) * 2); }
-  .tag { font: 700 calc(var(--u) * 1.2)/1.3 var(--fonte); letter-spacing: .16em; text-transform: uppercase; color: var(--rosa); }
-  .logo { flex: none; height: calc(var(--u) * 3.4); width: auto; display: block; }   /* assinatura oficial TOTVS, branca, sem efeitos */
-  .call { font: 700 calc(var(--u) * 2.3)/1.2 var(--fonte); letter-spacing: -.01em; }
-  .lead { font-size: calc(var(--u) * 1.55); line-height: 1.4; }
-  .lead b { color: var(--azul); font-weight: 700; }
-  .how { display: grid; gap: calc(var(--u) * .9); }
-  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(var(--u) * .8); font: 600 calc(var(--u) * 1.5) var(--fonte); }
-  .steps b { color: var(--limao); margin-right: .6em; }
-  .note { font: 400 calc(var(--u) * 1.4) var(--fonte); color: var(--verde); }
-  .when-block { display: grid; gap: calc(var(--u) * .6); padding-top: calc(var(--u) * 1.2); border-top: 3px solid var(--c); }
-  .when-block[hidden] { display: none; }
-  .when-block + .when-block { padding-top: calc(var(--u) * .9); border-top: 0; }
+      var(--azul-escuro);
+    box-shadow: 0 0 40px rgba(0,219,255,.07), inset 0 0 40px rgba(0,219,255,.04); }   /* mesmo efeito de borda da caixa da roleta, na cor da garra */
+  .info { display: grid; gap: calc(var(--u) * .6); }
+  .info[hidden] { display: none; }
+  .info + .info { padding-top: calc(var(--u) * 1.1); border-top: 2px solid var(--azul); }
   .live { display: inline-flex; align-items: center; gap: calc(var(--u) * .9); color: var(--limao); }
   .live::after { content: ""; width: calc(var(--u) * 1.1); height: calc(var(--u) * 1.1); border-radius: 50%; background: var(--limao); animation: blink 1.4s ease-in-out infinite; }
   @keyframes blink { 50% { opacity: .25; } }
-  .when { font: 800 calc(var(--u) * 4)/1 var(--fonte); letter-spacing: -.02em; }
-  .where { font: 700 calc(var(--u) * 2.8)/1.1 var(--fonte); letter-spacing: -.01em; }
+  .when { font: 800 calc(var(--u) * 4.4)/1 var(--fonte); letter-spacing: -.02em; color: var(--rosa); }
+  .where { font: 700 calc(var(--u) * 2.9)/1.1 var(--fonte); letter-spacing: -.01em; }
+
+  /* assinatura oficial TOTVS, branca, centralizada no fim da tela, sem efeitos */
+  .logo { position: fixed; left: 50%; bottom: calc(var(--u) * 2.4); transform: translateX(-50%); height: calc(var(--u) * 3.4); width: auto; z-index: 5; }
 
   /* telas "em pé": arte em cima, chamada embaixo */
   @media (max-aspect-ratio: 7/5) {
-    #stage { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: center; justify-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3); }
+    #stage { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: center; justify-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3) calc(var(--u) * 3) calc(var(--u) * 9); }
     .artbox { width: 100%; }
-    .art { width: min(100%, 34vh, 34dvh); }
-    .card { width: 100%; }
-    h1 { font-size: calc(var(--u) * 4.8); }
-    .when { font-size: calc(var(--u) * 4.8); } .where { font-size: calc(var(--u) * 3.4); } .call { font-size: calc(var(--u) * 2.6); }
+    .art { width: min(100%, 30vh, 30dvh); }
+    .side { width: 100%; }
+    h1 { font-size: calc(var(--u) * 4.6); }
+    .when { font-size: calc(var(--u) * 4.6); } .where { font-size: calc(var(--u) * 3.2); } .call { font-size: calc(var(--u) * 2.5); }
   }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
+<div class="scene" aria-hidden="true"><div class="floor"></div><div id="rain"></div></div>
 <main id="stage">
   <section class="artbox" aria-label="Garra pegando uma bola">
     <div class="art">
-      <svg viewBox="0 0 620 620" role="img" aria-label="Uma garra pega uma bola com um ponto de interrogação">
-        <!-- mira de fundo -->
-        <g class="spin" fill="none">
-          <circle cx="310" cy="330" r="268" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="2 16" stroke-linecap="round"/>
+      <svg viewBox="0 0 620 620" role="img" aria-label="Uma garra neon pega uma bola com um ponto de interrogação">
+        <defs>
+          <!-- brilho neon: halo das próprias cores da paleta -->
+          <filter id="neon" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g class="spin" fill="none"><circle cx="310" cy="330" r="268" stroke="#00DBFF" stroke-width="2" stroke-dasharray="2 16" stroke-linecap="round"/></g>
+        <circle cx="310" cy="330" r="212" fill="none" stroke="#00DBFF" stroke-width="1.5"/>
+        <path d="M310 40 V70 M310 590 V560 M20 330 H50 M600 330 H570" stroke="#00FFD4" stroke-width="3" stroke-linecap="round"/>
+        <ellipse id="shadow" cx="310" cy="548" rx="84" ry="10" fill="none" stroke="#00DBFF" stroke-width="2"/>
+        <line x1="150" y1="548" x2="470" y2="548" stroke="#00DBFF" stroke-width="2"/>
+        <circle id="ring" cx="310" cy="486" r="62" fill="none" stroke="#D9FF65" stroke-width="3" opacity="0"/>
+        <g id="ball" filter="url(#neon)">
+          <circle r="62" fill="#002233" stroke="#FF009E" stroke-width="4"/>
+          <g fill="none" stroke="#FF009E" stroke-width="2"><ellipse rx="62" ry="20"/><ellipse rx="62" ry="40"/><ellipse rx="28" ry="62"/><ellipse rx="48" ry="62"/></g>
+          <text y="19" text-anchor="middle" font-family="TOTVS, Verdana, sans-serif" font-weight="800" font-size="54" fill="#FFFFFF" stroke="none">?</text>
         </g>
-        <circle cx="310" cy="330" r="212" fill="none" stroke="#FFFFFF" stroke-width="2"/>
-        <path d="M310 40 V70 M310 590 V560 M20 330 H50 M600 330 H570" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-        <!-- chão -->
-        <ellipse id="shadow" cx="310" cy="548" rx="96" ry="10" fill="#002233"/>
-        <line x1="150" y1="548" x2="470" y2="548" stroke="#FFFFFF" stroke-width="3"/>
-        <!-- onda ao pegar -->
-        <circle id="ring" cx="310" cy="486" r="62" fill="none" stroke="#D9FF65" stroke-width="4" opacity="0"/>
-        <!-- bola -->
-        <g id="ball">
-          <circle r="62" fill="#FFFFFF" stroke="#FF009E" stroke-width="5"/>
-          <g fill="none" stroke="#002233" stroke-width="2">
-            <ellipse rx="62" ry="20"/><ellipse rx="28" ry="62"/>
-          </g>
-          <circle r="31" fill="#FFFFFF" stroke="none"/>
-          <text y="19" text-anchor="middle" font-family="TOTVS, sans-serif" font-weight="800" font-size="54" fill="#FF009E" stroke="none">?</text>
-        </g>
-        <!-- garra: contorno em azul escuro por baixo e traço branco por cima, para ler bem sobre qualquer ponto do fundo -->
-        <g id="claw" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <line id="cable0" x1="310" y1="-30" x2="310" y2="150" stroke="#002233" stroke-width="11"/>
-          <line id="cable" x1="310" y1="-30" x2="310" y2="150" stroke="#FFFFFF" stroke-width="5"/>
+        <g id="claw" filter="url(#neon)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <line id="cable" x1="310" y1="-30" x2="310" y2="150" stroke="#00DBFF" stroke-width="5"/>
           <line id="stream" class="flow" x1="310" y1="-30" x2="310" y2="150" stroke="#D9FF65" stroke-width="2.5"/>
           <g id="head">
-            <path id="pl0" stroke="#002233" stroke-width="14"/><path id="pr0" stroke="#002233" stroke-width="14"/>
-            <path id="pl" stroke="#FFFFFF" stroke-width="6"/><path id="pr" stroke="#FFFFFF" stroke-width="6"/>
-            <path d="M-28 -2 L-14 -22 H14 L28 -2 L14 18 H-14 Z" fill="#002233" stroke="#FFFFFF" stroke-width="4"/>
+            <path d="M-28 -2 L-14 -22 H14 L28 -2 L14 18 H-14 Z" fill="#002233" stroke="#00DBFF" stroke-width="4"/>
             <circle r="7" cy="-2" fill="#D9FF65" stroke="none"/>
-            <circle id="jl" r="7" fill="#002233" stroke="#D9FF65" stroke-width="3"/>
-            <circle id="jr" r="7" fill="#002233" stroke="#D9FF65" stroke-width="3"/>
+            <path id="pl" stroke="#00FFD4" stroke-width="6"/><path id="pr" stroke="#00FFD4" stroke-width="6"/>
+            <circle id="jl" r="6" fill="#002233" stroke="#D9FF65" stroke-width="3"/><circle id="jr" r="6" fill="#002233" stroke="#D9FF65" stroke-width="3"/>
           </g>
         </g>
       </svg>
     </div>
   </section>
-  <section class="card">
-    <div class="top">
-      <div class="tag">Semana de Segurança e Privacidade</div>
-      <svg class="logo" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 302 92" role="img" aria-label="TOTVS">
+  <section class="side">
+    <div class="tag">Semana de Segurança e Privacidade</div>
+    <h1>Garra do Phishing</h1>
+    <p class="call">Será que você escapa do phishing?</p>
+    <p class="lead">A clássica máquina de garra, mas <b>o prêmio não é um ursinho</b>. Dentro de cada bola há um bilhete: uma pergunta de segurança… ou um phishing.</p>
+    <div class="how">
+      <ol class="steps">
+        <li><b>1</b>Espere sua vez e pegue uma bola com a garra</li>
+        <li><b>2</b>Abra a bola e leia o bilhete</li>
+        <li><b>3</b>Respondeu certo? Leve um brinde</li>
+      </ol>
+      <p class="note">&gt; Pegou o phishing? Fica sem nada.</p>
+    </div>
+    <div class="panel">
+      <div class="info"><div class="tag live" style="color: var(--limao)">Quarta-feira - 25/11</div><div class="when">10h às 16h</div></div>
+      <div class="info" id="whereRow" hidden><div class="tag">Onde</div><div class="where" id="where"></div></div>
+    </div>
+  </section>
+</main>
+<svg class="logo" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 302 92" role="img" aria-label="TOTVS">
   <defs>
     <style>
       .st0 {
@@ -144,40 +163,24 @@
   <path class="st0" d="M226.6,64.6l-10.7-13.8c-.8-1-1-1.8-1-3v-21.9h7c1.6,0,2.5.9,2.5,2.5v17.5c0,1.2.3,2.1,1,3.1l7.1,8.8,6.8-8.8c.7-1,1-1.9,1-3.1v-17.5c0-1.6.9-2.5,2.5-2.5h7v21.9c0,1.2-.3,2.1-1,3.1l-10.5,13.7c-.8,1-1.7,1.5-3,1.5h-5.7c-1.3,0-2.2-.4-3-1.5"/>
   <path class="st0" d="M256.1,53.1h7.5c1.7,0,2,.6,2.5,2.2.7,2.4,2.7,3.6,6.9,3.6h2.2c4.3,0,6.5-1.3,6.5-4v-.9c0-1.6-1.4-2.7-4.2-3.2l-9.4-1.7c-6.7-1.2-11.3-4.4-11.3-10.3v-2.3c0-7.4,6.6-11.6,14.5-11.6h4.5c9.5,0,14.8,5,14.8,13h-7.6c-1.5,0-1.9-.4-2.2-1.6-.6-2.2-2.2-3.3-5.5-3.3h-2.6c-3,0-6,.8-6,3.6v.9c0,1.4,1.3,2.5,3.9,2.9l9.9,1.8c6.6,1.2,11.1,4.2,11.1,10.4v2.4c0,8-7.1,12-15.6,12h-4.1c-9.3,0-15.9-4.2-15.9-13.9"/>
 </svg>
-    </div>
-    <h1>Garra do <span class="hl">Phishing</span></h1>
-    <p class="call">Será que você escapa do phishing?</p>
-    <p class="lead">A clássica máquina de garra, mas <b>o prêmio não é um ursinho</b>. Dentro de cada bola há um bilhete: uma pergunta de segurança… ou um phishing.</p>
-    <div class="how">
-      <ol class="steps">
-        <li><b>1</b>Espere sua vez e pegue uma bola com a garra</li>
-        <li><b>2</b>Abra a bola e leia o bilhete</li>
-        <li><b>3</b>Respondeu certo? Leve um brinde</li>
-      </ol>
-      <p class="note">&gt; Pegou o phishing? Fica sem nada.</p>
-    </div>
-    <div class="when-block"><div class="tag live">Quarta-feira - 25/11</div><div class="when">10h às 16h</div></div>
-    <div class="when-block" id="whereRow" hidden><div class="tag">Onde</div><div class="where" id="where"></div></div>
-  </section>
-</main>
 
 <script>
-/* Só para exibir: uma garra pega uma bola, levanta e solta de volta; sem toque e sem registro de dados. */
+/* Só para exibir: uma garra pega uma bola, levanta e solta de volta; sem clique e sem registro de dados. */
 const LOCAL = 'Corredor do 1º andar';   // local da garra; vazio = a linha "Onde" não aparece
 if (LOCAL) { document.getElementById('where').textContent = LOCAL; document.getElementById('whereRow').hidden = false; }
 
 const $ = id => document.getElementById(id);
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const CX = 310, BALL_Y = 486, REST = 150, HOLD_Y = 230;     // eixo da garra, posição da bola no chão, cabeça em repouso e bola no ar
 const GRAB = BALL_Y - 74;                                    // altura da cabeça quando a garra fecha na bola
 function drawClaw(headY, g) {
-  for (const id of ['cable0', 'cable', 'stream']) $(id).setAttribute('y2', headY - 22);
+  $('cable').setAttribute('y2', headY - 22); $('stream').setAttribute('y2', headY - 22);
   $('head').setAttribute('transform', `translate(${CX} ${headY})`);
   const ex = 104 - 38 * g, tx = 98 - 44 * g;                 // cotovelo e ponta: abertos = 104 e 98; fechados = 66 e 54
-  const dl = `M-16 10 L${-ex} 54 L${-tx} 98`, dr = `M16 10 L${ex} 54 L${tx} 98`;
-  $('pl').setAttribute('d', dl); $('pl0').setAttribute('d', dl);
-  $('pr').setAttribute('d', dr); $('pr0').setAttribute('d', dr);
+  $('pl').setAttribute('d', `M-16 10 L${-ex} 54 L${-tx} 98`);
+  $('pr').setAttribute('d', `M16 10 L${ex} 54 L${tx} 98`);
   $('jl').setAttribute('cx', -ex); $('jl').setAttribute('cy', 54);
   $('jr').setAttribute('cx', ex); $('jr').setAttribute('cy', 54);
 }
@@ -201,7 +204,7 @@ function frame(now) {
   const ringK = t >= 2.8 && t < 3.8 ? (t - 2.8) : -1;                                   // onda ao fechar na bola
   $('ring').setAttribute('r', 62 + (ringK < 0 ? 0 : ringK * 70)); $('ring').setAttribute('opacity', ringK < 0 ? 0 : 1 - ringK);
   const lift = Math.max(0, BALL_Y - ballY) / (BALL_Y - HOLD_Y);                           // a sombra encolhe com a bola no ar
-  $('shadow').setAttribute('rx', 96 - 34 * lift);
+  $('shadow').setAttribute('rx', 84 - 30 * lift);
   if (!reduceMotion) raf = requestAnimationFrame(frame);
 }
 drawClaw(REST, 0); setBall(BALL_Y);
@@ -209,6 +212,26 @@ if (!reduceMotion) {
   raf = requestAnimationFrame(frame);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); } });   // retoma se a aba ficou escondida
 }
+
+/* fundo: colunas de código caindo, como na roleta */
+(function initRain() {
+  const snippets = [
+    "if (link.suspicious) report();", "const mfa = true;", "hash(password, salt);", "while (alive) { scan(); }",
+    "lgpd.consent(user);", "firewall.allow(trusted);", "token.rotate();", "if (!verified) deny();",
+    "encrypt(data, key);", "audit.log(event);", "return 'threat_blocked';", "session.expire(15);",
+    "patch(vuln.cve);", "const zeroTrust = 1;", "phishing.detect(mail);", "vpn.connect();",
+  ];
+  const rain = $('rain');
+  for (let c = 0; c < 6; c++) {
+    const col = document.createElement('div');
+    col.className = 'rain';
+    col.style.left = (c * 17 + Math.random() * 6) + '%';
+    col.style.animationDuration = (45 + Math.random() * 40) + 's';
+    col.style.animationDelay = (-Math.random() * 60) + 's';
+    col.textContent = shuffle(snippets).concat(shuffle(snippets)).join('\n');
+    rain.appendChild(col);
+  }
+})();
 
 /* o ponteiro do mouse aparece ao mexer e some depois de 3 segundos parado (tela de exibição) */
 (function cursorAuto() {

@@ -14,93 +14,120 @@
   @font-face { font-family: 'TOTVS'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Bold.ttf') format('truetype'); }
   @font-face { font-family: 'TOTVS'; font-weight: 800; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraBold.ttf') format('truetype'); }
   :root {
-    /* paleta TOTVS, sempre em cor chapada (100% de opacidade) */
+    /* paleta TOTVS */
     --azul-escuro: #002233; --azul: #00DBFF; --roxo: #A44DFF; --rosa: #FF009E; --verde: #00FFD4; --limao: #D9FF65; --laranja: #FF8900; --branco: #FFFFFF;
-    --fonte: 'TOTVS', sans-serif;     /* a tipografia TOTVS vale para tudo: títulos, subtítulos e texto corrido */
-    --u: min(1vw, 1.65vh);            /* unidade fluida: tudo se ajusta ao tamanho da tela, de notebook a TV 4K */
+    --muted: rgba(255,255,255,.72); --line: rgba(164,77,255,.45); --panel: rgba(0,34,51,.92);
+    --fonte: 'TOTVS', Verdana, sans-serif;     /* TOTVS em todo o texto; Verdana só se a TOTVS não carregar */
+    --u: min(1vw, 1.65vh);                      /* unidade fluida: tudo se ajusta ao tamanho da tela, de notebook a TV 4K */
   }
   @media (max-aspect-ratio: 7/5) { :root { --u: min(1.7vw, 1.1vh); } }   /* telas "em pé": layout empilhado */
   * { box-sizing: border-box; }
   html, body { height: 100%; }
-  body {
-    margin: 0; overflow: hidden; color: var(--branco); font: 400 calc(var(--u) * 1.55)/1.4 var(--fonte);
-    user-select: none; -webkit-user-select: none;
-    /* gradiente do manual (tipo 1): azul escuro + cor adicional (roxo), nas pontas, com 100% de opacidade; só no fundo */
-    background: linear-gradient(45deg, var(--roxo) 0%, var(--azul-escuro) 65%);
-    background-attachment: fixed;
-  }
+  html { background: #002233; }
+  body { margin: 0; overflow: hidden; color: var(--branco); font: 400 calc(var(--u) * 1.5)/1.45 var(--fonte); user-select: none; -webkit-user-select: none; background: #002233; }
   h1, p { margin: 0; }
-  h1 { font: 700 calc(var(--u) * 3.9)/1.05 var(--fonte); letter-spacing: -.02em; text-transform: uppercase; }
-  .hl { color: var(--verde); }      /* cor de destaque em um trecho do título (uso pontual) */
+  h1 { font: 800 calc(var(--u) * 4.4)/1.05 var(--fonte); letter-spacing: -.02em; text-transform: uppercase; color: var(--roxo); filter: drop-shadow(0 0 18px rgba(164,77,255,.35)); }
+  .tag { font: 700 calc(var(--u) * 1.3)/1 var(--fonte); letter-spacing: .18em; text-transform: uppercase; color: var(--azul); }
+  .tag::before { content: "// "; color: var(--muted); }
+  .tag.bad { color: var(--rosa); }
+
+  /* ---------- fundo: rede e código animados (o mesmo da roleta) ---------- */
+  .scene { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .floor { position: absolute; left: -50%; right: -50%; bottom: -2%; height: 46vh;
+    background: repeating-linear-gradient(90deg, rgba(164,77,255,.35) 0 max(1px, calc(var(--u) * .08)), transparent max(1px, calc(var(--u) * .08)) calc(var(--u) * 3.6)), repeating-linear-gradient(0deg, rgba(164,77,255,.35) 0 max(1px, calc(var(--u) * .08)), transparent max(1px, calc(var(--u) * .08)) calc(var(--u) * 2.7));
+    transform: perspective(calc(var(--u) * 23.6)) rotateX(62deg); transform-origin: 50% 100%;
+    -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 92%); mask-image: linear-gradient(to top, #000 10%, transparent 92%);
+    opacity: .42; animation: run 2.4s linear infinite; }
+  @keyframes run { to { background-position: 0 0, 0 calc(var(--u) * 2.7); } }
+  .rain { position: absolute; top: 0; font: calc(var(--u) * .62)/1.7 var(--fonte); color: var(--roxo); opacity: .06; white-space: pre; animation: fall linear infinite; }
+  @keyframes fall { from { transform: translateY(-60%); } to { transform: translateY(100vh); } }
 
   /* ---------- palco ---------- */
-  #stage { position: relative; height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; gap: calc(var(--u) * 3);
-    padding: calc(var(--u) * 3) calc(var(--u) * 4); }
+  #stage { position: relative; z-index: 1; height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; gap: calc(var(--u) * 3);
+    padding: calc(var(--u) * 2) calc(var(--u) * 4) calc(var(--u) * 9); }
   .wheelbox { display: grid; place-items: center; min-height: 0; min-width: 0; }
-  .wheelwrap { position: relative; width: min(100%, calc(100vh - var(--u) * 8), calc(100dvh - var(--u) * 8)); aspect-ratio: 1; }
+  .wheelwrap { position: relative; width: min(100%, calc(100vh - var(--u) * 12), calc(100dvh - var(--u) * 12)); aspect-ratio: 1; filter: drop-shadow(0 0 40px rgba(164,77,255,.25)); }
   .wheelwrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
-  .pointer { position: absolute; top: 0; left: 50%; width: 8%; aspect-ratio: 1; transform: translate(-50%, 2%); background: var(--limao); clip-path: polygon(0 0, 100% 0, 50% 100%); z-index: 2; }
+  .pointer { position: absolute; top: 0; left: 50%; width: 8%; aspect-ratio: 1; transform: translate(-50%, 2%); background: var(--rosa); clip-path: polygon(0 0, 100% 0, 50% 100%); filter: drop-shadow(0 0 10px var(--rosa)); z-index: 2; }
   #rot { transform-origin: 0 0; will-change: transform; }
-  .ss { fill: #00DBFF; } .sp { fill: #00FFD4; } .sg { fill: #A44DFF; }   /* segurança = azul, privacidade = verde, proteção total = roxo */
+  .ss { fill: #00DBFF; } .sp { fill: #A44DFF; } .sg { fill: #D9FF65; } .sn { fill: #002233; }   /* segurança, privacidade, proteção total, não foi dessa vez! */
   .ls { font: 700 21px var(--fonte); fill: #002233; letter-spacing: .01em; }
-  .lg { font: 800 20px var(--fonte); fill: #FFFFFF; letter-spacing: .05em; }
+  .lw { font: 700 21px var(--fonte); fill: #FFFFFF; letter-spacing: .01em; }
+  .lg { font: 800 20px var(--fonte); fill: #002233; letter-spacing: .05em; }
 
-  /* ---------- chamada: um cartão de azul escuro chapado, onde todas as cores da paleta têm bom contraste ---------- */
-  .card { --c: var(--roxo); --s: calc(var(--u) * 1.8); --t: 4px; position: relative; min-width: 0; display: flex; flex-direction: column; gap: calc(var(--u) * 1.2); padding: calc(var(--u) * 2.2) calc(var(--u) * 3.4);
+  .side { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--u) * 2); }
+  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 1) calc(var(--u) * 2.4); margin-top: calc(var(--u) * 1.8); font: 700 calc(var(--u) * 1.35) var(--fonte); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: calc(var(--u) * .8); }
+  .sw { display: inline-block; width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); border: 1px solid transparent; border-radius: 3px; }
+  .sw.ss { background: #00DBFF; border-color: #00DBFF; } .sw.sp { background: #A44DFF; border-color: #A44DFF; } .sw.sg { background: #D9FF65; border-color: #D9FF65; } .sw.sn { background: #002233; border-color: #FFFFFF; }
+  .call { font: 800 calc(var(--u) * 2.5)/1.2 var(--fonte); letter-spacing: -.01em; }
+  .lead { font-size: calc(var(--u) * 1.7); line-height: 1.4; }
+  .lead b { color: var(--limao); font-weight: 700; }
+
+  .panel { --c: var(--roxo); --s: calc(var(--u) * 1.4); --t: 2px; position: relative; display: grid; gap: calc(var(--u) * 1.3); padding: calc(var(--u) * 2) calc(var(--u) * 2.4); border: 1px solid var(--line); border-radius: 4px;
     background:
       linear-gradient(var(--c), var(--c)) top left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top left / var(--t) var(--s) no-repeat,
       linear-gradient(var(--c), var(--c)) top right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top right / var(--t) var(--s) no-repeat,
       linear-gradient(var(--c), var(--c)) bottom left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom left / var(--t) var(--s) no-repeat,
       linear-gradient(var(--c), var(--c)) bottom right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom right / var(--t) var(--s) no-repeat,
-      var(--azul-escuro); }
-  .top { display: flex; align-items: flex-start; justify-content: space-between; gap: calc(var(--u) * 2); }
-  .tag { font: 700 calc(var(--u) * 1.2)/1.3 var(--fonte); letter-spacing: .16em; text-transform: uppercase; color: var(--verde); }
-  .logo { flex: none; height: calc(var(--u) * 3.4); width: auto; display: block; }   /* assinatura oficial TOTVS, branca, sem efeitos */
-  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--u) * .8) calc(var(--u) * 2.4); margin-top: calc(var(--u) * 1.4); font: 700 calc(var(--u) * 1.3) var(--fonte); letter-spacing: .1em; text-transform: uppercase; color: var(--branco); }
-  .legend span { display: inline-flex; align-items: center; gap: calc(var(--u) * .8); }
-  .sw { display: inline-block; width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); border-radius: 3px; }
-  .sw.ss { background: #00DBFF; } .sw.sp { background: #00FFD4; } .sw.sg { background: #A44DFF; }
-  .call { font: 700 calc(var(--u) * 2.3)/1.2 var(--fonte); letter-spacing: -.01em; }
-  .lead { font-size: calc(var(--u) * 1.55); line-height: 1.4; }
-  .lead b { color: var(--limao); font-weight: 700; }
-  .when-block { display: grid; gap: calc(var(--u) * .7); padding-top: calc(var(--u) * 1.3); border-top: 3px solid var(--c); }
-  .when-block + .when-block { padding-top: calc(var(--u) * 1); border-top: 0; }
-  .live { display: inline-flex; align-items: center; gap: calc(var(--u) * .9); color: var(--limao); }
-  .live::after { content: ""; width: calc(var(--u) * 1.1); height: calc(var(--u) * 1.1); border-radius: 50%; background: var(--limao); animation: blink 1.4s ease-in-out infinite; }
+      var(--panel);
+    box-shadow: 0 0 40px rgba(164,77,255,.07), inset 0 0 40px rgba(164,77,255,.04); }
+  .info { display: grid; gap: calc(var(--u) * .6); }
+  .info + .info { padding-top: calc(var(--u) * 1.3); border-top: 2px solid var(--roxo); }
+  .live { display: inline-flex; align-items: center; gap: calc(var(--u) * .9); }
+  .live::after { content: ""; width: calc(var(--u) * 1.1); height: calc(var(--u) * 1.1); border-radius: 50%; background: var(--rosa); animation: blink 1.4s ease-in-out infinite; }
   @keyframes blink { 50% { opacity: .25; } }
-  .when { font: 800 calc(var(--u) * 4.6)/1 var(--fonte); letter-spacing: -.02em; }
+  .when { font: 800 calc(var(--u) * 4.8)/1 var(--fonte); letter-spacing: -.02em; color: var(--roxo); }
   .where { font: 700 calc(var(--u) * 3)/1.1 var(--fonte); letter-spacing: -.01em; }
+
+  /* assinatura oficial TOTVS, branca, centralizada no fim da tela, sem efeitos */
+  .logo { position: fixed; left: 50%; bottom: calc(var(--u) * 2.4); transform: translateX(-50%); height: calc(var(--u) * 3.4); width: auto; z-index: 5; }
 
   /* telas "em pé": roda em cima, chamada embaixo */
   @media (max-aspect-ratio: 7/5) {
-    #stage { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: center; justify-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3); }
+    #stage { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: center; justify-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3) calc(var(--u) * 3) calc(var(--u) * 9); }
     .wheelbox { width: 100%; }
-    .wheelwrap { width: min(100%, 40vh, 40dvh); }
-    .card { width: 100%; }
-    h1 { font-size: calc(var(--u) * 5); }
-    .when { font-size: calc(var(--u) * 5); } .where { font-size: calc(var(--u) * 3.4); } .call { font-size: calc(var(--u) * 2.6); }
+    .wheelwrap { width: min(100%, 36vh, 36dvh); }
+    .side { width: 100%; }
+    h1 { font-size: calc(var(--u) * 4); }
+    .when { font-size: calc(var(--u) * 4.6); } .where { font-size: calc(var(--u) * 3.2); } .call { font-size: calc(var(--u) * 2.5); }
   }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
+<div class="scene" aria-hidden="true"><div class="floor"></div><div id="rain"></div></div>
 <main id="stage">
   <section class="wheelbox" aria-label="Roleta">
     <div class="wheelwrap">
       <div class="pointer" aria-hidden="true"></div>
-      <svg viewBox="-310 -310 620 620" role="img" aria-label="Roleta Interativa">
-        <circle r="304" fill="#002233" stroke="#FFFFFF" stroke-width="8"/>
+      <svg viewBox="-310 -310 620 620" role="img" aria-label="Roleta Interativa, roleta com 14 fatias: 5 de segurança, 5 de privacidade, 2 de Proteção Total e 2 de Não foi dessa vez">
+        <defs>
+          <linearGradient id="gRim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A44DFF"/><stop offset="1" stop-color="#FF009E"/></linearGradient>
+        </defs>
+        <circle r="304" fill="#00DBFF" stroke="url(#gRim)" stroke-width="8"/>
         <g id="rot"><g id="slices"></g></g>
-        <circle r="52" fill="#002233" stroke="#FFFFFF" stroke-width="5"/>
-        <path d="M0 -26 L22 -18 V3 C22 17 12 25 0 31 C-12 25 -22 17 -22 3 V-18 Z" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/>
+        <circle r="52" fill="#002233" stroke="url(#gRim)" stroke-width="5"/>
+        <path d="M0 -26 L22 -18 V3 C22 17 12 25 0 31 C-12 25 -22 17 -22 3 V-18 Z" fill="rgba(164,77,255,.18)" stroke="url(#gRim)" stroke-width="3" stroke-linejoin="round"/>
         <circle cx="0" cy="-3" r="5" fill="#D9FF65"/>
       </svg>
     </div>
   </section>
-  <section class="card">
-    <div class="top">
+  <section class="side">
+    <div>
       <div class="tag">Semana de Segurança e Privacidade</div>
-      <svg class="logo" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 302 92" role="img" aria-label="TOTVS">
+      <h1>Roleta Interativa</h1>
+      <div class="legend" aria-hidden="true"><span><i class="sw ss"></i>Segurança</span><span><i class="sw sp"></i>Privacidade</span><span><i class="sw sg"></i>Proteção Total</span><span><i class="sw sn"></i>Não foi dessa vez!</span></div>
+    </div>
+    <p class="call">Aceita o desafio de proteger a TOTVS?</p>
+    <p class="lead">Gire a roda, enfrente uma situação de segurança ou de privacidade e <b>acerte o quiz para levar um brinde</b>. Caiu em Proteção Total? Passe no desafio e leve um prêmio!</p>
+    <div class="panel">
+      <div class="info"><div class="tag bad live">Terça-feira - 24/11</div><div class="when">10h às 16h</div></div>
+      <div class="info"><div class="tag">Onde</div><div class="where">Corredor do 1º andar</div></div>
+    </div>
+  </section>
+</main>
+<svg class="logo" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 302 92" role="img" aria-label="TOTVS">
   <defs>
     <style>
       .st0 {
@@ -115,36 +142,28 @@
   <path class="st0" d="M226.6,64.6l-10.7-13.8c-.8-1-1-1.8-1-3v-21.9h7c1.6,0,2.5.9,2.5,2.5v17.5c0,1.2.3,2.1,1,3.1l7.1,8.8,6.8-8.8c.7-1,1-1.9,1-3.1v-17.5c0-1.6.9-2.5,2.5-2.5h7v21.9c0,1.2-.3,2.1-1,3.1l-10.5,13.7c-.8,1-1.7,1.5-3,1.5h-5.7c-1.3,0-2.2-.4-3-1.5"/>
   <path class="st0" d="M256.1,53.1h7.5c1.7,0,2,.6,2.5,2.2.7,2.4,2.7,3.6,6.9,3.6h2.2c4.3,0,6.5-1.3,6.5-4v-.9c0-1.6-1.4-2.7-4.2-3.2l-9.4-1.7c-6.7-1.2-11.3-4.4-11.3-10.3v-2.3c0-7.4,6.6-11.6,14.5-11.6h4.5c9.5,0,14.8,5,14.8,13h-7.6c-1.5,0-1.9-.4-2.2-1.6-.6-2.2-2.2-3.3-5.5-3.3h-2.6c-3,0-6,.8-6,3.6v.9c0,1.4,1.3,2.5,3.9,2.9l9.9,1.8c6.6,1.2,11.1,4.2,11.1,10.4v2.4c0,8-7.1,12-15.6,12h-4.1c-9.3,0-15.9-4.2-15.9-13.9"/>
 </svg>
-    </div>
-    <div>
-      <h1>Roleta <span class="hl">Interativa</span></h1>
-      <div class="legend" aria-hidden="true"><span><i class="sw ss"></i>Segurança</span><span><i class="sw sp"></i>Privacidade</span><span><i class="sw sg"></i>Proteção Total</span></div>
-    </div>
-    <p class="call">Aceita o desafio de proteger a TOTVS?</p>
-    <p class="lead">Gire a roda, enfrente uma situação de segurança ou de privacidade e <b>acerte o quiz para levar um brinde</b>. Caiu em Proteção Total? Passe no desafio e leve um prêmio!</p>
-    <div class="when-block"><div class="tag live">Terça-feira - 24/11</div><div class="when">10h às 16h</div></div>
-    <div class="when-block"><div class="tag">Onde</div><div class="where">Corredor do 1º andar</div></div>
-  </section>
-</main>
 
 <script>
-/* Mesma roda do jogo (roleta.html), só para exibir: gira sozinha, sem toque e sem registro de dados. */
+/* Mesma roda do jogo (index.html), só para exibir: gira sozinha, sem clique e sem registro de dados. */
 const $ = id => document.getElementById(id);
-const SLICES = [   // mesma ordem da roleta: segurança e privacidade alternadas, com 2 fatias de Proteção Total
+const SLICES = [   // mesma ordem da roleta
   { gold: true, label: 'PROTEÇÃO TOTAL' }, { kind: 's', label: 'Caiu no phishing' }, { kind: 'p', label: 'Dados na IA' }, { kind: 's', label: 'Senha vazada' },
-  { kind: 'p', label: 'Destino errado' }, { kind: 's', label: 'Ransomware' }, { gold: true, label: 'PROTEÇÃO TOTAL' }, { kind: 'p', label: 'Selfie reveladora' },
-  { kind: 's', label: 'Wi-Fi falso' }, { kind: 'p', label: 'Dados demais' }, { kind: 's', label: 'Pendrive-isca' }, { kind: 'p', label: 'Base aberta' },
+  { none: true, label: 'Não foi dessa vez!' }, { kind: 'p', label: 'Destino errado' }, { kind: 's', label: 'Ransomware' }, { gold: true, label: 'PROTEÇÃO TOTAL' },
+  { kind: 'p', label: 'Selfie reveladora' }, { kind: 's', label: 'Wi-Fi falso' }, { kind: 'p', label: 'Dados demais' }, { none: true, label: 'Não foi dessa vez!' },
+  { kind: 's', label: 'Pendrive-isca' }, { kind: 'p', label: 'Base aberta' },
 ];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const R = 290;
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const R = 290, STEP = 360 / SLICES.length;
 const pt = (deg, r) => { const a = deg * Math.PI / 180; return [(r * Math.sin(a)).toFixed(2), (-r * Math.cos(a)).toFixed(2)]; };
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 $('slices').innerHTML = SLICES.map((s, i) => {
-  const c = i * 30, [x1, y1] = pt(c - 15, R), [x2, y2] = pt(c + 15, R);
-  const cls = s.gold ? 'sg' : (s.kind === 'p' ? 'sp' : 'ss');
+  const c = i * STEP, [x1, y1] = pt(c - STEP / 2, R), [x2, y2] = pt(c + STEP / 2, R);
+  const cls = s.gold ? 'sg' : s.none ? 'sn' : (s.kind === 'p' ? 'sp' : 'ss');
+  const tcls = s.gold ? 'lg' : (s.none || s.kind === 'p') ? 'lw' : 'ls';
   return `<g><path class="${cls}" d="M0 0 L${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2} Z" stroke="#002233" stroke-width="3"/>
-    <text class="${s.gold ? 'lg' : 'ls'}" transform="rotate(${c - 90}) translate(${R - 20},0)" text-anchor="end" dominant-baseline="central">${esc(s.label)}</text></g>`;
+    <text class="${tcls}" transform="rotate(${c - 90}) translate(${R - 20},0)" text-anchor="end" dominant-baseline="central">${esc(s.label)}</text></g>`;
 }).join('');
 
 /* Gira devagar o tempo todo e, de tempos em tempos, dá um giro completo que desacelera como no jogo. */
@@ -161,12 +180,32 @@ function drift() {
 }
 function spin() {
   cancelAnimationFrame(raf);
-  const ms = 6000, target = Math.ceil(rot / 360) * 360 + 360 * (5 + Math.floor(Math.random() * 2)) - Math.floor(Math.random() * 12) * 30 + (Math.random() - .5) * 18;
+  const ms = 6000, target = Math.ceil(rot / 360) * 360 + 360 * (5 + Math.floor(Math.random() * 2)) - Math.floor(Math.random() * SLICES.length) * STEP + (Math.random() - .5) * STEP * .6;
   setRot(rot, 0); void $('rot').getBoundingClientRect();
   setRot(target, ms);
   setTimeout(() => { rot = target % 360; setRot(rot, 0); drift(); setTimeout(spin, 7000); }, ms + 300);
 }
 if (!reduceMotion) { drift(); setTimeout(spin, 2500); }
+
+/* fundo: colunas de código caindo, como no jogo */
+(function initRain() {
+  const snippets = [
+    "if (link.suspicious) report();", "const mfa = true;", "hash(password, salt);", "while (alive) { scan(); }",
+    "lgpd.consent(user);", "firewall.allow(trusted);", "token.rotate();", "if (!verified) deny();",
+    "encrypt(data, key);", "audit.log(event);", "return 'threat_blocked';", "session.expire(15);",
+    "patch(vuln.cve);", "const zeroTrust = 1;", "phishing.detect(mail);", "vpn.connect();",
+  ];
+  const rain = $('rain');
+  for (let c = 0; c < 6; c++) {
+    const col = document.createElement('div');
+    col.className = 'rain';
+    col.style.left = (c * 17 + Math.random() * 6) + '%';
+    col.style.animationDuration = (45 + Math.random() * 40) + 's';
+    col.style.animationDelay = (-Math.random() * 60) + 's';
+    col.textContent = shuffle(snippets).concat(shuffle(snippets)).join('\n');
+    rain.appendChild(col);
+  }
+})();
 
 /* o ponteiro do mouse aparece ao mexer e some depois de 3 segundos parado (tela de exibição) */
 (function cursorAuto() {
