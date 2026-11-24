@@ -1,8 +1,8 @@
-﻿# Gera o chamada.html com os banners (banner.html e garra.html) embutidos, para funcionar aberto direto do disco,
+﻿# Gera o chamada.html com os banners (banner.html, garra.html e palestra.html) embutidos, para funcionar aberto direto do disco,
 # em qualquer navegador e na Vercel, sem depender de arquivos carregados de dentro da página.
-# Rode de novo sempre que alterar o banner.html ou o garra.html:   powershell -ExecutionPolicy Bypass -File gerar-chamada.ps1
+# Rode de novo sempre que alterar o banner.html, o garra.html ou o palestra.html:   powershell -ExecutionPolicy Bypass -File gerar-chamada.ps1
 $dir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$slides = @('banner.html', 'garra.html')          # ordem de exibição: roleta, depois garra
+$slides = @('banner.html', 'garra.html', 'palestra.html')   # ordem de exibição: roleta, garra, palestra online
 
 $pages = foreach ($s in $slides) {
   $html = [System.IO.File]::ReadAllText((Join-Path $dir $s), [System.Text.Encoding]::UTF8)
@@ -28,7 +28,7 @@ $template = @'
 </style>
 </head>
 <body>
-<!-- ARQUIVO GERADO por gerar-chamada.ps1: não edite aqui; altere o banner.html ou o garra.html e rode o script de novo.
+<!-- ARQUIVO GERADO por gerar-chamada.ps1: não edite aqui; altere o banner.html, o garra.html ou o palestra.html e rode o script de novo.
      Exibição em loop para a TV: um banner depois do outro, sem parar. Abra em tela cheia (F11).
      O tempo de cada banner (segundos) é 15; para mudar, use ?s=20 no endereço. -->
 <script>
