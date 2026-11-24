@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#002233">
 <meta name="robots" content="noindex,nofollow">
-<title>Cyber Shield Game · TOTVS</title>
+<title>Roleta Interativa · Semana de Segurança e Privacidade</title>
 <style>
   @font-face { font-family: 'TOTVS'; font-weight: 200; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraLight.ttf') format('truetype'); }
   @font-face { font-family: 'TOTVS'; font-weight: 300; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Light.ttf') format('truetype'); }
@@ -15,395 +15,1064 @@
   @font-face { font-family: 'TOTVS'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/TOTVS-Bold.ttf') format('truetype'); }
   @font-face { font-family: 'TOTVS'; font-weight: 800; font-style: normal; font-display: swap; src: url('fonts/TOTVS-ExtraBold.ttf') format('truetype'); }
   :root {
-    --bg0: #002233;
-    --bg1: #002233;
-    --panel: rgba(0,34,51,.9);
-    --panel-2: rgba(255,255,255,.07);
+    --bg0: #002233; --bg1: #002233;
+    --panel: rgba(0,34,51,.92); --panel-2: rgba(255,255,255,.07);
     /* paleta do jogo: apenas estas cores, mais branco */
-    --purple: #A44DFF;
-    --pink: #FF009E;
-    --cyan: #00DBFF;
-    --mint: #00FFD4;
-    --lime: #D9FF65;
-    --orange: #FF8900;
-    --line: rgba(164,77,255,.45);
-    --text: #FFFFFF;
-    --muted: rgba(255,255,255,.72);
-    --ok: #00FFD4;
-    --bad: #FF009E;
-    --warn: #FF8900;
-    --grad: linear-gradient(90deg, #A44DFF, #FF009E);   /* único gradiente do jogo */
+    --purple: #A44DFF; --pink: #FF009E; --cyan: #00DBFF; --mint: #00FFD4; --lime: #D9FF65; --orange: #FF8900;
+    --line: rgba(164,77,255,.45); --text: #FFFFFF; --muted: rgba(255,255,255,.72);
+    --ok: #00FFD4; --bad: #FF009E; --warn: #FF8900;
+    --grad: linear-gradient(90deg, #A44DFF, #FF009E);   /* degradê roxo e rosa: botões, aro da roleta e efeitos neon (os textos são roxo chapado) */
     --label: 'TOTVS', Verdana, sans-serif;   /* rótulos, botões e números */
-    --sans: Verdana, sans-serif;
+    --sans: 'TOTVS', Verdana, sans-serif;   /* texto corrido: TOTVS; Verdana só se a TOTVS não carregar */
     --display: 'TOTVS', Verdana, sans-serif;
+    --u: min(1vw, 1.65vh);   /* unidade fluida: tudo se ajusta ao tamanho da tela, de notebook a TV 4K */
   }
-  * { box-sizing: border-box; }
-  html { background: var(--bg0); }
+  @media (max-width: 760px) { :root { --u: min(1.7vw, 1.1vh); } }   /* só telas realmente pequenas (celular): layout empilhado. TV e notebook ficam sempre no layout horizontal */
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
   body {
-    margin: 0; color: var(--text); font: 16px/1.5 var(--sans);
-    min-height: 100vh; min-height: 100dvh; position: relative; overflow-x: hidden;
-    background:
-      radial-gradient(1100px 560px at 50% -12%, rgba(164,77,255,.42), transparent 62%),
-      radial-gradient(700px 480px at 100% 100%, rgba(255,0,158,.16), transparent 60%),
-      radial-gradient(600px 420px at 0% 70%, rgba(164,77,255,.12), transparent 60%),
-      linear-gradient(180deg, var(--bg0), var(--bg1));
-    background-attachment: fixed;
+    margin: 0; overflow: hidden; color: var(--text); font: calc(var(--u) * 1.5)/1.45 var(--sans);
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+    background: #002233;      /* fundo do site: azul TOTVS chapado; os grafismos animados (código e rede) ficam por cima */
   }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  @media (hover: hover) { button:not(:disabled):hover { filter: brightness(1.18); } }   /* com mouse: o botão sob o ponteiro acende */
+  h1, h2 { margin: 0; font-family: var(--display); line-height: 1.05; letter-spacing: -.02em; }
+  p { margin: 0 0 calc(var(--u) * 1); }
+  .muted { color: var(--muted); }
+  .grad { color: var(--purple); filter: drop-shadow(0 0 18px rgba(164,77,255,.35)); }   /* título: roxo TOTVS chapado + brilho neon roxo */
+  .tag { font: 700 calc(var(--u) * 1.3)/1 var(--label); letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); }
+  .tag::before { content: "// "; color: var(--muted); }
+  .tag.bad { color: var(--bad); } .tag.ok { color: var(--ok); }
 
   /* ---------- cenário ---------- */
   .scene { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-  .floor {
-    position: absolute; left: -50%; right: -50%; bottom: -2%; height: 46vh;
-    background:
-      repeating-linear-gradient(90deg, rgba(164,77,255,.35) 0 1px, transparent 1px 64px),
-      repeating-linear-gradient(0deg, rgba(164,77,255,.35) 0 1px, transparent 1px 48px);
+  .floor { position: absolute; left: -50%; right: -50%; bottom: -2%; height: 46vh;
+    background: repeating-linear-gradient(90deg, rgba(164,77,255,.35) 0 1px, transparent 1px 64px), repeating-linear-gradient(0deg, rgba(164,77,255,.35) 0 1px, transparent 1px 48px);
     transform: perspective(420px) rotateX(62deg); transform-origin: 50% 100%;
-    -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 92%);
-            mask-image: linear-gradient(to top, #000 10%, transparent 92%);
-    opacity: .42; animation: run 2.4s linear infinite;
-  }
+    -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 92%); mask-image: linear-gradient(to top, #000 10%, transparent 92%);
+    opacity: .42; animation: run 2.4s linear infinite; }
   @keyframes run { to { background-position: 0 0, 0 48px; } }
-  .rain { position: absolute; top: 0; font: 11px/1.7 var(--sans); color: var(--purple); opacity: .06; white-space: pre; animation: fall linear infinite; }
+  .rain { position: absolute; top: 0; font: calc(var(--u) * .62)/1.7 var(--sans); color: var(--purple); opacity: .06; white-space: pre; animation: fall linear infinite; }
   @keyframes fall { from { transform: translateY(-60%); } to { transform: translateY(100vh); } }
   .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,34,51,.45)); }
-
-  main { position: relative; z-index: 1; }
   @keyframes blink { 50% { opacity: .25; } }
-  .wrap { max-width: 560px; margin: 0 auto; padding: calc(24px + env(safe-area-inset-top)) 18px 8px; }
-  #testbar { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; padding: 7px 12px;
-    font: 700 .66rem/1.3 var(--label); letter-spacing: .08em; text-transform: uppercase; color: #002233; background: var(--warn); }
-  #testbar[hidden] { display: none; }
-  #testbar button { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; text-decoration: underline; text-underline-offset: 3px; }
-  body.test .wrap { padding-top: 56px; }
-  .screen { animation: in .4s cubic-bezier(.2,.8,.2,1) both; }
-  @keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-  /* ---------- tipografia ---------- */
-  h1, h2 { margin: 0; font-family: var(--display); line-height: 1.05; letter-spacing: -.02em; }
-  .title { font-size: clamp(2.5rem, 13vw, 3.7rem); font-weight: 800; text-transform: uppercase; }
-  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(164,77,255,.35)); }
-  .tag { font: 700 .72rem/1 var(--label); letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); }
-  .tag::before { content: "// "; color: var(--muted); }
-  p { margin: 0 0 12px; }
-  .muted { color: var(--muted); }
-  .small { font-size: .85rem; }
-  .mono { font-family: var(--label); }
-  .center { text-align: center; }
+  /* ---------- palco ---------- */
+  #stage { position: relative; z-index: 1; height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: center; gap: calc(var(--u) * 3);
+    padding: calc(var(--u) * 2) calc(var(--u) * 4) calc(var(--u) * 5.2); }
+  .wheelbox { display: grid; place-items: center; min-height: 0; min-width: 0; }
+  .wheelwrap { position: relative; width: min(100%, calc(100vh - var(--u) * 12), calc(100dvh - var(--u) * 12)); aspect-ratio: 1; filter: drop-shadow(0 0 40px rgba(164,77,255,.25)); }
+  .wheelwrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .pointer { position: absolute; top: 0; left: 50%; width: 8%; aspect-ratio: 1; transform: translate(-50%, 2%); background: var(--pink);
+    clip-path: polygon(0 0, 100% 0, 50% 100%); filter: drop-shadow(0 0 10px var(--pink)); z-index: 2; }
+  #rot { transform-origin: 0 0; will-change: transform; }
+  .ss { fill: #00DBFF; } .sp { fill: #A44DFF; }   /* segurança = azul claro, privacidade = roxo */
+  .sg  { fill: #D9FF65; } .sn { fill: #002233; }   /* proteção total = limão, não foi dessa vez! = azul escuro */
+  .legend { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 1) calc(var(--u) * 2.4); margin-top: calc(var(--u) * 1.8); font: 700 calc(var(--u) * 1.35) var(--label); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: calc(var(--u) * .8); }
+  .sw { display: inline-block; width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); border: 1px solid rgba(164,77,255,.6); border-radius: 3px; }
+  .sw.ss { background: #00DBFF; border-color: #00DBFF; } .sw.sp { background: #A44DFF; border-color: #A44DFF; } .sw.sg { background: #D9FF65; border-color: #D9FF65; } .sw.sn { background: #002233; border-color: #FFFFFF; }
+  .ls { font: 700 21px var(--display); fill: #002233; letter-spacing: .01em; }   /* sobre azul claro */
+  .lw { font: 700 21px var(--display); fill: #FFFFFF; letter-spacing: .01em; }   /* sobre roxo e azul escuro */
+  .lg { font: 800 20px var(--display); fill: #002233; letter-spacing: .05em; }   /* sobre limão */
 
-  /* ---------- painel HUD (cantos em L) ---------- */
-  .panel {
-    --c: var(--purple); --s: 16px; --t: 2px;
-    position: relative; padding: 20px; margin-bottom: 16px; border: 1px solid var(--line); border-radius: 4px;
+  .side { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--u) * 2.4); }
+  #state { display: flex; flex-direction: column; gap: calc(var(--u) * 2.4); }
+  #state > p, #state > div > p { margin: 0; }
+  .side h1 { font-size: calc(var(--u) * 4.4); font-weight: 800; text-transform: uppercase; }
+  .lead { font-size: calc(var(--u) * 1.9); line-height: 1.4; color: var(--text); }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(var(--u) * 1.2); font: 700 calc(var(--u) * 1.4) var(--label); color: var(--muted); }
+  .steps b { color: var(--lime); margin-right: .6em; }
+  .note { font: calc(var(--u) * 1.35) var(--label); color: var(--muted); letter-spacing: .04em; }
+
+  .panel { --c: var(--purple); --s: calc(var(--u) * 1.4); --t: 2px; position: relative; padding: calc(var(--u) * 2); border: 1px solid var(--line); border-radius: 4px;
     background:
-      linear-gradient(var(--c), var(--c)) top left / var(--s) var(--t) no-repeat,
-      linear-gradient(var(--c), var(--c)) top left / var(--t) var(--s) no-repeat,
-      linear-gradient(var(--c), var(--c)) top right / var(--s) var(--t) no-repeat,
-      linear-gradient(var(--c), var(--c)) top right / var(--t) var(--s) no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom left / var(--s) var(--t) no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom left / var(--t) var(--s) no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom right / var(--s) var(--t) no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom right / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) top left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top left / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) top right / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom left / var(--t) var(--s) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / var(--s) var(--t) no-repeat, linear-gradient(var(--c), var(--c)) bottom right / var(--t) var(--s) no-repeat,
       var(--panel);
-    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-    box-shadow: 0 0 40px rgba(164,77,255,.07), inset 0 0 40px rgba(164,77,255,.04);
-  }
+    box-shadow: 0 0 40px rgba(164,77,255,.07), inset 0 0 40px rgba(164,77,255,.04); }
 
-  /* ---------- hero ---------- */
-  .home { min-height: calc(100vh - 56px); min-height: calc(100dvh - 56px); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0 0 24px; }
-  .headline { font-size: clamp(2.3rem, 11vw, 3.6rem); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-transform: uppercase; margin: 14px 0 18px; }
-  .provoke { max-width: 36ch; margin: 0 auto 30px; font: .88rem/1.55 var(--sans); color: var(--muted); }
-  .caret::after { content: "_"; margin-left: 2px; color: var(--lime); animation: blink 1s steps(2) infinite; }
-  .home-actions { width: 100%; max-width: 340px; }
-  .shield { width: 120px; height: 120px; margin: 0 auto 18px; display: block; filter: drop-shadow(0 0 22px rgba(164,77,255,.45)); }
-  .shield .spin { transform-box: fill-box; transform-origin: center; animation: spin 24s linear infinite; }
-  .shield .spin.rev { animation-duration: 16s; animation-direction: reverse; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .chips { display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
-  .chip { font: 700 .7rem/1 var(--label); letter-spacing: .1em; text-transform: uppercase; padding: 8px 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--cyan); }
-  .chip b { color: var(--lime); }
-
-  /* ---------- formulário ---------- */
-  label { display: block; font: 700 .7rem/1 var(--label); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; }
-  input[type=text], input[type=email], input[type=password] {
-    width: 100%; padding: 14px; font: 1rem var(--sans); color: var(--text); background: rgba(0,34,51,.55);
-    border: 1px solid var(--line); border-radius: 2px; transition: border-color .2s, box-shadow .2s; }
-  input::placeholder { color: rgba(255,255,255,.55); }
-  input:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(164,77,255,.18), 0 0 18px rgba(164,77,255,.2); }
-  .check { display: flex; gap: 10px; align-items: flex-start; margin: 18px 0 4px; font: 400 .85rem/1.45 var(--sans); letter-spacing: 0; text-transform: none; color: var(--muted); }
-  .check input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--lime); flex: none; }
-  .error { color: var(--bad); font: .85rem var(--sans); margin-top: 12px; min-height: 1.3em; }
-
-  /* ---------- botões ---------- */
-  /* botão ajustado ao texto; botões vizinhos ficam com a largura do maior (ver groupButtons) */
-  .btn { display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: 210px; margin-top: 12px; padding: 15px 34px; border-radius: 999px; border: 1px solid transparent; cursor: pointer; white-space: nowrap;
-    font: 800 .9rem/1 var(--label); letter-spacing: .2em; text-transform: uppercase; text-align: center; transition: transform .15s, box-shadow .2s, background .2s; }
+  /* botão ajustado ao texto: largura automática, com respiro moderado nas laterais */
+  .btn { display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: calc(var(--u) * 14); padding: calc(var(--u) * 1.5) calc(var(--u) * 3.2); border-radius: 999px; border: 1px solid transparent;
+    font: 800 calc(var(--u) * 1.6)/1 var(--label); letter-spacing: .14em; text-transform: uppercase; text-align: center; white-space: nowrap; transition: transform .15s, box-shadow .2s; }
   .btn:active:not(:disabled) { transform: scale(.98); }
-  .btn.primary { color: #FFFFFF; background: var(--grad); box-shadow: 0 0 26px rgba(164,77,255,.45), inset 0 1px 0 rgba(255,255,255,.35); }
-  .btn.primary:hover:not(:disabled) { box-shadow: 0 0 38px rgba(255,0,158,.6), inset 0 1px 0 rgba(255,255,255,.35); }
+  .btn.primary { color: #FFFFFF; background: var(--grad); box-shadow: 0 0 30px rgba(164,77,255,.45), inset 0 1px 0 rgba(255,255,255,.35); }
   .btn.secondary { color: #FFFFFF; background: rgba(0,34,51,.4); border-color: var(--line); }
-  .btn.secondary:hover { border-color: var(--purple); box-shadow: 0 0 18px rgba(164,77,255,.35); }
   .btn.danger { color: var(--bad); background: transparent; border-color: rgba(255,0,158,.5); }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
-  .btns { display: grid; grid-template-columns: max-content; justify-content: center; gap: 12px; margin: 14px auto 0; }
-  .btns .btn { width: 100%; margin-top: 0; }
-  #fb .btn { min-width: 340px; max-width: 100%; }   /* largura fixa: o texto da contagem muda e o botão não pode "pular" */
-  button:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
-  .homelink { display: inline-block; margin: 0 0 14px; padding: 6px 0; background: none; border: 0; cursor: pointer; font: 700 .74rem/1 var(--label); letter-spacing: .06em; color: var(--muted); transition: color .2s; }
-  .homelink:hover { color: var(--cyan); }
-  .linkish { background: none; border: 0; color: var(--muted); font: .72rem var(--label); letter-spacing: .14em; text-transform: uppercase; cursor: pointer; padding: 10px; text-decoration: underline; text-underline-offset: 4px; }
+  .btn.pulse:not(:disabled) { animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 52px rgba(255,0,158,.75), inset 0 1px 0 rgba(255,255,255,.35); } }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--u) * 2); }
+  /* grupos de botões: todos com a largura do maior, para não depender de alinhamento */
+  .btns { display: inline-grid; grid-template-columns: 1fr; gap: calc(var(--u) * 1.4); }
+  .btns.cols { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }
+  .btns.two { grid-template-columns: repeat(2, 1fr); }
+  .btns .btn { width: 100%; }
+  #state > .btn, #state > .row, #state > .btns, .idform > .btns { align-self: flex-start; }
+  .modal .box > .btns { align-self: center; }
+  .modal .box > .btn { align-self: center; }
+  .modal .box > .row { justify-content: center; }
+  .chips { display: flex; flex-wrap: wrap; gap: calc(var(--u) * .8); margin: calc(var(--u) * 1.2) 0; }
+  .chip { font: 700 calc(var(--u) * 1.4)/1 var(--label); letter-spacing: .08em; text-transform: uppercase; padding: calc(var(--u) * .9) calc(var(--u) * 1.2); border: 1px solid var(--line); background: var(--panel-2); color: var(--cyan); }
+  .chip b { color: var(--lime); }
+  .chip.lime { color: #002233; background: var(--lime); border-color: var(--lime); }
 
-  /* ---------- partida ---------- */
-  .hud { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin-bottom: 10px; }
-  .hud .lvl { font: 800 1.5rem/1 var(--label); }
-  .hud .lvl small { font-size: .8rem; color: var(--muted); }
-  .hud .score { text-align: right; font: 700 .68rem/1 var(--label); letter-spacing: .16em; color: var(--muted); }
-  .hud .score b { display: block; margin-top: 6px; font-size: 1.5rem; letter-spacing: 0; color: var(--lime); text-shadow: 0 0 14px rgba(217,255,101,.45); }
-  .progress { display: flex; gap: 4px; margin-bottom: 14px; }
-  .progress i { flex: 1; height: 4px; background: rgba(255,255,255,.2); }
-  .progress i.done { background: var(--purple); box-shadow: 0 0 8px var(--purple); }
-  .progress i.cur { background: var(--lime); box-shadow: 0 0 10px var(--lime); animation: blink 1s steps(2) infinite; }
-  .combo { display: inline-block; font: 800 .72rem/1 var(--label); letter-spacing: .16em; padding: 6px 9px; color: #002233; background: var(--lime); box-shadow: 0 0 16px rgba(217,255,101,.6); animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
-  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
-  .q-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-  .timer { position: relative; width: 54px; height: 54px; color: var(--cyan); }
-  .timer svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
-  .timer circle { fill: none; stroke-width: 4; }
-  .timer .bg { stroke: rgba(255,255,255,.22); }
-  .timer .fg { stroke: currentColor; stroke-linecap: round; filter: drop-shadow(0 0 5px currentColor); transition: stroke-dashoffset .1s linear; }
-  .timer span { position: absolute; inset: 0; display: grid; place-items: center; font: 800 1rem var(--label); color: var(--text); }
-  .timer.low { color: var(--warn); }
-  .timer.crit { color: var(--bad); animation: shake .4s infinite; }
-  @keyframes shake { 25% { transform: translateX(-1px); } 75% { transform: translateX(1px); } }
-  .q { font-family: var(--display); font-size: 1.25rem; font-weight: 700; line-height: 1.35; margin: 0 0 18px; }
-  .opt { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 13px 14px; margin-bottom: 10px; cursor: pointer;
-    color: var(--text); font: inherit; background: rgba(0,34,51,.25); border: 1px solid var(--line); border-radius: 2px; transition: border-color .15s, background .15s, box-shadow .15s, transform .15s; }
-  .opt .key { flex: none; width: 28px; height: 28px; display: grid; place-items: center; font: 800 .8rem var(--label); color: var(--cyan); border: 1px solid var(--line); background: rgba(164,77,255,.08); }
-  .opt:hover:not(:disabled) { border-color: var(--purple); background: rgba(164,77,255,.09); box-shadow: 0 0 18px rgba(164,77,255,.18); transform: translateX(3px); }
-  .opt:disabled { cursor: default; }
-  .opt.correct { border-color: var(--ok); background: rgba(0,255,212,.12); box-shadow: 0 0 20px rgba(0,255,212,.22); }
-  .opt.correct .key { color: #002233; background: var(--ok); border-color: var(--ok); }
-  .opt.wrong { border-color: var(--bad); background: rgba(255,0,158,.12); }
-  .opt.wrong .key { color: #fff; background: var(--bad); border-color: var(--bad); }
-  .opt.dim { opacity: .38; }
-  .opt.sel { border-color: var(--lime); background: rgba(217,255,101,.1); box-shadow: 0 0 18px rgba(217,255,101,.2); }
-  .opt.sel .key { color: #002233; background: var(--lime); border-color: var(--lime); }
-  #confirm { margin-top: 6px; }
-  .term .rule { margin: 4px 0 10px; padding: 10px 12px; font: 700 1rem/1.35 var(--display); color: var(--text); background: rgba(217,255,101,.09); border-left: 3px solid var(--lime); }
-  .term .rule span { display: block; margin-bottom: 4px; font: 800 .62rem/1 var(--label); letter-spacing: .18em; text-transform: uppercase; color: var(--lime); }
-  .readbar { height: 3px; margin: 12px 0 0; background: rgba(255,255,255,.2); }
-  .readbar i { display: block; height: 100%; width: 0; background: var(--grad); box-shadow: 0 0 8px var(--purple); }
-  ul.rules { margin: 12px 0 0; padding: 0; list-style: none; }
-  ul.rules li { position: relative; padding: 8px 0 8px 18px; border-bottom: 1px solid rgba(164,77,255,.12); font: 700 .95rem/1.35 var(--display); }
-  ul.rules li:last-child { border-bottom: 0; }
-  ul.rules li::before { content: ""; position: absolute; left: 2px; top: 15px; width: 7px; height: 7px; background: var(--lime); box-shadow: 0 0 8px var(--lime); transform: rotate(45deg); }
-  .term { margin-top: 4px; padding: 14px 16px; font: .9rem/1.55 var(--sans); background: rgba(0,34,51,.55); border-left: 3px solid var(--muted); animation: in .3s both; }
-  .term.ok { border-left-color: var(--ok); }
-  .term.bad { border-left-color: var(--bad); }
-  .term .h { font-family: var(--label); font-weight: 800; letter-spacing: .08em; margin-bottom: 6px; }
-  .term.ok .h { color: var(--ok); }
-  .term.bad .h { color: var(--bad); }
-  .term .b { color: var(--muted); font-family: var(--sans); font-size: .92rem; }
-  .term .b::before { content: "// "; color: var(--cyan); font-family: var(--label); }
+  /* ---------- identificação ---------- */
+  .key { flex: 1; max-width: calc(var(--u) * 7.5); min-height: calc(var(--u) * 4.2); display: grid; place-items: center; font: 800 calc(var(--u) * 2) var(--label); text-transform: lowercase;
+    color: var(--text); background: rgba(164,77,255,.08); border: 1px solid var(--line); border-radius: 6px; }
+  .key:active { background: rgba(217,255,101,.3); border-color: var(--lime); }
+  .key.wide { max-width: calc(var(--u) * 11); font-size: calc(var(--u) * 1.4); }
+  .it svg, .rv svg, .stats svg, .linkish svg { width: 1em; height: 1em; vertical-align: -.12em; }
+  .err { color: var(--bad); font: calc(var(--u) * 1.3) var(--sans); min-height: 1.4em; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * .8); }
+  .stats div { padding: calc(var(--u) * 1) calc(var(--u) * .6); border: 1px solid var(--line); background: var(--panel-2); text-align: center; }
+  .stats b { display: block; font: 800 calc(var(--u) * 2) var(--label); }
+  .stats span { font: calc(var(--u) * 1.15) var(--label); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 
-  /* ---------- resultado ---------- */
-  .stars { display: flex; gap: 6px; justify-content: center; margin: 10px 0 6px; }
-  .stars { align-items: flex-end; }
-  .stars svg { width: 66px; height: 66px; overflow: visible; }
-  .stars svg:nth-child(3) { width: 92px; height: 92px; }
-  .stars svg:first-child { width: 0; height: 0; }
-  .stars .on { fill: url(#gStar); filter: drop-shadow(0 0 10px rgba(217,255,101,.7)); stroke: none; }
-  .stars .off { fill: none; stroke: rgba(255,255,255,.55); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
-  .rank-title { font: 800 1.05rem/1.2 var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); }
-  .score-big { font-family: var(--display); font-size: clamp(3.4rem, 18vw, 5rem); font-weight: 800; line-height: 1; margin: 10px 0 2px; font-variant-numeric: tabular-nums; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
-  .stats div { padding: 12px 6px; border: 1px solid var(--line); background: var(--panel-2); text-align: center; }
-  .stats b { display: block; font: 800 1.15rem var(--label); color: var(--text); }
-  .stats span { font: .62rem var(--label); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  /* ---------- popup ---------- */
+  .modal { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: calc(var(--u) * 2); background: rgba(0,34,51,.84); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fade .25s both; }
+  .modal[hidden] { display: none; }
+  @keyframes fade { from { opacity: 0; } }
+  .modal .box { width: min(100%, calc(var(--u) * 88)); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: calc(var(--u) * 2); padding: calc(var(--u) * 2.8); animation: pop .35s cubic-bezier(.2,.9,.3,1.2) both; }
+  .modal .box > * { margin: 0; flex: none; }
+  .modal .box > .btn { margin-top: calc(var(--u) * .8); }
+  @keyframes pop { from { transform: scale(.92); opacity: 0; } }
+  .box h2 { font-size: calc(var(--u) * 3.8); font-weight: 800; margin: calc(var(--u) * .6) 0 calc(var(--u) * 1); }
+  .story { font-size: calc(var(--u) * 1.9); line-height: 1.45; }
+  .lesson { margin: calc(var(--u) * 1.4) 0; padding: calc(var(--u) * 1.4) calc(var(--u) * 1.6); background: rgba(217,255,101,.09); border-left: 4px solid var(--lime); font: 700 calc(var(--u) * 1.9)/1.35 var(--display); }
+  .lesson .fn { display: block; margin-top: calc(var(--u) * .9); font: 400 calc(var(--u) * 1.25)/1.4 var(--sans); color: var(--muted); }
+  .lesson span { display: block; margin-bottom: calc(var(--u) * .5); font: 800 calc(var(--u) * 1.2) var(--label); letter-spacing: .18em; text-transform: uppercase; color: var(--lime); }
+  .story .qtext { display: block; margin-top: calc(var(--u) * 1.2); font-weight: 700; color: var(--text); }
+  .stats.two { grid-template-columns: repeat(2, 1fr); }
+  .prizeh { color: var(--lime); text-shadow: 0 0 30px rgba(217,255,101,.45); }
+  .linkish { background: none; border: 0; padding: calc(var(--u) * 1); color: var(--muted); font: calc(var(--u) * 1.25) var(--label); letter-spacing: .12em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }
 
-  /* ---------- ranking ---------- */
-  .rank { list-style: none; margin: 0; padding: 0; counter-reset: none; }
-  .rank li { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 12px 10px; border-bottom: 1px solid rgba(164,77,255,.12); }
-  .rank li:last-child { border-bottom: 0; }
-  .rank li.me { background: rgba(217,255,101,.08); box-shadow: inset 3px 0 0 var(--lime); }
-  .rank .pos { font: 800 1.05rem var(--label); text-align: center; color: var(--muted); }
-  .rank .top1 .pos { color: #D9FF65; text-shadow: 0 0 12px rgba(217,255,101,.7); }
-  .rank .top2 .pos { color: #FFFFFF; text-shadow: 0 0 12px rgba(255,255,255,.5); }
-  .rank .top3 .pos { color: #FF8900; text-shadow: 0 0 12px rgba(255,137,0,.5); }
-  .rank .who b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .rank .who span { font: .75rem var(--sans); color: var(--muted); }
-  .rank .pts { font: 800 1.1rem var(--label); color: var(--lime); }
-  .empty { padding: 28px 0; text-align: center; font: .9rem var(--sans); color: var(--muted); }
-  .table-wrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; font: .8rem var(--sans); }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(164,77,255,.12); white-space: nowrap; }
-  th { color: var(--muted); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  /* ---------- desafio ---------- */
+  .opts { display: grid; gap: calc(var(--u) * 1.3); margin: 0; }
+  .opts.two { grid-template-columns: 1fr 1fr; }
+  .it { display: flex; align-items: center; gap: calc(var(--u) * 1.2); width: 100%; text-align: left; padding: calc(var(--u) * 1.2) calc(var(--u) * 1.4); font-size: calc(var(--u) * 1.6); line-height: 1.3;
+    background: rgba(0,34,51,.3); border: 2px solid var(--line); border-radius: 4px; }
+  .it .n { flex: none; width: calc(var(--u) * 3.4); height: calc(var(--u) * 3.4); display: grid; place-items: center; font: 800 calc(var(--u) * 1.6) var(--label); border: 1px solid var(--line); color: var(--cyan); }
+  .it.sel { border-color: var(--lime); background: rgba(217,255,101,.12); box-shadow: 0 0 22px rgba(217,255,101,.2); }
+  .it.sel .n { background: var(--lime); color: #002233; border-color: var(--lime); }
+  .jbox { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: calc(var(--u) * 2); padding: calc(var(--u) * 1.4) calc(var(--u) * 1.6); background: rgba(0,34,51,.3); border: 1px solid var(--line); }
+  .jbox p { margin: 0; font-size: calc(var(--u) * 1.6); }
+  .jbox .row { gap: calc(var(--u) * 1); }
+  .jbox .row .it { white-space: nowrap; }
+  .jbox .row .it { width: auto; justify-content: center; font: 800 calc(var(--u) * 1.4) var(--label); letter-spacing: .08em; text-transform: uppercase; padding: calc(var(--u) * 1.1) calc(var(--u) * 1.6); }
+  .box.tight { gap: calc(var(--u) * 1.5); padding: calc(var(--u) * 2.4); }
+  .box.tight h2 { font-size: calc(var(--u) * 3.2); }
+  .box.tight .story { font-size: calc(var(--u) * 1.6); }
+  .box.tight .opts { gap: calc(var(--u) * 1); }
+  .box.tight .it { padding: calc(var(--u) * 1) calc(var(--u) * 1.3); }
+  .rv { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * .9); margin: 0; font-size: calc(var(--u) * 1.35); }
+  .rv div:only-child { grid-column: 1 / -1; }
+  .rv div { padding: calc(var(--u) * .8) calc(var(--u) * 1.2); border-left: 4px solid var(--ok); background: rgba(0,255,212,.07); }
+  #done, #confirm { position: sticky; bottom: 0; box-shadow: 0 calc(var(--u) * 1.2) 0 calc(var(--u) * .4) var(--panel); }
+  .rv div.no { border-left-color: var(--bad); background: rgba(255,0,158,.08); }
+  .rv small { display: block; color: var(--muted); font-size: calc(var(--u) * 1.25); }
 
-  /* ---------- telão (#telao) ---------- */
-  body.tv { --u: min(1vw, 1.75vh); overflow: hidden; }
-  body.tv.idle { cursor: none; }
-  body.tv .wrap { max-width: none; padding: calc(var(--u) * 1.6) calc(var(--u) * 4) calc(var(--u) * .4); }
-  body.tv .tag { font-size: calc(var(--u) * 1); }
-  body.tv .homelink { position: fixed; right: calc(var(--u) * 2); bottom: calc(var(--u) * 1.2); z-index: 5; margin: 0; font-size: calc(var(--u) * .9); transition: opacity .4s; }
-  body.tv.idle .homelink, body.tv.idle #tvfs { opacity: 0; }
-  .tv-head { display: flex; justify-content: space-between; align-items: flex-end; gap: calc(var(--u) * 2); }
-  .tv-title { font-size: calc(var(--u) * 5.2); margin-top: calc(var(--u) * .5); }
-  .tv-meta { display: flex; align-items: center; gap: calc(var(--u) * 2); font: 700 calc(var(--u) * 1) var(--label); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding-bottom: calc(var(--u) * .6); }
-  .tv-meta b { color: var(--lime); }
-  .tv-live { color: var(--lime); }
-  .tv-live::before { content: ""; display: inline-block; width: .7em; height: .7em; margin-right: .6em; border-radius: 50%; background: var(--lime); box-shadow: 0 0 10px var(--lime); animation: blink 1.2s steps(2) infinite; }
-  #tvfs { transition: opacity .4s; }
-  .tv-pods { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: calc(var(--u) * 1.6); align-items: end; margin: calc(var(--u) * 1) 0 calc(var(--u) * 1); }
-  .pod { margin: 0; padding: calc(var(--u) * 1.4) calc(var(--u) * 1.2); text-align: center; min-width: 0; --s: calc(var(--u) * 1.4); }
-  .pod.p1 { --c: #D9FF65; order: 2; padding-top: calc(var(--u) * 2); padding-bottom: calc(var(--u) * 2); box-shadow: 0 0 60px rgba(217,255,101,.14), inset 0 0 40px rgba(217,255,101,.06); }
-  .pod.p2 { --c: #FFFFFF; order: 1; }
-  .pod.p3 { --c: #FF8900; order: 3; }
-  .pod .medal { font: 800 calc(var(--u) * 1.5) var(--label); letter-spacing: .2em; color: var(--c); text-shadow: 0 0 14px var(--c); }
-  .pod .pname { font: 700 calc(var(--u) * 2) / 1.15 var(--display); margin-top: calc(var(--u) * .5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pod.p1 .pname { font-size: calc(var(--u) * 2.7); }
-  .pod .pmail { font: calc(var(--u) * 1) var(--sans); color: var(--muted); margin-top: calc(var(--u) * .2); }
-  .pod .ppts { font: 800 calc(var(--u) * 4.4) / 1 var(--display); margin-top: calc(var(--u) * .7); font-variant-numeric: tabular-nums; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(164,77,255,.35)); }
-  .pod.p1 .ppts { font-size: calc(var(--u) * 6); }
-  .pod .pmeta { font: 700 calc(var(--u) * 1) var(--label); letter-spacing: .12em; color: var(--muted); margin-top: calc(var(--u) * .6); text-transform: uppercase; }
-  .pod.vazio { opacity: .35; }
-  .pod.vazio .pname { font-size: calc(var(--u) * 1.4); color: var(--muted); }
-  .tv-rows { list-style: none; margin: 0; padding: 0 calc(var(--u) * 1); display: grid; grid-auto-flow: column; column-gap: calc(var(--u) * 4); }
-  .tv-rows li { display: grid; grid-template-columns: calc(var(--u) * 3.6) 1fr auto; gap: calc(var(--u) * 1); align-items: center; padding: calc(var(--u) * .75) calc(var(--u) * .6); border-bottom: 1px solid rgba(164,77,255,.14); min-width: 0; }
-  .tv-rows .pos { font: 800 calc(var(--u) * 1.5) var(--label); color: var(--muted); text-align: center; }
-  .tv-rows .who { min-width: 0; }
-  .tv-rows .who b { display: block; font: 700 calc(var(--u) * 1.6) / 1.2 var(--sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tv-rows .who span { font: calc(var(--u) * .9) var(--sans); color: var(--muted); }
-  .tv-rows .pts { font: 800 calc(var(--u) * 2) var(--label); color: var(--lime); font-variant-numeric: tabular-nums; }
-  .fresh { animation: fresh 2.6s ease-out; }
-  @keyframes fresh { 0%, 40% { background-color: rgba(217,255,101,.28); } 100% { background-color: transparent; } }
-  .tv-empty { padding: calc(var(--u) * 4) 0; text-align: center; font: calc(var(--u) * 1.6) var(--sans); color: var(--muted); }
-  .tv-foot { display: flex; justify-content: space-between; gap: calc(var(--u) * 2); margin-top: calc(var(--u) * 1.2); padding-right: calc(var(--u) * 12); font: calc(var(--u) * 1) var(--sans); letter-spacing: .08em; color: var(--muted); }
-  .tv-foot b { color: var(--cyan); }
+  /* ---------- admin / pin ---------- */
+  #pin { z-index: 40; }
+  .pinbox { width: min(100%, calc(var(--u) * 34)); text-align: center; }
+  .dots { font: 800 calc(var(--u) * 3) var(--label); letter-spacing: .4em; min-height: 1.4em; color: var(--lime); }
+  table { border-collapse: collapse; width: 100%; font: calc(var(--u) * 1.4) var(--sans); }
+  th, td { text-align: left; padding: calc(var(--u) * .6) calc(var(--u) * .8); border-bottom: 1px solid rgba(164,77,255,.12); }
+  th { color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+  /* página da organização */
+  #stage[hidden], #org[hidden] { display: none; }
+  #org { position: fixed; inset: 0; z-index: 10; overflow-y: auto; padding: calc(var(--u) * 3) calc(var(--u) * 5) calc(var(--u) * 6); }
+  .org-wrap { max-width: calc(var(--u) * 104); margin: 0 auto; display: flex; flex-direction: column; gap: calc(var(--u) * 2.4); }
+  .org-wrap .panel { margin: 0; }
+  .org-head { display: flex; justify-content: space-between; align-items: flex-end; gap: calc(var(--u) * 2); flex-wrap: wrap; }
+  .org-head h1 { font-size: calc(var(--u) * 4.4); font-weight: 800; text-transform: uppercase; margin-top: calc(var(--u) * .8); }
+  .org-head .btn { margin-top: 0; }
+  .org-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 2.4); }
+  .stockcard { display: flex; flex-direction: column; gap: calc(var(--u) * 1.2); }
+  .stockcard .note { margin: 0; }
+  .bignum { font: 800 calc(var(--u) * 7) var(--display); line-height: 1; color: var(--lime); font-variant-numeric: tabular-nums; }
+  .adjust { display: flex; gap: calc(var(--u) * 1); flex-wrap: wrap; }
+  .adjust .key { flex: none; min-width: calc(var(--u) * 7); max-width: none; font-size: calc(var(--u) * 1.6); }
+  .stats.wide { grid-template-columns: repeat(4, 1fr); }
+  .stats.wide div { padding: calc(var(--u) * 1.2) calc(var(--u) * .6); }
+  .hot { position: fixed; left: 0; bottom: 0; width: calc(var(--u) * 8); height: calc(var(--u) * 8); z-index: 25; }
 
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; }
+  #testbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; padding: 6px 12px;
+    font: 700 calc(var(--u) * 1.3)/1.3 var(--label); letter-spacing: .08em; text-transform: uppercase; color: #002233; background: var(--warn); }
+  #testbar[hidden] { display: none; }
+  #testbar button { background: none; border: 0; padding: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+  /* só telas realmente pequenas (largura até 760 px, como um celular): roda em cima, painel embaixo */
+  @media (max-width: 760px) {
+    #stage { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; justify-items: center; overflow-y: auto; gap: calc(var(--u) * 3); padding: calc(var(--u) * 6) calc(var(--u) * 3) calc(var(--u) * 9); }
+    .wheelwrap { width: min(100%, 46vh, 46dvh); }
+    .side { width: 100%; }
+    .side h1 { font-size: calc(var(--u) * 3.8); }
+    .org-grid, .btns.two { grid-template-columns: 1fr; }
+    .stats.wide { grid-template-columns: repeat(2, 1fr); }
+    #org { padding: calc(var(--u) * 3) calc(var(--u) * 3) calc(var(--u) * 6); }
+    .opts.two { grid-template-columns: 1fr; }
+    .jbox { grid-template-columns: 1fr; }
   }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<div class="scene" aria-hidden="true">
-  <div class="floor"></div>
-  <div id="rain"></div>
-  <div class="vignette"></div>
-</div>
-<main class="wrap" id="app" aria-live="polite"></main>
+<div class="scene" aria-hidden="true"><div class="floor"></div><div id="rain"></div><div class="vignette"></div></div>
 <div id="testbar" hidden></div>
+<main id="stage">
+  <section class="wheelbox" aria-label="Roleta">
+    <div class="wheelwrap">
+      <div class="pointer" aria-hidden="true"></div>
+      <svg viewBox="-310 -310 620 620" role="img" aria-label="Roleta Interativa, roleta com 14 fatias: 5 de segurança, 5 de privacidade, 2 de Proteção Total e 2 de Não foi dessa vez">
+        <defs>
+          <linearGradient id="gRim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A44DFF"/><stop offset="1" stop-color="#FF009E"/></linearGradient>
+        </defs>
+        <circle r="304" fill="#00DBFF" stroke="url(#gRim)" stroke-width="8"/>
+        <g id="rot"><g id="slices"></g></g>
+        <circle r="52" fill="#002233" stroke="url(#gRim)" stroke-width="5"/>
+        <path d="M0 -26 L22 -18 V3 C22 17 12 25 0 31 C-12 25 -22 17 -22 3 V-18 Z" fill="rgba(164,77,255,.18)" stroke="url(#gRim)" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="0" cy="-3" r="5" fill="#D9FF65"/>
+      </svg>
+    </div>
+  </section>
+  <section class="side">
+    <div>
+      <div class="tag">Semana de Segurança e Privacidade</div>
+      <h1><span class="grad">Roleta Interativa</span></h1>
+      <div class="legend" aria-hidden="true"><span><i class="sw ss"></i>Segurança</span><span><i class="sw sp"></i>Privacidade</span><span><i class="sw sg"></i>Proteção Total</span><span><i class="sw sn"></i>Não foi dessa vez!</span></div>
+    </div>
+    <div id="state" aria-live="polite"></div>
+  </section>
+</main>
+<main id="org" hidden aria-label="Organização"></main>
+<div id="modal" class="modal" role="dialog" aria-modal="true" hidden></div>
+<div id="pin" class="modal" role="dialog" aria-modal="true" hidden></div>
+<div class="hot" id="hot" aria-hidden="true"></div>
 
-<script src="perguntas.js"></script>
 <script>
 /* ============================================================
    CONFIGURAÇÃO — ajuste aqui sem mexer no resto do código
+   O estoque (total de brindes e de prêmios) NÃO fica aqui: a organização informa na
+   página index.html#organizacao antes de começar, e pode alterar durante o evento.
    ============================================================ */
 const CONFIG = {
-  gameTitle: ['Cyber', 'Shield', 'Game'],
-  allowedDomains: ['totvs.com.br'],   // [] para aceitar qualquer domínio
-  questionsPerGame: 10,
-  secondsPerQuestion: 20,
-  levelPoints: [100, 150, 200],       // pontos por acerto: pergunta fácil, média, difícil
-  speedBonusMax: 100,                 // bônus máximo por rapidez
-  reviewFactor: 0.5,                  // acerto na rodada de revisão vale 50% dos pontos da pergunta
-  readSecondsOk: 6,                  // pausa para ler a explicação após um acerto
-  readSecondsWrong: 8,               // pausa para ler a explicação após um erro
-  comboStep: 10,                      // bônus por acerto consecutivo (a partir do 2º)
-  comboMax: 50,                       // teto do bônus de combo
-  attemptsPerEmail: 3,                // melhor pontuação conta
-  rankingSize: 10,
-  adminPin: '2468',                   // PROTÓTIPO: trocar/remover quando houver backend
-  storageKey: 'sp-game-v1',
+  prizeStockUsedOn: 'landing',        // 'landing': cada queda em Proteção Total reserva 1 prêmio do estoque (abandono devolve;
+                                      //            desafios reprovados voltam pelo painel da organização)
+                                      // 'win': o estoque só baixa quando a pessoa acerta o desafio
+  maxChallengesPerHour: 0,            // 0 = sem limite; ex.: 3 permite no máximo 3 quedas em Proteção Total por hora
+  spinSeconds: 6,
+  idleSeconds: 45,                    // volta ao início se ninguém tocar
+  idleChallengeSeconds: 120,          // idem, durante o quiz e o desafio (abandono não gera brinde nem prêmio)
+  adminPin: '2468',                   // o mesmo PIN do quiz (PROTÓTIPO: PIN no cliente não é segurança real)
+  storageKey: 'sp-roleta-v3',
+  sheetsEndpoint: 'https://script.google.com/a/macros/totvs.com.br/s/AKfycbywfhNDG9P0ArKTrWV2L70dgIW80LV80x8WHOaPx_ugRX0Xhh54r1TrZydkNI1KQa2d/exec',   // planilha do Google (vazio = não envia)
 };
 
-/* MODO TESTE: abrir o jogo com ?teste no endereço (ex.: index.html?teste).
-   Aceita qualquer e-mail, sem limite de tentativas, e usa um armazenamento
-   separado, então nada do teste entra no ranking real. */
+/* MODO TESTE: abrir com ?teste (ex.: index.html?teste). Dados guardados à parte, estoque de teste
+   preenchido sozinho e um atalho para forçar o Proteção Total. */
 const TEST = /[?&]teste(=|&|$)/.test(location.search);
-if (TEST) Object.assign(CONFIG, { allowedDomains: [], attemptsPerEmail: Infinity, storageKey: 'sp-game-v1-teste' });
-const attemptsLabel = n => n === Infinity ? '∞' : n;
+const TEST_STOCK = { souvenirs: 110, prizes: 10 };
+if (TEST) Object.assign(CONFIG, { storageKey: 'sp-roleta-v3-teste' });
 
 /* ============================================================
-   CAMADA DE ARMAZENAMENTO
-   Hoje: localStorage (cada aparelho tem seu próprio ranking).
-   Para ligar ao backend/TI: reimplementar estes métodos
-   (todos assíncronos) sem alterar o resto do jogo.
+   CONTEÚDO: fatias, cenas e desafios
    ============================================================ */
-const Store = {
-  _read() {
-    try {
-      const d = JSON.parse(localStorage.getItem(CONFIG.storageKey)) || {};
-      return { results: d.results || [], seen: d.seen || {} };
-    } catch { return { results: [], seen: {} }; }
-  },
-  _write(data) { localStorage.setItem(CONFIG.storageKey, JSON.stringify(data)); },
-  async countAttempts(email) {
-    return this._read().results.filter(r => r.email === email).length;
-  },
-  async saveResult(result) {
-    const data = this._read();
-    data.results.push(result);
-    this._write(data);
-  },
-  async getAllResults() { return this._read().results; },
-  async getSeen(email) { return this._read().seen[email] || []; },
-  async addSeen(email, ids) {
-    const data = this._read();
-    data.seen[email] = [...new Set([...(data.seen[email] || []), ...ids])];
-    this._write(data);
-  },
-  async clearAll() { this._write({ results: [], seen: {} }); },
+const SLICES = [   // kind: 's' = segurança, 'p' = privacidade (5 de cada, alternadas na roda); gold = Proteção Total; none = Não foi dessa vez
+  { id: 'gold1', gold: true, label: 'PROTEÇÃO TOTAL' },
+  { id: 'phishing', kind: 's', label: 'Caiu no phishing', scene: {
+    title: 'Você caiu em um phishing',
+    story: 'Um e-mail dizia ser do RH, pedia a atualização da sua senha em 1 hora e trazia um link. Você clicou e digitou a senha numa página falsa. Agora o golpista já tenta entrar nas suas contas.',
+    lesson: 'Urgência + link + ameaça são sinais de phishing. Confira o remetente, não clique e reporte à segurança.' } },
+  { id: 'ia', kind: 'p', label: 'Dados na IA', scene: {
+    title: 'Você colou dados numa IA pública',
+    story: 'Para ganhar tempo, você colou um contrato com dados de clientes numa ferramenta de IA aberta. O texto pode ser guardado e reutilizado por terceiros.',
+    lesson: 'Dado confidencial e dado pessoal não entram em ferramenta de IA que a empresa não aprovou.' } },
+  { id: 'senha', kind: 's', label: 'Senha vazada', scene: {
+    title: 'Sua senha vazou',
+    story: 'Uma loja online onde você usava a mesma senha do trabalho foi invadida. Sua senha apareceu numa lista à venda, e os criminosos estão testando ela em outros serviços.',
+    lesson: 'Use uma senha diferente para cada serviço, de preferência frases longas, e guarde tudo num gerenciador de senhas.' } },
+  { id: 'nada1', none: true, label: 'Não foi dessa vez!' },
+  { id: 'destino', kind: 'p', label: 'Destino errado', scene: {
+    title: 'Você enviou dados à pessoa errada',
+    story: 'Você anexou a planilha de clientes, com nomes, CPFs e telefones, e o autopreenchimento mandou o e-mail para alguém de fora da empresa. Os dados de várias pessoas ficaram expostos.',
+    lesson: 'Confira o destinatário antes de enviar e avise a segurança ou a privacidade na hora: reportar rápido reduz o dano.' } },
+  { id: 'ransomware', kind: 's', label: 'Ransomware', scene: {
+    title: 'Seus arquivos foram sequestrados',
+    story: 'Uma tela exige um pagamento para liberar seus arquivos. Você reiniciou o computador várias vezes e o problema se espalhou pela rede da empresa.',
+    lesson: 'Desconecte o equipamento da rede e avise a segurança na hora. Nunca pague o resgate e mantenha backup (regra 3-2-1*).',
+    note: '* 3 cópias dos seus dados em 2 tipos diferentes de mídia com 1 cópia fora do local' } },
+  { id: 'gold2', gold: true, label: 'PROTEÇÃO TOTAL' },
+  { id: 'selfie', kind: 'p', label: 'Selfie reveladora', scene: {
+    title: 'Sua selfie revelou informações',
+    story: 'Você postou uma foto no trabalho, com o crachá no peito e a tela do computador ao fundo. Golpistas usaram os nomes, sistemas e dados visíveis para montar um golpe direcionado.',
+    lesson: 'Antes de postar, olhe o fundo da foto: crachá, telas e documentos expõem dados seus e da empresa.' } },
+  { id: 'wifi', kind: 's', label: 'Wi-Fi falso', scene: {
+    title: 'Você entrou num Wi-Fi falso',
+    story: 'A rede "Cafe_Gratis" foi criada por um golpista. Enquanto você acessava seu e-mail, ele via tudo o que passava pela conexão.',
+    lesson: 'Em rede pública, use a VPN da empresa. Confirme o nome oficial da rede antes de conectar.' } },
+  { id: 'demais', kind: 'p', label: 'Dados demais', scene: {
+    title: 'Você coletou mais dados do que precisava',
+    story: 'Para um cadastro simples, você pediu CPF, data de nascimento e endereço. A base vazou, e todos esses dados ficaram expostos sem necessidade.',
+    lesson: 'Colete só o necessário para a finalidade informada: dado que não foi coletado não vaza.' } },
+  { id: 'nada2', none: true, label: 'Não foi dessa vez!' },
+  { id: 'pendrive', kind: 's', label: 'Pendrive-isca', scene: {
+    title: 'Você plugou um pendrive achado',
+    story: 'Ele estava no estacionamento, com a etiqueta "Folha de pagamento". Ao plugar, um programa malicioso se instalou sozinho no seu computador.',
+    lesson: 'Dispositivo desconhecido nunca se conecta. Entregue à equipe de TI ou de segurança.' } },
+  { id: 'base', kind: 'p', label: 'Base aberta', scene: {
+    title: 'Você compartilhou a base inteira entre áreas',
+    story: 'Para agilizar, você enviou a outra área a base completa de clientes, com CPF, telefone e histórico, quando ela só precisava do e-mail. Os dados circularam sem necessidade e foram parar em planilhas sem controle.',
+    lesson: 'Compartilhe só os dados necessários, com quem precisa, e limite o fluxo de informações entre as áreas.' } },
+];
+
+/* Proteção Total: 3 itens por desafio, 3 formatos, com temas de segurança e de privacidade.
+   Passar = acertar os 3. */
+const SPOT = [
+  { title: 'Caça ao golpe', intro: 'Você recebeu este e-mail. Toque nos 3 sinais de golpe.', items: [
+    { t: 'De: rh@totvs-beneficios.com', bad: true, why: 'Domínio parecido com o oficial, mas não é o da empresa.' },
+    { t: 'Assunto: URGENTE: atualize sua senha em 1 hora', bad: true, why: 'Urgência e ameaça são marcas de phishing.' },
+    { t: 'Link: http://totvs-senha.top/login', bad: true, why: 'O link leva a um endereço que não é da empresa.' },
+    { t: 'Saudação: "Olá, tudo bem?"' }, { t: 'Enviado numa terça-feira, às 10h' },
+    { t: 'Assinatura: "Equipe de Pessoas"' }, { t: 'Texto em português correto' } ] },
+  { title: 'Caça ao golpe', intro: 'Você recebeu este SMS. Toque nos 3 sinais de golpe.', items: [
+    { t: 'Remetente: número desconhecido', bad: true, why: 'Empresas de verdade se identificam, não usam números aleatórios.' },
+    { t: 'Cobrança surpresa de R$ 4,90 para liberar a encomenda', bad: true, why: 'Valor baixo para você baixar a guarda e entregar o cartão.' },
+    { t: 'Link encurtado: bit.ly/x9Qa2', bad: true, why: 'Link encurtado esconde para onde você vai.' },
+    { t: 'Texto em português correto' }, { t: 'Enviado às 14h' }, { t: 'Mensagem curta e objetiva' } ] },
+  { title: 'Mesa com erros', intro: 'Observe esta mesa de trabalho. Toque nos 3 erros de segurança.', items: [
+    { t: 'Post-it com a senha colado no monitor', bad: true, why: 'Senha à vista é senha exposta.' },
+    { t: 'Computador destravado e ninguém na mesa', bad: true, why: 'Quem passa pode usar suas contas. Bloqueie a tela (Win + L).' },
+    { t: 'Pendrive desconhecido plugado no notebook', bad: true, why: 'Dispositivo desconhecido pode instalar malware.' },
+    { t: 'Crachá guardado no bolso' }, { t: 'Gaveta trancada com documentos' },
+    { t: 'Notebook preso por cabo de segurança' }, { t: 'Garrafa de água ao lado do teclado' } ] },
+  { title: 'Home office com erros', intro: 'Observe este trabalho remoto. Toque nos 3 erros.', items: [
+    { t: 'Reunião com cliente no Wi-Fi aberto do café, sem VPN', bad: true, why: 'Rede pública pode ser monitorada. Use a VPN.' },
+    { t: 'Tela inteira compartilhada, com e-mails abertos', bad: true, why: 'Compartilhe só a janela necessária, para não expor dados.' },
+    { t: 'Planilha de clientes enviada ao e-mail pessoal', bad: true, why: 'Dados de clientes só circulam em canais aprovados.' },
+    { t: 'VPN da empresa ativa em casa' }, { t: 'Notebook bloqueado ao sair da mesa' },
+    { t: 'Atualizações do sistema em dia' }, { t: 'Autenticação em dois fatores ativada' } ] },
+  { title: 'Dados expostos', intro: 'Observe este escritório. Toque nos 3 erros de privacidade.', items: [
+    { t: 'Planilha com o CPF dos clientes numa pasta aberta a todos', bad: true, why: 'Dado pessoal só para quem precisa dele para trabalhar.' },
+    { t: 'Base completa de clientes enviada a outra área que só precisa do e-mail', bad: true, why: 'Compartilhe só o necessário e limite o fluxo de dados entre áreas.' },
+    { t: 'Foto de tela com dados de clientes enviada num grupo pessoal', bad: true, why: 'Dados de clientes só circulam em canais aprovados.' },
+    { t: 'Relatório só com números agregados, sem nomes' }, { t: 'Documentos pessoais em armário trancado' },
+    { t: 'Acesso ao sistema limitado por perfil' }, { t: 'Planilha protegida, em ambiente aprovado pela empresa' } ] },
+  { title: 'Cadastro cheio demais', intro: 'Este formulário é só para receber uma newsletter por e-mail. Toque nos 3 campos que NÃO precisam ser coletados.', items: [
+    { t: 'CPF', bad: true, why: 'Não é necessário para receber uma newsletter.' },
+    { t: 'Data de nascimento completa', bad: true, why: 'Não é necessária para esta finalidade.' },
+    { t: 'Endereço residencial', bad: true, why: 'Colete só o necessário para a finalidade informada.' },
+    { t: 'Nome' }, { t: 'E-mail corporativo' }, { t: 'Aceite do termo de participação' } ] },
+];
+const ORDER = [
+  { title: 'Senha na ordem', intro: 'Toque nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['senha123', 'Maria1990', 'M@ria1990#', 'onibus-lua-pipoca-sino-92'], why: 'Quanto mais longa e imprevisível, mais forte. Frases com palavras soltas vencem os truques previsíveis.' },
+  { title: 'Senha na ordem', intro: 'Toque nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['abc12345', 'Futebol2023', 'F8tebol#2023', 'trem-janela-estrela-bolo-33-azul'], why: 'Trocar letras por números e símbolos ajuda pouco. O tamanho e o acaso é que fortalecem a senha.' },
+  { title: 'Senha na ordem', intro: 'Toque nas senhas da mais FRACA para a mais FORTE.', mono: true, pw: ['admin', 'admin2024', 'Adm1n@2024!', 'peixe-lanterna-cobre-nuvem-58'], why: 'Palavras óbvias com data são as primeiras a serem testadas por um atacante.' },
+  { title: 'Dados em ordem', intro: 'Toque nos dados do MENOS sensível para o MAIS sensível.', pw: ['Cargo na empresa', 'Nome completo', 'CPF', 'Exame médico'], why: 'Dados de saúde, biometria e crenças são sensíveis na LGPD e pedem proteção reforçada.' },
+  { title: 'Dados em ordem', intro: 'Toque nos dados do MENOS sensível para o MAIS sensível.', pw: ['Cidade onde mora', 'Telefone pessoal', 'CPF', 'Impressão digital (biometria)'], why: 'Biometria é dado pessoal sensível: se vazar, não dá para trocar como uma senha.' },
+];
+/* Risco ou tudo certo? Cada partida sorteia 3 situações, sempre com ao menos uma de segurança e uma de privacidade. */
+const JUDGE = [
+  { kind: 's', t: 'Vou usar a mesma senha do trabalho no meu cadastro da loja online.', risk: true, why: 'Se a loja vazar, a senha do trabalho vaza junto.' },
+  { kind: 's', t: 'Achei um pendrive no estacionamento. Vou plugar para descobrir de quem é.', risk: true, why: 'Dispositivo desconhecido pode instalar malware.' },
+  { kind: 's', t: 'Chegou um e-mail urgente do RH com um link para atualizar a senha. Vou clicar rápido.', risk: true, why: 'Urgência e link são sinais de phishing.' },
+  { kind: 's', t: 'Vou ativar a verificação em dois fatores na minha conta.', risk: false, why: 'Uma segunda camada protege a conta mesmo se a senha vazar.' },
+  { kind: 's', t: 'Quando saio da mesa, bloqueio a tela do computador.', risk: false, why: 'Bloquear a tela leva 1 segundo e evita acesso indevido.' },
+  { kind: 's', t: 'Em Wi-Fi público, só trabalho conectado à VPN da empresa.', risk: false, why: 'A VPN protege o tráfego em redes não confiáveis.' },
+  { kind: 'p', t: 'Vou mandar a planilha de clientes, com CPF, para o meu e-mail pessoal e terminar em casa.', risk: true, why: 'Dados de clientes só circulam em canais aprovados.' },
+  { kind: 'p', t: 'Vou colar o contrato do cliente numa IA pública para resumir.', risk: true, why: 'O que é colado em ferramentas externas pode ser guardado e reutilizado.' },
+  { kind: 'p', t: 'No cadastro da newsletter vou pedir CPF e endereço, vai que precisamos depois.', risk: true, why: 'Colete só o necessário para a finalidade informada.' },
+  { kind: 'p', t: 'Outra área pediu a base de clientes. Vou enviar tudo, melhor sobrar do que faltar.', risk: true, why: 'Compartilhe só os campos necessários e limite o fluxo de dados entre áreas.' },
+  { kind: 'p', t: 'Quando outra área pede dados, envio só as colunas de que ela precisa.', risk: false, why: 'Mínimo necessário: o fluxo de dados entre áreas fica sob controle.' },
+  { kind: 'p', t: 'Antes de enviar o e-mail com dados de clientes, confiro o destinatário.', risk: false, why: 'Conferir evita um envio errado, que é incidente de privacidade.' },
+  { kind: 'p', t: 'Para o sorteio só peço o e-mail e aviso que os dados serão apagados depois do evento.', risk: false, why: 'Coleta mínima, com finalidade e prazo claros.' },
+  { kind: 'p', t: 'Planilhas temporárias com dados de clientes são excluídas quando o projeto termina.', risk: false, why: 'Cópias esquecidas viram risco sem utilidade.' },
+];
+
+/* Quiz de cada situação: a pessoa só ganha o brinde se acertar. A regra de ouro (scene.lesson) só aparece depois da resposta. */
+const SCENE_QUIZ = {
+  phishing: [
+    { q: 'Depois de clicar no link do e-mail falso e digitar sua senha, qual deve ser a primeira atitude?', correct: 'Avisar a segurança na hora e trocar a senha',
+      wrong: ['Esperar para ver se algo estranho acontece', 'Apagar o e-mail e não comentar com ninguém', 'Encaminhar o e-mail aos colegas como alerta'] },
+    { q: 'Qual destes sinais mais indica que o e-mail do "RH" era falso?', correct: 'Urgência para agir e um link para atualizar a senha',
+      wrong: ['Ter sido enviado em um dia útil', 'Vir com a assinatura da equipe de Pessoas', 'Estar escrito em português correto'] },
+  ],
+  ia: [
+    { q: 'O que fazer antes de usar uma ferramenta de IA com dados de clientes?', correct: 'Conferir se ela foi aprovada pela empresa',
+      wrong: ['Remover só o nome da empresa do texto', 'Usar a conta pessoal na ferramenta', 'Testar primeiro com um documento menos importante'] },
+    { q: 'Por que não se deve colar dados de clientes numa IA pública?', correct: 'O texto pode ser guardado e reutilizado por terceiros',
+      wrong: ['A ferramenta pode ficar mais lenta', 'A IA pode se recusar a responder', 'Os dados são sempre apagados na hora'] },
+  ],
+  senha: [
+    { q: 'Como evitar que o vazamento de um site exponha suas outras contas?', correct: 'Usar uma senha diferente em cada serviço',
+      wrong: ['Trocar a mesma senha uma vez por ano', 'Usar a senha do trabalho só em sites seguros', 'Adicionar um número no final da senha'] },
+    { q: 'Qual ferramenta ajuda a ter uma senha única para cada serviço?', correct: 'Um gerenciador de senhas aprovado pela empresa',
+      wrong: ['Um bloco de notas guardado no desktop', 'Uma planilha compartilhada com a equipe', 'Um papel colado no monitor'] },
+  ],
+  destino: [
+    { q: 'Você enviou uma planilha de clientes à pessoa errada. O que fazer?', correct: 'Avisar na hora a segurança ou a privacidade',
+      wrong: ['Pedir que apague e não avisar ninguém', 'Torcer para ela ignorar o e-mail', 'Apagar o e-mail dos itens enviados'] },
+    { q: 'Qual hábito evita enviar dados ao destinatário errado?', correct: 'Conferir o endereço de cada destinatário antes de enviar',
+      wrong: ['Confiar no preenchimento automático do e-mail', 'Enviar a planilha para um grupo grande', 'Colocar todos os destinatários em cópia'] },
+  ],
+  ransomware: [
+    { q: 'Seus arquivos foram sequestrados e pedem um resgate. O que fazer primeiro?', correct: 'Desconectar da rede e avisar a segurança',
+      wrong: ['Pagar o resgate para recuperar rápido', 'Reiniciar o computador várias vezes', 'Apagar os arquivos afetados'] },
+    { q: 'Qual prática ajuda a se recuperar de um ransomware sem pagar?', correct: 'Manter backups atualizados, inclusive um fora da rede',
+      wrong: ['Guardar as cópias na mesma pasta dos originais', 'Confiar apenas no antivírus instalado', 'Desativar as atualizações do sistema'] },
+  ],
+  selfie: [
+    { q: 'Antes de postar uma foto no trabalho, o que conferir?', correct: 'Se aparecem crachá, telas ou documentos ao fundo',
+      wrong: ['Se a foto está com boa iluminação', 'Se a postagem é feita no horário comercial', 'Se há mais de uma pessoa na imagem'] },
+    { q: 'Por que crachás e telas em fotos são um risco?', correct: 'Revelam nomes e sistemas usados em golpes direcionados',
+      wrong: ['Deixam a foto com baixa qualidade', 'Fazem a rede social bloquear a conta', 'Aumentam o tamanho do arquivo enviado'] },
+  ],
+  wifi: [
+    { q: 'Você precisa trabalhar numa rede Wi-Fi pública. O que protege seus dados?', correct: 'Conectar a VPN da empresa antes de acessar sistemas',
+      wrong: ['Usar a aba anônima do navegador', 'Escolher a rede com o sinal mais forte', 'Desligar o antivírus para ganhar velocidade'] },
+    { q: 'Como saber se uma rede Wi-Fi do local é a oficial?', correct: 'Perguntar o nome da rede à organização do local',
+      wrong: ['Escolher a que tiver o nome mais parecido', 'Conectar na que não pede senha', 'Usar a primeira que aparecer na lista'] },
+  ],
+  demais: [
+    { q: 'Para um cadastro simples de evento, quais dados pedir?', correct: 'Só os necessários, como nome e e-mail',
+      wrong: ['Também CPF e data de nascimento', 'Endereço completo, por precaução', 'Todos os dados do cadastro de clientes'] },
+    { q: 'Qual princípio da LGPD diz para coletar só o necessário?', correct: 'O princípio da necessidade',
+      wrong: ['O princípio da gratuidade', 'O princípio da rapidez', 'O princípio da publicidade'] },
+  ],
+  pendrive: [
+    { q: 'Você encontrou um pendrive no estacionamento. Qual a atitude certa?', correct: 'Entregar à TI ou à segurança, sem plugar',
+      wrong: ['Plugar em um computador antigo para testar', 'Plugar no seu para achar o dono', 'Deixar no mesmo lugar para o dono procurar'] },
+    { q: 'Por que um pendrive desconhecido é perigoso?', correct: 'Pode instalar um programa malicioso ao ser conectado',
+      wrong: ['Ele sempre contém arquivos pessoais de alguém', 'Ele deixa a internet mais lenta', 'Ele consome muita bateria do computador'] },
+  ],
+  base: [
+    { q: 'Outra área pediu a base completa de clientes. O que fazer?', correct: 'Enviar só os campos de que ela precisa',
+      wrong: ['Enviar a base inteira, é a mesma empresa', 'Enviar tudo e pedir que apaguem depois', 'Enviar pelo e-mail pessoal, que é mais rápido'] },
+    { q: 'Por que limitar o fluxo de dados entre áreas?', correct: 'Quanto mais cópias circulam, maior o risco de vazamento',
+      wrong: ['Para a base ficar mais leve nos computadores', 'Porque outras áreas nunca precisam de dados', 'Para evitar que o arquivo mude de nome'] },
+  ],
 };
 
 /* ============================================================
-   UTILITÁRIOS
+   UTILITÁRIOS E ARMAZENAMENTO (um único computador: localStorage)
+   Nenhum dado pessoal é coletado: o jogo só controla estoque e histórico de giros.
+   Estoque = total informado pela organização − baixas (brindes entregues e prêmios reservados).
    ============================================================ */
-const $app = document.getElementById('app');
+const $ = id => document.getElementById(id);
+/* ícones desenhados em SVG (a fonte do jogo é a TOTVS, com Verdana de reserva) */
+const CHK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const XIC = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-const normEmail = e => e.trim().toLowerCase();
-const maskEmail = e => { const [u, d] = e.split('@'); return (u[0] || '') + '***@' + d; };
-const fmtTime = ms => (ms / 1000).toFixed(1).replace('.', ',') + 's';
-const pad2 = n => String(n).padStart(2, '0');
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const hhmm = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 const csvCell = v => { let s = String(v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function validateEmail(email) {
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Informe um e-mail válido.';
-  const domain = email.split('@')[1];
-  const ds = CONFIG.allowedDomains;
-  if (ds.length && !ds.some(d => domain === d || domain.endsWith('.' + d)))
-    return 'Use seu e-mail corporativo (@' + ds[0] + ').';
-  return '';
+/* total: null = a organização ainda não informou; used = baixas de estoque */
+const freshDb = () => ({ log: [], total: { souvenirs: null, prizes: null }, used: { souvenirs: 0, prizes: 0 } });
+function readDb() {
+  try { const d = JSON.parse(localStorage.getItem(CONFIG.storageKey)); if (d && Array.isArray(d.log) && d.total && d.used) return d; } catch { /* sem dados */ }
+  return freshDb();
+}
+let db = readDb();
+const save = () => { try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(db)); } catch { /* armazenamento indisponível */ } };
+if (TEST && db.total.souvenirs === null && db.total.prizes === null) { db.total = { ...TEST_STOCK }; save(); }
+
+function currentPlayer() { try { return JSON.parse(localStorage.getItem('sp-current-player')) || {}; } catch { return {}; } }
+
+/* Planilha do Google (Apps Script). Duas mãos:
+   - ENVIO: cada registro entra numa fila guardada no navegador e só sai dela quando o Apps Script confirma a gravação
+     (resposta JSONP); se falhar, tenta de novo sozinho.
+   - ESTOQUE: a planilha é a fonte da verdade dos prêmios (brinde top). A equipe preenche "brinde_entregue" lá; o jogo consulta
+     a contagem em segundo plano e, se não houver conexão ou a resposta estiver velha, usa a contagem local.
+   No modo teste nada é enviado nem consultado. Sem dados pessoais: só horário, situação, pergunta, resposta e resultado. */
+const SHEET = (() => {
+  const KEY = 'sp-roleta-fila', TIMEOUT = 15000, MAX_QUEUE = 500, MAX_LEN = 300, FRESH_MS = 120000, POLL_MS = 30000;
+  let busy = false, retryT = 0, fails = 0, lastOk = 0, lastFail = 0, lastWhy = '';
+  let stock = null, stockAt = 0, stockBusy = false, stale = true;
+  const active = () => !TEST && !!CONFIG.sheetsEndpoint;
+  const read = () => { try { const q = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(q) ? q : []; } catch { return []; } };
+  const write = q => { try { localStorage.setItem(KEY, JSON.stringify(q.slice(-MAX_QUEUE))); } catch { /* armazenamento indisponível */ } };
+  const changed = () => {
+    if (typeof renderSync === 'function') renderSync();
+  };
+  /* chama o Apps Script e entrega (ok, resposta); ok só é verdadeiro se o callback JSONP rodou com { ok: true } */
+  function call(params, done) {
+    const cb = '__spAck' + Math.random().toString(36).slice(2), s = document.createElement('script');
+    let over = false, timer = 0;
+    const end = (ok, r, why) => { if (over) return; over = true; clearTimeout(timer); delete window[cb]; s.remove(); done(ok, r, why); };
+    timer = setTimeout(() => end(false, null, 'timeout'), TIMEOUT);
+    window[cb] = r => end(!!(r && r.ok), r, r && r.ok ? '' : 'recusado');
+    s.onerror = () => end(false, null, 'rede');          // o navegador não conseguiu carregar o endereço
+    s.onload = () => end(false, null, 'resposta');       // o callback roda antes do onload; sem ele, a resposta não era a esperada (ex.: tela de login)
+    s.src = `${CONFIG.sheetsEndpoint}?${new URLSearchParams({ ...params, callback: cb, t: Date.now() })}`;
+    document.head.appendChild(s);
+  }
+  function refreshStock() {
+    if (!active() || stockBusy) return;
+    stockBusy = true;
+    call({ acao: 'estoque' }, (ok, r) => {
+      stockBusy = false;
+      if (ok) { stock = r; stockAt = Date.now(); stale = false; }
+      changed();
+    });
+  }
+  function flush(force) {
+    if (!active() || busy) return;
+    const q = read();
+    if (!q.length) { if (stale) refreshStock(); changed(); return; }
+    if (force) { fails = 0; clearTimeout(retryT); }
+    busy = true; clearTimeout(retryT);
+    call(q[0], (ok, r, why) => {
+      busy = false;
+      if (ok) { lastOk = Date.now(); fails = 0; stale = true; write(read().filter(x => x.id !== q[0].id)); flush(); }   // a contagem da planilha mudou: consulta de novo
+      else { lastFail = Date.now(); lastWhy = why; fails++; retryT = setTimeout(flush, Math.min(60000, 5000 * 2 ** (fails - 1))); }
+      changed();
+    });
+    changed();
+  }
+  function push(ev) {
+    if (!active()) return;
+    const clean = {}; for (const k in ev) clean[k] = String(ev[k] ?? '').slice(0, MAX_LEN);
+    const q = read();
+    q.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), data_hora: new Date().toISOString(), ...clean });
+    write(q); flush();
+  }
+  /* Prêmios top já comprometidos segundo a planilha + os que ainda estão na fila de envio; null = sem contagem confiável (usa a local).
+     Não é confiável quando a resposta é velha, quando acabou de chegar uma gravação ainda não recontada ou quando há um "zerar" na fila. */
+  function topUsed() {
+    if (!active() || !stock || stale || Date.now() - stockAt > FRESH_MS) return null;
+    const q = read();
+    if (q.some(x => x.evento === 'zerar')) return null;
+    return (+stock.top_usados || 0) + q.filter(x => x.direito === 'top').length;
+  }
+  addEventListener('online', () => flush(true));
+  setInterval(refreshStock, POLL_MS);
+  setTimeout(flush, 1500);                                  // reenvia o que sobrou de uma sessão anterior e consulta o estoque
+  return { push, flush, topUsed, state: () => ({ on: active(), pending: read().length, fails, lastOk, lastFail, lastWhy, busy, stock: stock && !stale ? stock : null }) };
+})();
+const configured = () => db.total.souvenirs !== null && db.total.prizes !== null;
+/* Baixas de prêmios: com a planilha confiável, vale a contagem dela (mais o desafio em andamento); senão, a contagem local. */
+const usedOf = k => {
+  const sheet = k === 'prizes' ? SHEET.topUsed() : null;
+  return sheet === null ? db.used[k] : sheet + (ui.challenge ? 1 : 0);
+};
+const left = k => Math.max(0, (db.total[k] === null ? 0 : db.total[k]) - usedOf(k));
+function newCode() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let code;
+  do { code = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join(''); } while (db.log.some(l => l.code === code));
+  return code;
+}
+function giveSouvenir() {
+  if (left('souvenirs') <= 0) return 'none';
+  db.used.souvenirs++;
+  return 'given';
+}
+const challengesLastHour = () => db.log.filter(l => l.type === 'spin' && l.kind === 'challenge' && l.at > Date.now() - 3600000).length;
+
+/* ============================================================
+   ESTADO E RODA
+   ============================================================ */
+let ui = { mode: 'attract', challenge: null, quiz: null };
+let rot = 0, idleRaf = 0, idleT = 0, forceGold = false, orgOk = false;
+const R = 290, STEP = 360 / SLICES.length;      // cada fatia ocupa STEP graus
+const pt = (deg, r) => { const a = deg * Math.PI / 180; return [(r * Math.sin(a)).toFixed(2), (-r * Math.cos(a)).toFixed(2)]; };
+
+function drawWheel() {
+  $('slices').innerHTML = SLICES.map((s, i) => {
+    const c = i * STEP, [x1, y1] = pt(c - STEP / 2, R), [x2, y2] = pt(c + STEP / 2, R);
+    const cls = s.gold ? 'sg' : s.none ? 'sn' : (s.kind === 'p' ? 'sp' : 'ss');
+    const tcls = s.gold ? 'lg' : (s.none || s.kind === 'p') ? 'lw' : 'ls';
+    return `<g><path class="${cls}" d="M0 0 L${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2} Z" stroke="#002233" stroke-width="3"/>
+      <text class="${tcls}" transform="rotate(${c - 90}) translate(${R - 20},0)" text-anchor="end" dominant-baseline="central">${esc(s.label)}</text></g>`;
+  }).join('');
+}function setRot(deg, ms) {
+  const g = $('rot');
+  g.style.transition = ms ? `transform ${ms}ms cubic-bezier(.12,.6,.1,1)` : 'none';
+  g.style.transform = `rotate(${deg}deg)`;
+}
+function idleSpin() {
+  cancelAnimationFrame(idleRaf);
+  if (reduceMotion) return;
+  const step = () => { if (ui.mode !== 'attract') return; rot += .06; setRot(rot, 0); idleRaf = requestAnimationFrame(step); };
+  idleRaf = requestAnimationFrame(step);
 }
 
-/** Soma das partidas de cada e-mail, ordenada: pontos > acertos > menor tempo > terminou antes. */
-function buildRanking(results) {
-  const by = new Map();
-  for (const r of results) {
-    const a = by.get(r.email);
-    if (!a) { by.set(r.email, { ...r, games: 1 }); continue; }
-    if (r.at > a.at) a.name = r.name;
-    a.score += r.score; a.correct += r.correct; a.total += r.total; a.timeMs += r.timeMs;
-    a.at = Math.max(a.at, r.at); a.games++;
-  }
-  return [...by.values()].sort(cmp);
+/* Sorteio da fatia: Proteção Total só cai enquanto houver prêmio em estoque (e dentro do limite por hora, se houver);
+   Não foi dessa vez só cai enquanto houver brinde em estoque. A roda continua com o mesmo visual em qualquer caso. */
+function pickSlice() {
+  const goldOk = left('prizes') > 0 && (!CONFIG.maxChallengesPerHour || challengesLastHour() < CONFIG.maxChallengesPerHour);
+  const noneOk = left('souvenirs') > 0;
+  const idxs = SLICES.map((_, i) => i).filter(i => (!SLICES[i].gold || goldOk) && (!SLICES[i].none || noneOk));
+  if (TEST && forceGold && goldOk) { forceGold = false; renderTestBar(); return pick(idxs.filter(i => SLICES[i].gold)); }
+  return pick(idxs);
 }
-function cmp(a, b) {
-  return b.score - a.score || b.correct - a.correct || a.timeMs - b.timeMs || a.at - b.at;
+
+function startSpin() {
+  if (ui.mode !== 'attract' || !configured()) return;
+  ui.mode = 'spin'; clearTimeout(idleT);
+  const idx = pickSlice(), gold = !!SLICES[idx].gold;
+  db.log.push({ at: Date.now(), type: 'spin', slice: SLICES[idx].id, kind: gold ? 'challenge' : SLICES[idx].none ? 'none' : SLICES[idx].kind });
+  if (gold && CONFIG.prizeStockUsedOn === 'landing') db.used.prizes++;      // reserva o prêmio para este desafio
+  save();
+  $('state').innerHTML = `<p class="lead">Girando…</p><p class="note">&gt; descobrindo o que o destino reservou</p>`;
+  cancelAnimationFrame(idleRaf);
+  const ms = reduceMotion ? 1200 : CONFIG.spinSeconds * 1000;
+  const target = Math.ceil(rot / 360) * 360 + 360 * (5 + Math.floor(Math.random() * 2)) - idx * STEP + (Math.random() - .5) * STEP * .6;
+  setRot(rot, 0); void $('rot').getBoundingClientRect();
+  setRot(target, ms);
+  setTimeout(() => { rot = target % 360; setRot(rot, 0); settle(idx); }, ms + 300);
+}
+
+function settle(idx) {
+  const s = SLICES[idx];
+  drawWheel();
+  if (s.gold) return startChallenge();
+  if (s.none) return showNoLuck(s);
+  startSceneQuiz(s);
+}
+
+/* Não foi dessa vez: sem quiz e sem brinde. */
+function showNoLuck(s) {
+  SHEET.push({ evento: 'sem_brinde', fatia: s.label, tema: 'sem brinde', detalhe: 'não foi dessa vez' });
+  openModal(`<div class="box panel">
+    <div class="tag bad">Roleta Interativa</div>
+    <h2><span class="grad">Não foi dessa vez!</span></h2>
+    <button class="btn primary" id="done" type="button">Concluir</button></div>`);
+  $('done').onclick = showAttract;
+  ui.mode = 'modal'; bumpIdle();
 }
 
 /* ============================================================
-   VISUAL: cenário, marca e ícones
+   QUIZ DA SITUAÇÃO (segurança ou privacidade): acertou = brinde; errou = sem brinde
    ============================================================ */
-function initScene() {
+function startSceneQuiz(s) {
+  const base = pick(SCENE_QUIZ[s.id]);
+  const qz = ui.quiz = { slice: s, q: base.q, opts: shuffle([{ t: base.correct, ok: true }, ...base.wrong.map(t => ({ t, ok: false }))]), sel: null };
+  openModal(`<div class="box tight panel">
+    <div class="tag bad">Alerta de ${s.kind === 'p' ? 'privacidade' : 'segurança'}</div>
+    <h2><span class="grad">${esc(s.scene.title)}</span></h2>
+    <p class="story">${esc(s.scene.story)}<span class="qtext">${esc(qz.q)}</span></p>
+    <div class="opts two">${qz.opts.map((o, i) => `<button class="it" type="button" data-i="${i}"><span class="n">${'ABCD'[i]}</span><span>${esc(o.t)}</span></button>`).join('')}</div>
+    <button class="btn primary" id="confirm" type="button" disabled>Confirmar</button></div>`);
+  const box = $('modal'), confirm = $('confirm');
+  box.querySelectorAll('.it').forEach(b => b.onclick = () => {
+    qz.sel = +b.dataset.i;
+    box.querySelectorAll('.it').forEach(x => x.classList.toggle('sel', +x.dataset.i === qz.sel));
+    confirm.disabled = false; bumpIdle();
+  });
+  confirm.onclick = () => { if (qz.sel !== null) answerSceneQuiz(); };
+  ui.mode = 'modal'; bumpIdle();
+}
+function answerSceneQuiz() {
+  const qz = ui.quiz; ui.quiz = null;
+  const right = qz.opts[qz.sel].ok, s = qz.slice;
+  const souv = right ? giveSouvenir() : '';
+  const last = db.log[db.log.length - 1];
+  if (last && last.type === 'spin') { last.quiz = right ? 'pass' : 'fail'; last.souvenir = souv; }
+  save(); drawWheel();
+  SHEET.push({ evento: 'quiz', fatia: s.label, tema: s.kind === 'p' ? 'privacidade' : 'segurança', pergunta: qz.q, resposta_roleta: qz.opts[qz.sel].t,
+    resposta_correta: qz.opts.find(o => o.ok).t, acertou: right ? 'sim' : 'não',
+    direito: souv === 'given' ? 'simples' : '', detalhe: right ? (souv === 'given' ? 'brinde a entregar' : 'brindes esgotados') : 'sem brinde' });
+  const lesson = `<div class="lesson"><span>Para não repetir</span>${esc(s.scene.lesson)}${s.scene.note ? `<small class="fn">${esc(s.scene.note)}</small>` : ''}</div>`;
+  if (right) {
+    const brinde = souv === 'given' ? '' : '<div class="chips"><span class="chip">Brindes esgotados</span></div>';
+    openModal(`<div class="box panel">
+      <div class="tag ok">Resposta certa</div>
+      <h2><span class="grad">Boa! Você sabe se proteger</span></h2>
+      ${lesson}
+      ${brinde}
+      <button class="btn primary" id="done" type="button">Concluir</button></div>`);
+  } else {
+    const correct = qz.opts.find(o => o.ok).t;
+    openModal(`<div class="box panel">
+      <div class="tag bad">Resposta errada</div>
+      <h2><span class="grad">Não foi dessa vez!</span></h2>
+      <p class="story">A resposta certa era: <b>${esc(correct)}</b></p>
+      ${lesson}
+      <div class="chips"><span class="chip">Sem brinde dessa vez</span></div>
+      <button class="btn primary" id="done" type="button">Concluir</button></div>`);
+  }
+  $('done').onclick = showAttract;
+  ui.mode = 'modal'; bumpIdle();
+}
+/* Quiz abandonado (ninguém tocou): sem brinde e sem baixa de estoque. */
+function abandonQuiz() {
+  const qz = ui.quiz; ui.quiz = null;
+  const last = db.log[db.log.length - 1];
+  if (last && last.type === 'spin' && !last.quiz) {
+    last.quiz = 'abandon'; last.souvenir = ''; save();
+    if (qz) SHEET.push({ evento: 'quiz_abandonado', fatia: qz.slice.label, tema: qz.slice.kind === 'p' ? 'privacidade' : 'segurança', pergunta: qz.q, detalhe: 'abandonado' });
+  }
+}
+
+/* ============================================================
+   PROTEÇÃO TOTAL
+   ============================================================ */
+function makeChallenge() {
+  const kind = pick(['spot', 'order', 'judge']);
+  if (kind === 'spot') { const v = pick(SPOT); return { kind, title: v.title, intro: v.intro, items: shuffle(v.items), sel: new Set() }; }
+  if (kind === 'order') { const v = pick(ORDER); return { kind, title: v.title, intro: v.intro, mono: !!v.mono, pw: v.pw, why: v.why, shown: shuffle(v.pw), chosen: [] }; }
+  // 3 situações: ao menos uma de segurança, uma de privacidade, e nem todas iguais (risco x tudo certo)
+  let items;
+  do {
+    const s = shuffle(JUDGE.filter(j => j.kind === 's')), p = shuffle(JUDGE.filter(j => j.kind === 'p'));
+    items = shuffle([s[0], p[0], pick([...s.slice(1), ...p.slice(1)])]);
+  } while (new Set(items.map(j => j.risk)).size < 2);
+  return { kind, title: 'Risco ou tudo certo?', intro: 'Classifique cada situação.', items, ans: [] };
+}
+function startChallenge() {
+  const ch = ui.challenge = makeChallenge();
+  const body = {
+    spot: () => `<div class="opts two">${ch.items.map((it, i) => `<button class="it" type="button" data-i="${i}"><span class="n">+</span><span>${esc(it.t)}</span></button>`).join('')}</div>`,
+    order: () => `<div class="opts two">${ch.shown.map((pw, i) => `<button class="it" type="button" data-i="${i}"><span class="n">&nbsp;</span><span${ch.mono ? ' style="font-family:var(--sans)"' : ''}>${esc(pw)}</span></button>`).join('')}</div>
+      <button class="linkish" id="redo" type="button">Refazer a ordem</button>`,
+    judge: () => ch.items.map((it, i) => `<div class="jbox"><p>${esc(it.t)}</p><div class="row"><button class="it" type="button" data-i="${i}" data-v="1">Risco</button><button class="it" type="button" data-i="${i}" data-v="0">Tudo certo</button></div></div>`).join(''),
+  }[ch.kind]();
+  openModal(`<div class="box tight panel">
+    <div class="tag">Proteção Total</div>
+    <h2><span class="grad">${esc(ch.title)}</span></h2>
+    <p class="story">${esc(ch.intro)} Acerte os 3 para concluir o desafio.</p>
+    ${body}
+    <button class="btn primary" id="confirm" type="button" disabled>Confirmar</button></div>`);
+  const confirm = $('confirm'), box = $('modal');
+  const update = () => {
+    if (ch.kind === 'spot') {
+      box.querySelectorAll('.it').forEach((b, i) => { const on = ch.sel.has(i); b.classList.toggle('sel', on); b.querySelector('.n').innerHTML = on ? CHK : '+'; });
+      confirm.disabled = ch.sel.size === 0;
+    } else if (ch.kind === 'order') {
+      box.querySelectorAll('.it').forEach((b, i) => { const k = ch.chosen.indexOf(i); b.classList.toggle('sel', k >= 0); b.querySelector('.n').textContent = k >= 0 ? k + 1 : ' '; });
+      confirm.disabled = ch.chosen.length < 4;
+    } else {
+      box.querySelectorAll('.it').forEach(b => b.classList.toggle('sel', ch.ans[+b.dataset.i] === +b.dataset.v));
+      confirm.disabled = ch.ans.filter(a => a !== undefined).length < 3;
+    }
+  };
+  box.querySelectorAll('.it').forEach(b => b.onclick = () => {
+    const i = +b.dataset.i;
+    if (ch.kind === 'spot') { ch.sel.has(i) ? ch.sel.delete(i) : ch.sel.add(i); }
+    else if (ch.kind === 'order') { if (!ch.chosen.includes(i)) ch.chosen.push(i); }
+    else ch.ans[i] = +b.dataset.v;
+    update(); bumpIdle();
+  });
+  if ($('redo')) $('redo').onclick = () => { ch.chosen = []; update(); };
+  confirm.onclick = () => finishChallenge(evaluate(ch));
+  ui.mode = 'modal'; bumpIdle();
+}
+/* Cada desafio devolve score 0..3 e o gabarito. */
+function evaluate(ch) {
+  if (ch.kind === 'spot') {
+    const found = ch.items.filter((it, i) => it.bad && ch.sel.has(i)).length;
+    const fp = ch.items.filter((it, i) => !it.bad && ch.sel.has(i)).length;
+    const review = ch.items.map((it, i) => it.bad ? { ok: ch.sel.has(i), t: it.t, why: it.why } : (ch.sel.has(i) ? { ok: false, t: it.t, why: 'Isso é normal, não é um sinal de golpe.' } : null)).filter(Boolean);
+    return { score: Math.max(0, found - fp), review };
+  }
+  if (ch.kind === 'order') {
+    const rank = ch.chosen.map(i => ch.pw.indexOf(ch.shown[i]));
+    let score = 0; for (let k = 0; k < 3; k++) if (rank[k] < rank[k + 1]) score++;
+    return { score, review: [{ ok: score === 3, t: 'Ordem certa: ' + ch.pw.join('  →  '), why: ch.why }] };
+  }
+  const review = ch.items.map((it, i) => ({ ok: ch.ans[i] === (it.risk ? 1 : 0), t: (it.risk ? 'Risco: ' : 'Tudo certo: ') + it.t, why: it.why }));
+  return { score: review.filter(r => r.ok).length, review };
+}
+function finishChallenge(res) {
+  const ch = ui.challenge; ui.challenge = null;
+  const landing = CONFIG.prizeStockUsedOn === 'landing';
+  let won = res.score === 3, code = '', souv = '';
+  if (won && !landing) { if (left('prizes') > 0) db.used.prizes++; else won = false; }
+  if (won) { code = newCode(); db.log.push({ at: Date.now(), type: 'prize', code, delivered: false }); }
+  else souv = giveSouvenir();                      // consolo: quem não conquista o prêmio leva um brinde
+  db.log.push({ at: Date.now(), type: 'challenge', format: ch ? ch.kind : '', score: res.score, result: won ? 'pass' : 'fail', souvenir: souv, returned: false });
+  save(); drawWheel();
+  SHEET.push({ evento: 'protecao_total', fatia: 'PROTEÇÃO TOTAL', tema: 'proteção total', pergunta: ch ? `${ch.kind}: ${ch.title}` : '', resposta_roleta: `${res.score} de 3`,
+    acertou: res.score === 3 ? 'sim' : 'não', direito: won ? 'top' : souv === 'given' ? 'simples' : '',
+    detalhe: (won ? `prêmio gerado · código ${code}` : res.score === 3 ? 'prêmios esgotados' : 'reprovado') + (!won && souv === 'given' ? ' · brinde a entregar' : '') });
+  const review = res.review ? `<div class="rv">${res.review.map(r => `<div class="${r.ok ? '' : 'no'}">${r.ok ? CHK : XIC} ${esc(r.t)}<small>${esc(r.why)}</small></div>`).join('')}</div>` : '';
+  if (res.score === 3) {        // acertou os 3: a tela mostra só que a resposta está correta (o prêmio não aparece nas telas)
+    openModal(`<div class="box panel" style="--c:var(--lime)">
+      <div class="tag ok">Proteção Total concluída</div>
+      <h2 class="prizeh">Resposta correta!</h2>
+      <button class="btn primary" id="done" type="button">Concluir</button></div>`);
+  } else {
+    const brinde = souv === 'given' ? '' : '<div class="chips"><span class="chip">Brindes esgotados</span></div>';
+    openModal(`<div class="box tight panel">
+      <div class="tag bad">Proteção Total</div>
+      <h2><span class="grad">Quase!</span></h2>
+      <p class="story">Você acertou ${res.score} de 3. Veja o gabarito:</p>${review}
+      ${brinde}
+      <button class="btn primary" id="done" type="button">Concluir</button></div>`);
+  }
+  $('done').onclick = showAttract;
+  ui.mode = 'modal'; bumpIdle();
+}
+/* Desafio abandonado (ninguém tocou): não gera brinde nem prêmio, e o prêmio reservado volta ao estoque. */
+function abandonChallenge() {
+  const ch = ui.challenge; ui.challenge = null;
+  if (CONFIG.prizeStockUsedOn === 'landing') db.used.prizes = Math.max(0, db.used.prizes - 1);
+  db.log.push({ at: Date.now(), type: 'challenge', format: ch ? ch.kind : '', score: 0, result: 'abandon', souvenir: '', returned: true });
+  save(); drawWheel();
+  SHEET.push({ evento: 'protecao_abandonada', fatia: 'PROTEÇÃO TOTAL', tema: 'proteção total', pergunta: ch ? `${ch.kind}: ${ch.title}` : '', detalhe: 'abandonado' });
+}
+
+/* ============================================================
+   TELA PRINCIPAL
+   ============================================================ */
+function showAttract() {
+  clearTimeout(idleT); closeModal();
+  ui = { mode: 'attract', challenge: null, quiz: null };
+  if (!configured()) {
+    $('state').innerHTML = `
+      <p class="lead">A roleta ainda não foi iniciada.</p>
+      <p class="note">&gt; Aguarde...</p>
+      <button class="btn primary" id="go" type="button" disabled>Girar</button>`;
+  } else {
+    $('state').innerHTML = `
+      <p class="lead">Gire a roda, enfrente uma situação de segurança ou de privacidade e responda ao quiz para levar um brinde.</p>
+      <ul class="steps"><li><b>1</b>Toque em Girar</li><li><b>2</b>Conheça a situação e responda ao quiz</li><li><b>3</b>Acertou? Leve um brinde</li></ul>
+      <p class="note">&gt; Caiu na fatia PROTEÇÃO TOTAL? Passe no desafio e você ganha um prêmio!</p>
+      <button class="btn primary pulse" id="go" type="button">Girar</button>`;
+    $('go').onclick = startSpin;
+  }
+  idleSpin();
+}
+
+/* ============================================================
+   POPUPS, INATIVIDADE E TECLADO NUMÉRICO (PIN e quantidades)
+   ============================================================ */
+function openModal(html) { const m = $('modal'); m.innerHTML = html; m.hidden = false; const b = m.querySelector('.box'); if (b) b.scrollTop = 0; }
+function closeModal() { $('modal').hidden = true; $('modal').innerHTML = ''; }
+
+function bumpIdle() {
+  clearTimeout(idleT);
+  if (ui.mode === 'attract' || ui.mode === 'spin' || !$('pin').hidden || !$('org').hidden) return;
+  idleT = setTimeout(endSession, ((ui.challenge || ui.quiz) ? CONFIG.idleChallengeSeconds : CONFIG.idleSeconds) * 1000);
+}
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, bumpIdle, true));
+function endSession() {
+  if (ui.challenge) abandonChallenge();
+  if (ui.quiz) abandonQuiz();
+  showAttract();
+}
+
+/* entrada numérica pelo teclado do computador, sem teclado na tela: opts = { tag, label, mask, initial, max };
+   dígitos digitam, Backspace apaga, Enter confirma e Esc cancela; onSubmit(valor, falhar) devolve true para fechar */
+let padOff = null;
+function keypad(opts, onSubmit, onCancel) {
+  if (padOff) padOff();
+  const m = $('pin'); let v = opts.initial || '';
+  m.hidden = false; clearTimeout(idleT);
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();   // o Enter não pode acionar um botão que estava em foco por trás
+  const shown = () => (opts.mask ? '●'.repeat(v.length) : esc(v)) + (v ? '' : '&nbsp;');
+  const close = () => { document.removeEventListener('keydown', onKey, true); padOff = null; m.hidden = true; m.innerHTML = ''; bumpIdle(); };
+  const cancel = () => { close(); if (onCancel) onCancel(); };
+  const submit = () => {
+    const fail = msg => { v = ''; $('pd').innerHTML = shown(); $('perr').textContent = msg; };
+    if (onSubmit(v, fail) === true) close();
+  };
+  function onKey(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (/^\d$/.test(e.key)) { if (v.length < (opts.max || 8)) v += e.key; }
+    else if (e.key === 'Backspace') v = v.slice(0, -1);
+    else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); submit(); return; }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel(); return; }
+    else return;
+    e.preventDefault(); e.stopPropagation();
+    $('pd').innerHTML = shown(); $('perr').textContent = '';
+  }
+  m.innerHTML = `<div class="box panel pinbox"><div class="tag">${esc(opts.tag)}</div><p class="lead">${esc(opts.label)}</p><div class="dots" id="pd">${shown()}</div><div class="err" id="perr"></div>
+    <button class="btn primary" id="pok" type="button">Confirmar</button>
+    <button class="linkish" id="pc" type="button">Cancelar</button></div>`;
+  $('pok').onclick = submit;
+  $('pc').onclick = cancel;
+  document.addEventListener('keydown', onKey, true);
+  padOff = () => { document.removeEventListener('keydown', onKey, true); padOff = null; };
+}
+function askPin(onOk, onCancel) {
+  keypad({ tag: 'Organização', label: 'Digite o PIN', mask: true }, (v, fail) => {
+    if (v === CONFIG.adminPin) { onOk(); return true; }
+    fail('> PIN incorreto'); return false;
+  }, onCancel);
+}
+function askNumber(label, initial, onOk) {
+  keypad({ tag: 'Organização', label, mask: false, initial: initial === null ? '' : String(initial), max: 5 }, (v, fail) => {
+    if (v === '') { fail('> informe um número'); return false; }
+    onOk(+v); return true;
+  });
+}
+
+/* ============================================================
+   PÁGINA DA ORGANIZAÇÃO (index.html#organizacao, protegida pelo PIN)
+   ============================================================ */
+function summary() {
+  const L = db.log, spins = L.filter(l => l.type === 'spin'), ch = L.filter(l => l.type === 'challenge'), prizes = L.filter(l => l.type === 'prize');
+  return {
+    spins: spins.length,
+    sec: spins.filter(l => l.kind === 's').length, priv: spins.filter(l => l.kind === 'p').length, chal: spins.filter(l => l.kind === 'challenge').length, none: spins.filter(l => l.kind === 'none').length,
+    quizPass: spins.filter(l => l.quiz === 'pass').length, quizFail: spins.filter(l => l.quiz === 'fail').length,
+    pass: ch.filter(c => c.result === 'pass').length, fail: ch.filter(c => c.result === 'fail').length,
+    abandon: ch.filter(c => c.result === 'abandon').length + spins.filter(l => l.quiz === 'abandon').length,
+    souvDelivered: spins.filter(l => l.souvenir === 'given').length + ch.filter(c => c.souvenir === 'given').length,
+    prizesDelivered: prizes.filter(p => p.delivered).length, prizesPending: prizes.filter(p => !p.delivered),
+    toReturn: ch.filter(c => c.result === 'fail' && !c.returned).length,
+  };
+}
+const sliceById = id => SLICES.find(s => s.id === id);
+/* uma linha de histórico, legível: [tipo, detalhe, resultado, código, entregue] */
+function describe(l) {
+  if (l.type === 'spin') {
+    const s = sliceById(l.slice);
+    if (l.kind === 'challenge') return ['Giro', 'Proteção Total', '', '', ''];
+    if (l.kind === 'none') return ['Giro', 'Não foi dessa vez', 'sem brinde', '', ''];
+    const res = { pass: 'acertou o quiz · ' + (l.souvenir === 'given' ? 'brinde entregue' : 'brindes esgotados'), fail: 'errou o quiz · sem brinde', abandon: 'abandonado' }[l.quiz] || '';
+    return ['Giro', `${s ? s.label : l.slice} (${l.kind === 'p' ? 'privacidade' : 'segurança'})`, res, '', ''];
+  }
+  if (l.type === 'challenge') return ['Desafio', `${l.format} · ${l.score}/3`, { pass: 'aprovado', fail: 'reprovado', abandon: 'abandonado' }[l.result] + (l.souvenir === 'given' ? ' · brinde entregue' : ''), '', ''];
+  if (l.type === 'prize') return ['Prêmio', 'voucher gerado', '', l.code, l.delivered ? 'sim' : 'não'];
+  return ['Estoque', `total de ${l.what === 'souvenirs' ? 'brindes' : 'prêmios'}: ${l.from === null ? 'não informado' : l.from} → ${l.to}`, '', '', ''];
+}
+function download(name, rows) {
+  const blob = new Blob(['﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+/* A organização informa (ou altera) o TOTAL; as baixas continuam contadas e o restante é total − baixas. */
+function setTotal(what, n) {
+  const from = db.total[what];
+  db.total[what] = Math.max(0, Math.round(n));
+  db.log.push({ at: Date.now(), type: 'adjust', what, from, to: db.total[what] });
+  save(); drawWheel();
+}
+function deliver(code) {
+  const l = db.log.find(x => x.code === code);
+  if (!l || l.delivered) return;
+  l.delivered = true; save();
+  SHEET.push({ evento: 'premio_entregue', fatia: 'PROTEÇÃO TOTAL', tema: 'proteção total', detalhe: `código ${code}` });
+}
+function resetGame() {      // zera as baixas, o total informado e o histórico
+  db = freshDb(); save(); drawWheel();
+  SHEET.push({ evento: 'zerar', detalhe: 'jogo zerado: a contagem de estoque recomeça daqui' });   // a planilha só conta as linhas depois desta marca
+}
+/* Situação do envio à planilha do Google (atualiza sozinha enquanto a página da organização está aberta) */
+const WHY = {
+  rede: 'Motivo: o navegador não conseguiu abrir o endereço do Apps Script (internet fora, bloqueio de rede ou endereço incorreto).',
+  resposta: 'Motivo: o endereço respondeu, mas sem a confirmação esperada. Em geral é a tela de login da conta TOTVS (o navegador não está logado ou bloqueia cookies de terceiros) ou o Code.gs publicado ainda é a versão antiga.',
+  timeout: 'Motivo: o Apps Script demorou mais de 15 segundos para responder.',
+  recusado: 'Motivo: o Apps Script recebeu o registro, mas recusou a gravação.',
+};
+function renderSync() {
+  const box = $('sync'); if (!box || $('org').hidden) return;
+  const st = SHEET.state(), when = t => t ? hhmm(t) : '';
+  let tag = ['', 'Planilha do Google'], msg = '', btn = false;
+  if (TEST) msg = 'Modo teste: nada é enviado à planilha.';
+  else if (!st.on) msg = 'Envio desativado: não há endereço da planilha configurado.';
+  else if (!st.pending) msg = 'Tudo enviado.' + (st.lastOk ? ` Último envio às ${when(st.lastOk)}.` : '');
+  else if (st.fails) {
+    tag = ['bad', 'Planilha do Google · envio pendente'];
+    msg = `${st.pending} ${st.pending === 1 ? 'registro aguarda' : 'registros aguardam'} envio. A última tentativa falhou às ${when(st.lastFail)}. ${WHY[st.lastWhy] || 'Confira a internet e se o navegador está logado na conta TOTVS.'} O envio é tentado de novo sozinho. O histórico completo continua disponível em "Exportar histórico".`;
+    btn = true;
+  } else msg = `Enviando… ${st.pending} ${st.pending === 1 ? 'registro' : 'registros'} na fila.`;
+  if (st.on && st.stock) {
+    const k = st.stock;
+    msg += ` Contagem da planilha: ${k.top_entregues} prêmios top entregues e ${k.top_pendentes} aguardando entrega (${k.top_cancelados} cancelados); ${k.simples_entregues} brindes simples entregues.`;
+  } else if (st.on && !TEST) msg += ' A contagem de prêmios da planilha não está disponível agora; o jogo usa a contagem deste computador.';
+  box.innerHTML = `<div class="tag ${tag[0]}">${tag[1]}</div><p class="story" style="margin:12px 0${btn ? '' : ' 0'}">${esc(msg)}</p>${btn ? '<button class="btn secondary" id="syncNow" type="button">Reenviar agora</button>' : ''}`;
+  if (btn) $('syncNow').onclick = () => SHEET.flush(true);
+}
+function renderOrg() {
+  const S = summary();
+  const card = (k, label, extra) => `<section class="panel stockcard">
+      <div class="tag">${label}</div><div class="bignum">${db.total[k] === null ? '—' : left(k)}</div>
+      <p class="note">${db.total[k] === null ? 'total ainda não informado' : 'restantes'}${extra || ''}</p>
+      <div class="stats two"><div><b>${db.total[k] === null ? '—' : db.total[k]}</b><span>total informado</span></div><div><b>${usedOf(k)}</b><span>baixas</span></div></div>
+      <div class="adjust"><button class="btn secondary" data-set="${k}" type="button">${db.total[k] === null ? 'Informar total' : 'Alterar total'}</button>
+        ${db.total[k] === null ? '' : [-10, -1, 1, 10].map(d => `<button class="key" data-s="${k}" data-d="${d}" type="button">${d > 0 ? '+' : '−'}${Math.abs(d)}</button>`).join('')}</div></section>`;
+  const tile = (n, label) => `<div><b>${n}</b><span>${label}</span></div>`;
+  const recent = db.log.slice(-15).reverse().map(l => { const d = describe(l); return `<tr><td>${hhmm(l.at)}</td><td>${esc(d[0])}</td><td>${esc(d[1])}</td><td>${esc(d[2] || (d[3] ? 'código ' + d[3] : ''))}</td></tr>`; }).join('');
+  $('org').innerHTML = `<div class="org-wrap">
+    <div class="org-head">
+      <div><div class="tag">Organização</div><h1><span class="grad">Painel da roleta</span></h1></div>
+      <button class="btn secondary" id="back" type="button">Voltar à roleta</button>
+    </div>
+    ${configured() ? '' : `<section class="panel" style="--c:var(--orange)"><div class="tag bad">Estoque não informado</div>
+      <p class="story" style="margin:12px 0 0">Informe o total de brindes e de prêmios para liberar a roleta. O total informado vale até alguém da organização alterá-lo.</p></section>`}
+    <div class="org-grid">${card('souvenirs', 'Brindes')}${card('prizes', 'Prêmios', ' · o estoque de prêmios limita quantas vezes a roda cai em Proteção Total' + (SHEET.topUsed() === null ? '' : ' · contado pela planilha'))}</div>
+    <section class="panel"><div class="tag">Resumo</div>
+      <div class="stats wide" style="margin-top:12px">${tile(S.spins, 'giros')}${tile(S.sec, 'segurança')}${tile(S.priv, 'privacidade')}${tile(S.chal, 'proteção total')}${tile(S.none, 'não foi dessa vez')}
+        ${tile(S.quizPass, 'quiz: acertos')}${tile(S.quizFail, 'quiz: erros')}${tile(S.pass, 'desafio: aprovados')}${tile(S.fail, 'desafio: reprovados')}
+        ${tile(S.abandon, 'abandonados')}${tile(S.souvDelivered, 'brindes entregues')}${tile(S.prizesDelivered, 'prêmios entregues')}${tile(S.prizesPending.length, 'prêmios pendentes')}</div></section>
+    <section class="panel"><div class="tag">Prêmios pendentes de entrega</div>
+      ${S.prizesPending.length ? `<table><thead><tr><th>Código</th><th>Hora</th><th></th></tr></thead><tbody>${S.prizesPending.map(p => `<tr><td>${esc(p.code)}</td><td>${hhmm(p.at)}</td><td><button class="key wide" data-dv="${esc(p.code)}" type="button">Entregue</button></td></tr>`).join('')}</tbody></table>` : '<p class="note" style="margin-top:12px">Nenhum prêmio pendente de entrega.</p>'}</section>
+    ${CONFIG.prizeStockUsedOn === 'landing' && SHEET.topUsed() === null ? `<section class="panel"><div class="tag">Prêmios reservados e não conquistados</div>
+      <p class="story" style="margin:12px 0">${S.toReturn} ${S.toReturn === 1 ? 'desafio foi reprovado' : 'desafios foram reprovados'}: o prêmio reservado nesses giros não foi entregue e pode voltar ao estoque (as baixas diminuem).</p>
+      <button class="btn secondary" id="ret" type="button" ${S.toReturn ? '' : 'disabled'}>Devolver ${S.toReturn} ao estoque</button></section>` : ''}
+    <section class="panel" id="sync"></section>
+    <section class="panel"><div class="tag">Últimos registros</div>
+      ${recent ? `<div class="table-wrap"><table><thead><tr><th>Hora</th><th>Tipo</th><th>Detalhe</th><th>Resultado</th></tr></thead><tbody>${recent}</tbody></table></div>` : '<p class="note" style="margin-top:12px">Ainda não há giros.</p>'}</section>
+    <div class="btns cols"><button class="btn secondary" id="csv" type="button">Exportar histórico</button><button class="btn danger" id="zero" type="button">Zerar o jogo</button></div>
+  </div>`;
+  $('back').onclick = () => { location.hash = ''; };
+  renderSync();
+  document.querySelectorAll('#org [data-set]').forEach(b => b.onclick = () => {
+    const k = b.dataset.set, nome = k === 'souvenirs' ? 'Total de brindes' : 'Total de prêmios';
+    askNumber(nome, db.total[k], n => { setTotal(k, n); renderOrg(); });
+  });
+  document.querySelectorAll('#org [data-s]').forEach(b => b.onclick = () => { setTotal(b.dataset.s, db.total[b.dataset.s] + +b.dataset.d); renderOrg(); });
+  document.querySelectorAll('#org [data-dv]').forEach(b => b.onclick = () => { deliver(b.dataset.dv); renderOrg(); });
+  if ($('ret')) $('ret').onclick = () => {
+    const n = S.toReturn; db.log.filter(c => c.type === 'challenge' && c.result === 'fail' && !c.returned).forEach(c => { c.returned = true; });
+    db.used.prizes = Math.max(0, db.used.prizes - n); save(); drawWheel(); renderOrg();
+  };
+  $('csv').onclick = () => download('roleta-historico.csv', [['data', 'hora', 'tipo', 'detalhe', 'resultado', 'codigo_premio', 'entregue'],
+    ...db.log.map(l => { const d = describe(l); return [new Date(l.at).toLocaleDateString('pt-BR'), new Date(l.at).toLocaleTimeString('pt-BR'), d[0], d[1], d[2], d[3], d[4]]; })]);
+  $('zero').onclick = () => { if (confirm('Zerar o jogo? Isso apaga as baixas de estoque, o total informado de brindes e de prêmios e o histórico. Exporte o histórico antes, se precisar.')) { resetGame(); renderOrg(); } };
+}
+/* rotas: vazio = roleta; #organizacao = página da organização (pede o PIN) */
+function route() {
+  const org = location.hash === '#organizacao';
+  $('stage').hidden = org; $('org').hidden = !org;
+  if (org) {
+    clearTimeout(idleT); closeModal();
+    if (ui.challenge) abandonChallenge();
+    if (ui.quiz) abandonQuiz();
+    if (orgOk) renderOrg();
+    else { $('org').innerHTML = ''; askPin(() => { orgOk = true; renderOrg(); }, () => { location.hash = ''; }); }
+  } else {
+    orgOk = false;
+    if (ui.mode !== 'spin') showAttract();
+  }
+}
+addEventListener('hashchange', route);
+let taps = [];
+$('hot').addEventListener('pointerdown', () => {            // 3 toques no canto inferior esquerdo abrem a organização
+  const now = Date.now(); taps = taps.filter(t => now - t < 1500); taps.push(now);
+  if (taps.length >= 3) { taps = []; location.hash = 'organizacao'; }
+});
+
+/* ---------- modo teste ---------- */
+function renderTestBar() {
+  const bar = $('testbar'); bar.hidden = false;
+  bar.innerHTML = `<span>Modo teste</span><button type="button" id="tbGold">${forceGold ? 'Próximo giro: Proteção Total (ativado)' : 'Forçar Proteção Total no próximo giro'}</button><button type="button" id="tbAdmin">Organização</button><button type="button" id="tbStock">Estoque 110/10</button><button type="button" id="tbZero">Zerar</button><button type="button" id="tbExit">Sair</button>`;
+  $('tbGold').onclick = () => { forceGold = !forceGold; renderTestBar(); };
+  $('tbAdmin').onclick = () => { location.hash = 'organizacao'; };
+  $('tbStock').onclick = () => { resetGame(); db.total = { ...TEST_STOCK }; save(); drawWheel(); showAttract(); };
+  $('tbZero').onclick = () => { if (confirm('Zerar os dados de teste?')) { resetGame(); showAttract(); } };
+  $('tbExit').onclick = () => { location.href = location.pathname; };
+}
+
+/* ---------- fundo do quiz: colunas de código caindo ---------- */
+(function initRain() {
   const snippets = [
     "if (link.suspicious) report();", "const mfa = true;", "hash(password, salt);", "while (alive) { scan(); }",
     "lgpd.consent(user);", "firewall.allow(trusted);", "token.rotate();", "if (!verified) deny();",
     "encrypt(data, key);", "audit.log(event);", "return 'threat_blocked';", "session.expire(15);",
     "patch(vuln.cve);", "const zeroTrust = 1;", "phishing.detect(mail);", "vpn.connect();",
   ];
-  const rain = document.getElementById('rain');
+  const rain = $('rain');
   for (let c = 0; c < 6; c++) {
     const col = document.createElement('div');
     col.className = 'rain';
@@ -413,567 +1082,11 @@ function initScene() {
     col.textContent = shuffle(snippets).concat(shuffle(snippets)).join('\n');
     rain.appendChild(col);
   }
-  if (TEST) initTestBar();
-}
+})();
 
-/* ---------- Modo teste: faixa de aviso + dados de exemplo ---------- */
-function initTestBar() {
-  document.body.classList.add('test');
-  const bar = document.getElementById('testbar');
-  bar.hidden = false;
-  bar.innerHTML = `<span title="Os dados do teste ficam separados e não entram no ranking real">Modo teste</span>
-    <button type="button" id="tbSeed" title="Adiciona 12 jogadores fictícios ao ranking de teste">Gerar exemplos</button>
-    <button type="button" id="tbClear" title="Apaga os dados do modo teste neste aparelho">Limpar</button>
-    <button type="button" id="tbExit" title="Voltar ao jogo normal">Sair</button>`;
-  document.getElementById('tbSeed').onclick = async () => {
-    const names = ['Ana Souza', 'Bruno Lima', 'Carla Mendes', 'Diego Alves', 'Eduarda Ribeiro', 'Felipe Santos', 'Gabriela Costa', 'Henrique Pereira', 'Isabela Martins', 'João Carvalho', 'Karina Rocha', 'Lucas Oliveira'];
-    const stamp = Date.now();
-    for (const [i, name] of names.entries()) {
-      const correct = 4 + Math.floor(Math.random() * 7);
-      await Store.saveResult({
-        id: 'ex' + stamp.toString(36) + i, name, email: `exemplo${i + 1}@teste.local`,
-        score: correct * 100 + Math.round(Math.random() * correct * 130), correct, total: CONFIG.questionsPerGame,
-        timeMs: 50000 + Math.round(Math.random() * 90000), at: stamp + i,
-      });
-    }
-    route();
-  };
-  document.getElementById('tbClear').onclick = async () => {
-    if (confirm('Apagar todos os dados de teste deste aparelho?')) { await Store.clearAll(); route(); }
-  };
-  document.getElementById('tbExit').onclick = () => { location.href = location.pathname + location.hash; };
-}
-
-const SHIELD_SVG = `
-<svg class="shield" viewBox="0 0 120 120" aria-hidden="true">
-  <defs>
-    <linearGradient id="gSh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A44DFF"/><stop offset="1" stop-color="#FF009E"/></linearGradient>
-  </defs>
-  <circle class="spin" cx="60" cy="60" r="56" fill="none" stroke="#00DBFF" stroke-opacity=".55" stroke-width="1.2" stroke-dasharray="3 9"/>
-  <circle class="spin rev" cx="60" cy="60" r="48" fill="none" stroke="#D9FF65" stroke-opacity=".5" stroke-width="1.5" stroke-dasharray="26 14 4 14"/>
-  <path d="M60 24 L88 34 V59 C88 77 76 89 60 97 C44 89 32 77 32 59 V34 Z" fill="rgba(164,77,255,.14)" stroke="url(#gSh)" stroke-width="3" stroke-linejoin="round"/>
-  <path d="M60 33 L80 40 V59 C80 72 71 81 60 87 C49 81 40 72 40 59 V40 Z" fill="none" stroke="#00DBFF" stroke-opacity=".35" stroke-width="1"/>
-  <circle cx="60" cy="56" r="7" fill="url(#gSh)"/>
-  <path d="M57 60 H63 L65 74 H55 Z" fill="url(#gSh)"/>
-</svg>`;
-
-const STAR_PATH = 'M266.8 4C269.3 3.8 273.1 7 274.2 9.7C275.4 12.4 273.8 16.8 273.7 20.3C273.6 23.8 273.8 27.4 273.6 30.9C273.4 34.4 273 38 272.7 41.5C272.5 45 272.3 48.6 272.1 52.1C271.9 55.6 271.8 59.2 271.7 62.7C271.6 66.2 271.6 69.8 271.4 73.3C271.2 76.8 270.9 80.3 270.7 83.8C270.5 87.3 270.2 90.9 270 94.4C269.8 97.9 269.9 101.5 269.7 105C269.6 108.5 269.3 112.1 269.1 115.6C268.9 119.1 268.9 122.7 268.7 126.2C268.5 129.7 267.9 133.3 267.7 136.8C267.5 140.3 267.8 143.9 267.7 147.4C267.6 150.9 266.7 154.6 267.1 158C267.5 161.4 268.3 165.1 270 168C271.7 171 274.7 173.3 277.3 175.7C279.9 178.1 282.9 180.1 285.7 182.2C288.5 184.3 291.4 186.4 294.2 188.5C297 190.6 299.9 192.8 302.7 194.9C305.5 197 308.4 199.1 311.2 201.2C314 203.3 316.9 205.5 319.7 207.6C322.5 209.7 325.4 211.9 328.2 214C331 216.1 333.9 218.2 336.7 220.3C339.6 222.4 342.5 224.4 345.3 226.5C348.2 228.6 351 230.8 353.8 232.9C356.7 235 359.6 237 362.4 239.1C365.2 241.2 368 243.4 370.8 245.5C373.6 247.7 376.5 249.8 379.2 252C381.9 254.3 385.6 256.2 387.1 259C388.6 261.8 389.3 266.2 388.1 268.9C386.9 271.6 382.9 274 379.8 275C376.7 276 372.8 275 369.3 275C365.8 275 362.2 275 358.7 274.8C355.2 274.6 351.6 274.1 348.1 273.9C344.6 273.7 341 273.8 337.5 273.6C334 273.4 330.4 273.1 326.9 272.8C323.4 272.5 319.8 272.1 316.3 271.9C312.8 271.7 309.2 272 305.7 271.8C302.2 271.7 298.7 271.3 295.2 271C291.7 270.8 288.1 270.5 284.6 270.3C281.1 270.1 277.5 270 274 269.8C270.5 269.6 266.9 269.1 263.4 268.9C259.9 268.7 256.3 268.6 252.8 268.4C249.3 268.2 245.7 267.5 242.2 267.8C238.7 268.1 235.1 268.7 232 270.2C228.9 271.7 226.1 274.3 223.6 276.7C221.1 279.2 219.1 282.2 216.9 284.9C214.7 287.7 212.6 290.4 210.4 293.2C208.2 296 206 298.8 203.7 301.5C201.5 304.2 199.2 306.9 196.9 309.6C194.6 312.3 192.4 315 190.1 317.7C187.8 320.4 185.4 323 183 325.6C180.7 328.3 178.3 330.9 176 333.6C173.7 336.3 171.4 338.9 169.1 341.6C166.8 344.3 164.5 347 162.2 349.7C159.9 352.4 157.6 355.1 155.3 357.8C153 360.5 150.7 363.2 148.4 365.9C146.1 368.6 144 371.8 141.4 373.8C138.8 375.8 134.6 378.9 132.8 377.9C131 376.9 131.1 371.3 130.7 367.9C130.3 364.5 130.7 360.8 130.6 357.3C130.5 353.8 130.3 350.2 130.1 346.7C130 343.2 129.8 339.6 129.7 336.1C129.6 332.6 129.9 329 129.7 325.5C129.6 322 129 318.4 128.8 314.9C128.6 311.4 128.7 307.8 128.7 304.3C128.7 300.8 128.7 297.2 128.7 293.7C128.7 290.2 128.7 286.6 128.9 283.1C129.1 279.6 129.6 276 129.7 272.5C129.9 269 129.6 265.4 129.8 261.9C130 258.4 130.6 254.8 130.7 251.3C130.9 247.8 131.2 244.2 130.7 240.7C130.3 237.2 129.6 233.5 128 230.5C126.4 227.5 123.6 225 121 222.6C118.4 220.2 115.4 218.3 112.6 216.2C109.8 214.1 106.9 212 104.1 209.8C101.3 207.7 98.5 205.5 95.7 203.3C92.9 201.2 90.1 199 87.3 196.9C84.5 194.8 81.6 192.7 78.8 190.6C76 188.5 73.2 186.2 70.4 184.1C67.6 182 64.6 179.9 61.8 177.8C59 175.7 56.2 173.5 53.4 171.3C50.6 169.2 47.8 167 45 164.9C42.2 162.8 39.3 160.6 36.5 158.5C33.7 156.4 30.9 154.3 28.1 152.1C25.3 150 22.4 147.8 19.6 145.6C16.8 143.5 13.8 141.5 11.2 139.2C8.6 136.9 4.3 134.1 4 131.6C3.7 129.1 6.9 125.3 9.6 124.1C12.3 122.9 16.7 124.3 20.2 124.4C23.7 124.5 27.3 124.7 30.8 124.8C34.3 125 37.9 125.1 41.4 125.3C44.9 125.5 48.5 125.6 52 125.8C55.5 126 59.1 126.3 62.6 126.5C66.1 126.7 69.7 126.6 73.2 126.8C76.7 127 80.2 127.4 83.7 127.6C87.2 127.8 90.8 127.8 94.3 128C97.8 128.2 101.4 128.6 104.9 128.8C108.4 129 112 128.9 115.5 129.1C119 129.3 122.6 129.6 126.1 129.8C129.6 130 133.2 130 136.7 130.2C140.2 130.4 143.8 130.7 147.3 130.8C150.8 130.9 154.5 131.4 157.9 130.9C161.4 130.5 165 129.8 168 128.1C171 126.4 173.4 123.5 175.7 120.9C178.1 118.3 180 115.2 182.1 112.4C184.2 109.6 186.4 106.8 188.5 104C190.7 101.2 192.9 98.4 195 95.6C197.2 92.8 199.3 89.9 201.4 87.1C203.5 84.3 205.7 81.5 207.8 78.7C209.9 75.9 212.1 73 214.2 70.2C216.3 67.4 218.5 64.5 220.6 61.7C222.7 58.9 224.9 56 227 53.2C229.2 50.4 231.4 47.7 233.5 44.9C235.7 42.1 237.8 39.2 239.9 36.4C242 33.6 244.1 30.7 246.2 27.9C248.3 25.1 250.6 22.3 252.7 19.5C254.9 16.7 256.8 13.7 259.1 11.1C261.5 8.5 264.3 4.2 266.8 4Z';
-const STAR_VIEWBOX = '0 0 392.1 381.9';
-const starsSvg = n => `
-<div class="stars" aria-label="${n} de 3 estrelas">
-  <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="gStar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A44DFF"/><stop offset="1" stop-color="#FF009E"/></linearGradient><path id="starShape" d="${STAR_PATH}"/></defs></svg>
-  ${[0, 1, 2].map(i => `<svg viewBox="${STAR_VIEWBOX}"><use href="#starShape" class="${i < n ? 'on' : 'off'}"/></svg>`).join('')}
-</div>`;
-
-function rankTitle(correct, total) {
-  const p = correct / total;
-  if (p === 1) return { name: 'Lenda da Cibersegurança', stars: 3, msg: 'Gabaritou! Nenhuma ameaça passou por você.' };
-  if (p >= .8) return { name: 'Defensor Elite', stars: 3, msg: 'Você já pensa como quem protege a empresa.' };
-  if (p >= .6) return { name: 'Analista Sênior', stars: 2, msg: 'Mandou bem! Faltou pouco para o topo.' };
-  if (p >= .4) return { name: 'Aprendiz de SOC', stars: 1, msg: 'Bom começo. Revise os conceitos e tente de novo.' };
-  return { name: 'Alvo de Phishing', stars: 0, msg: 'Os golpistas agradecem. Hora de revisar e voltar mais forte.' };
-}
-
-/* ============================================================
-   ESTADO
-   ============================================================ */
-let player = null;      // { name, email }
-let game = null;        // estado da partida
-let timer = null;
-let keyHandler = null;
-
-function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
-/** Agrupa botões vizinhos para que todos fiquem com a largura do maior, sem depender de alinhamento. */
-function groupButtons(root) {
-  root.querySelectorAll('.btn').forEach(b => {
-    if (b.parentElement.classList.contains('btns')) return;
-    const run = [b];
-    for (let n = b.nextElementSibling; n && n.classList.contains('btn'); n = n.nextElementSibling) run.push(n);
-    const wrap = document.createElement('div');
-    wrap.className = 'btns';
-    b.parentElement.insertBefore(wrap, b);
-    run.forEach(x => wrap.appendChild(x));
-  });
-}
-function render(html, kind = 'page') {
-  stopTimer();
-  if (keyHandler) { document.removeEventListener('keydown', keyHandler); keyHandler = null; }
-  const back = kind === 'home' ? '' : '<button class="homelink" type="button">&larr; Voltar ao Início</button>';
-  $app.innerHTML = `<div class="screen">${back}${html}</div>`;
-  groupButtons($app);
-  const link = $app.querySelector('.homelink');
-  if (link) link.onclick = () => {
-    if (kind === 'game' && !confirm('Sair da partida? O progresso desta tentativa será perdido.')) return;
-    if (location.hash === '' || location.hash === '#') screenHome(); else go('');
-  };
-  window.scrollTo(0, 0);
-}
-function countUp(el, to, ms = 1000) {
-  if (reduceMotion || to === 0) { el.textContent = to; return; }
-  const t0 = performance.now();
-  const step = now => {
-    const k = Math.min(1, (now - t0) / ms);
-    el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3)));
-    if (k < 1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
-
-/* ============================================================
-   TELAS
-   ============================================================ */
-const go = hash => { location.hash = hash; };
-
-function screenHome() {
-  render(`
-    <div class="home">
-      ${SHIELD_SVG}
-      <div class="tag">${esc(CONFIG.gameTitle.join(' '))}</div>
-      <h1 class="headline">Aceita o desafio de <span class="grad">proteger a TOTVS?</span></h1>
-      <p class="provoke caret">Um clique errado abre a porta ao invasor. Um dado mal tratado expõe uma pessoa.</p>
-      <div class="home-actions">
-        <button class="btn primary" id="start" type="button">Iniciar</button>
-        <button class="btn secondary" id="goRank" type="button">Ranking</button>
-      </div>
-    </div>
-  `, 'home');
-  document.getElementById('start').onclick = () => go('jogar');
-  document.getElementById('goRank').onclick = () => go('ranking');
-}
-
-function screenRegister(prefill = {}) {
-  render(`
-    <div class="tag">Missão</div>
-    <h1 class="title" style="font-size:2.2rem;margin:8px 0 14px"><span class="grad">Identifique-se</span></h1>
-    <div class="chips" style="justify-content:flex-start;margin:0 0 18px">
-      <span class="chip"><b>${CONFIG.questionsPerGame}</b> fases</span>
-      <span class="chip"><b>${CONFIG.secondsPerQuestion}</b> seg por fase</span>
-      <span class="chip"><b>${attemptsLabel(CONFIG.attemptsPerEmail)}</b> tentativas</span>
-    </div>
-    <p class="muted small" style="margin:-4px 0 16px">Os pontos de todas as suas tentativas se somam no ranking. Errou? As perguntas voltam numa rodada de revisão com pontos extras.</p>
-    <form class="panel" id="form" novalidate>
-      <label for="name">Nome</label>
-      <input id="name" type="text" autocomplete="name" maxlength="60" value="${esc(prefill.name || '')}" required>
-      <label for="email">E-mail corporativo</label>
-      <input id="email" type="email" autocomplete="email" inputmode="email" maxlength="120" placeholder="nome@${esc(CONFIG.allowedDomains[0] || 'empresa.com')}" value="${esc(prefill.email || '')}" required>
-      <label class="check" for="consent">
-        <input id="consent" type="checkbox">
-        <span>Concordo em informar meu nome e e-mail para participar do ranking e da premiação desta atividade. Os dados serão usados apenas para esse fim e excluídos após o evento.</span>
-      </label>
-      <div class="error" id="err" role="alert"></div>
-      <button class="btn primary" type="submit">Começar</button>
-    </form>
-  `);
-  document.getElementById('form').onsubmit = async ev => {
-    ev.preventDefault();
-    const name = document.getElementById('name').value.trim().replace(/\s+/g, ' ');
-    const email = normEmail(document.getElementById('email').value);
-    const consent = document.getElementById('consent').checked;
-    const err = document.getElementById('err');
-    if (name.length < 2) return err.textContent = '> erro: informe seu nome.';
-    const emailErr = validateEmail(email);
-    if (emailErr) return err.textContent = '> erro: ' + emailErr.toLowerCase();
-    if (!consent) return err.textContent = '> erro: é necessário concordar para participar.';
-    const used = await Store.countAttempts(email);
-    if (used >= CONFIG.attemptsPerEmail)
-      return err.textContent = `> acesso negado: você já usou suas ${CONFIG.attemptsPerEmail} tentativas. Confira sua posição no ranking!`;
-    player = { name, email };
-    startGame();
-  };
-}
-
-const qid = q => { let h = 5381; for (const c of q.q) h = ((h << 5) + h + c.charCodeAt(0)) | 0; return (h >>> 0).toString(36); };
-
-/** Sorteia a partida: metade de segurança e metade de privacidade, dando prioridade às que o jogador ainda não viu. */
-function pickQuestions(seenIds) {
-  const seen = new Set(seenIds);
-  const half = Math.ceil(CONFIG.questionsPerGame / 2);
-  const take = (t, n) => {
-    const pool = QUESTIONS.filter(q => q.t === t);
-    return shuffle(pool.filter(q => !seen.has(qid(q)))).concat(shuffle(pool.filter(q => seen.has(qid(q))))).slice(0, n);
-  };
-  return shuffle([...take('s', half), ...take('p', CONFIG.questionsPerGame - half)]);
-}
-
-async function startGame() {
-  const picked = pickQuestions(await Store.getSeen(player.email));
-  await Store.addSeen(player.email, picked.map(qid));
-  game = {
-    qs: picked.map(q => {
-      const opts = shuffle([{ text: q.correct, ok: true }, ...q.wrong.map(text => ({ text, ok: false }))]);
-      return { q: q.q, why: q.why, rule: q.rule, d: q.d || 2, opts };
-    }),
-    mode: 'main',          // 'main' = 10 perguntas; 'review' = rodada de revisão dos erros
-    rev: [], missed: [], revRight: 0,
-    i: 0, score: 0, correct: 0, timeMs: 0, streak: 0,
-  };
-  screenQuestion();
-}
-
-const RING_C = 2 * Math.PI * 27;
-
-/** Rodada de revisão: as perguntas erradas voltam, com alternativas embaralhadas. */
-function screenReviewIntro() {
-  game.mode = 'review'; game.i = 0;
-  game.rev = game.missed.map(k => ({ ...game.qs[k], opts: shuffle(game.qs[k].opts) }));
-  const n = game.rev.length;
-  render(`
-    <div class="tag">Rodada de revisão</div>
-    <h1 class="title" style="font-size:2.2rem;margin:8px 0 14px"><span class="grad">Hora de revisar</span></h1>
-    <section class="panel">
-      <p style="margin-top:0">Você errou <b>${n}</b> ${n === 1 ? 'pergunta' : 'perguntas'}. ${n === 1 ? 'Ela volta' : 'Elas voltam'} agora, com as alternativas em outra ordem.</p>
-      <p class="muted" style="margin-bottom:0">Cada acerto vale <b>${Math.round(CONFIG.reviewFactor * 100)}%</b> dos pontos da pergunta. Não há bônus de rapidez: use o que acabou de ler.</p>
-    </section>
-    <button class="btn primary" id="go" type="button">Começar revisão</button>
-  `, 'game');
-  document.getElementById('go').onclick = screenQuestion;
-}
-
-function screenQuestion() {
-  const review = game.mode === 'review';
-  const list = review ? game.rev : game.qs;
-  const total = list.length, q = list[game.i];
-  const limit = CONFIG.secondsPerQuestion * 1000;
-  render(`
-    <div class="hud">
-      <div class="lvl"><small>${review ? 'REVISÃO' : 'FASE'}</small> ${pad2(game.i + 1)}<small>/${pad2(total)}</small></div>
-      <div id="combo">${!review && game.streak >= 2 ? `<span class="combo">COMBO x${game.streak}</span>` : ''}</div>
-      <div class="score">SCORE<b id="score">${game.score}</b></div>
-    </div>
-    <div class="progress" aria-hidden="true">${list.map((_, k) => `<i class="${k < game.i ? 'done' : k === game.i ? 'cur' : ''}"></i>`).join('')}</div>
-    <section class="panel">
-      <div class="q-head">
-        <span class="tag">${review ? 'Revisão' : 'Ameaça detectada'}</span>
-        <div class="timer" id="timer" role="timer" aria-label="Tempo restante">
-          <svg viewBox="0 0 64 64"><circle class="bg" cx="32" cy="32" r="27"/><circle class="fg" id="ring" cx="32" cy="32" r="27" stroke-dasharray="${RING_C}" stroke-dashoffset="0"/></svg>
-          <span id="secs">${CONFIG.secondsPerQuestion}</span>
-        </div>
-      </div>
-      <p class="q">${esc(q.q)}</p>
-      <div id="opts">${q.opts.map((o, k) => `<button class="opt" type="button" data-k="${k}" aria-pressed="false"><span class="key">${'ABCD'[k]}</span><span>${esc(o.text)}</span></button>`).join('')}</div>
-      <button class="btn primary" id="confirm" type="button" disabled>Confirmar resposta</button>
-    </section>
-    <div id="fb"></div>
-  `, 'game');
-  const start = performance.now();
-  const box = document.getElementById('timer'), ring = document.getElementById('ring'), secs = document.getElementById('secs');
-  let answered = false, sel = null;
-
-  /** Confirmar (ou o tempo acabar) para o relógio; a leitura da explicação não é cronometrada. */
-  const finish = chosen => {
-    if (answered) return;
-    answered = true; stopTimer();
-    const elapsed = Math.min(performance.now() - start, limit);
-    const right = chosen !== null && q.opts[chosen].ok;
-    const base = CONFIG.levelPoints[q.d - 1];
-    let gained = 0;
-    if (review) {
-      if (right) { gained = Math.round(base * CONFIG.reviewFactor); game.revRight++; }
-    } else if (right) {
-      game.streak++; game.correct++;
-      const combo = Math.min(Math.max(game.streak - 1, 0) * CONFIG.comboStep, CONFIG.comboMax);
-      gained = base + Math.round(CONFIG.speedBonusMax * (1 - elapsed / limit)) + combo;
-    } else { game.streak = 0; game.missed.push(game.i); }
-    if (!review) game.timeMs += elapsed;
-    game.score += gained;
-    document.getElementById('score').textContent = game.score;
-    document.getElementById('combo').innerHTML = !review && game.streak >= 2 ? `<span class="combo">COMBO x${game.streak}</span>` : '';
-    const confirmBtn0 = document.getElementById('confirm'), confirmBox = confirmBtn0.parentElement;
-    confirmBtn0.remove();
-    if (confirmBox.classList.contains('btns') && !confirmBox.children.length) confirmBox.remove();
-    document.querySelectorAll('.opt').forEach((b, k) => {
-      b.disabled = true; b.classList.remove('sel');
-      if (q.opts[k].ok) b.classList.add('correct');
-      else if (k === chosen) b.classList.add('wrong');
-      else b.classList.add('dim');
-    });
-    const last = game.i === list.length - 1;
-    const nextLabel = !last ? (review ? 'Próxima revisão' : 'Próxima fase')
-      : !review && game.missed.length ? 'Começar revisão' : 'Ver resultado';
-    const head = right ? (review ? `> REVISÃO CONCLUÍDA &nbsp;+${gained}` : `> ACCESS GRANTED &nbsp;+${gained}`)
-      : chosen === null ? '> TIMEOUT: ameaça não neutralizada' : '> THREAT DETECTED: resposta incorreta';
-    document.getElementById('fb').innerHTML = `
-      <div class="term ${right ? 'ok' : 'bad'}">
-        <div class="h">${head}</div>
-        <div class="rule"><span>Regra de ouro</span>${esc(q.rule)}</div>
-        <div class="b">${esc(q.why)}</div>
-      </div>
-      <div class="readbar" aria-hidden="true"><i id="readfill"></i></div>
-      <button class="btn primary" id="next" type="button" disabled></button>`;
-    groupButtons(document.getElementById('fb'));
-    const next = document.getElementById('next'), fill = document.getElementById('readfill');
-    const wait = (right ? CONFIG.readSecondsOk : CONFIG.readSecondsWrong) * 1000, t0 = performance.now();
-    const tick = () => {
-      const left = Math.max(0, wait - (performance.now() - t0));
-      fill.style.width = (100 * (1 - left / wait)) + '%';
-      if (left > 0) { next.textContent = `Leia a regra de ouro… ${Math.ceil(left / 1000)}s`; return; }
-      stopTimer();
-      next.disabled = false; next.textContent = nextLabel;
-      next.focus({ preventScroll: true });
-    };
-    tick(); timer = setInterval(tick, 100);
-    next.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
-    next.onclick = () => {
-      if (!last) { game.i++; screenQuestion(); }
-      else if (!review && game.missed.length) screenReviewIntro();
-      else finishGame();
-    };
-  };
-
-  const confirmBtn = document.getElementById('confirm');
-  document.querySelectorAll('.opt').forEach(b => b.onclick = () => {
-    if (answered) return;
-    sel = +b.dataset.k;
-    document.querySelectorAll('.opt').forEach((x, k) => { x.classList.toggle('sel', k === sel); x.setAttribute('aria-pressed', k === sel); });
-    confirmBtn.disabled = false;
-    confirmBtn.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
-  });
-  confirmBtn.onclick = () => { if (sel !== null) finish(sel); };
-
-  timer = setInterval(() => {
-    const left = Math.max(0, limit - (performance.now() - start));
-    ring.style.strokeDashoffset = RING_C * (1 - left / limit);
-    secs.textContent = Math.ceil(left / 1000);
-    box.classList.toggle('low', left < limit * .5 && left >= limit * .25);
-    box.classList.toggle('crit', left < limit * .25);
-    if (left <= 0) finish(null);
-  }, 100);
-}
-
-async function finishGame() {
-  const result = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    name: player.name, email: player.email,
-    score: game.score, correct: game.correct, total: game.qs.length,
-    reviewCorrect: game.revRight, reviewTotal: game.rev.length,
-    timeMs: Math.round(game.timeMs), at: Date.now(),
-  };
-  await Store.saveResult(result);
-  const ranking = buildRanking(await Store.getAllResults());
-  const pos = ranking.findIndex(r => r.email === player.email) + 1;
-  const mine = ranking[pos - 1];
-  const used = await Store.countAttempts(player.email);
-  const left = CONFIG.attemptsPerEmail - used;
-  const t = rankTitle(result.correct, result.total);
-  const hasReview = result.reviewTotal > 0;
-  const missedRules = game.missed.map(k => game.qs[k].rule);
-  render(`
-    <section class="panel center">
-      <div class="tag">Missão concluída</div>
-      ${starsSvg(t.stars)}
-      <div class="rank-title">${esc(t.name)}</div>
-      <div class="score-big grad" id="big">0</div>
-      <div class="muted mono small">PONTOS · ${esc(player.name)}</div>
-      ${mine.games > 1 ? `<div class="muted mono small" style="margin-top:4px">TOTAL NO RANKING · <b style="color:var(--lime)">${mine.score}</b> (${mine.games} partidas)</div>` : ''}
-      <div class="stats" style="grid-template-columns:repeat(${hasReview ? 4 : 3},1fr)">
-        <div><b>${result.correct}/${result.total}</b><span>acertos</span></div>
-        ${hasReview ? `<div><b>${result.reviewCorrect}/${result.reviewTotal}</b><span>revisão</span></div>` : ''}
-        <div><b>${fmtTime(result.timeMs)}</b><span>tempo</span></div>
-        <div><b>${pos}º</b><span>ranking</span></div>
-      </div>
-    </section>
-    <p class="center muted">${t.msg}${mine.games > 1 ? ' Seus pontos se somam aos das partidas anteriores.' : ''}</p>
-    ${missedRules.length ? `
-    <section class="panel">
-      <div class="tag">Regras de ouro para levar</div>
-      <ul class="rules">${missedRules.map(r => `<li>${esc(r)}</li>`).join('')}</ul>
-    </section>` : ''}
-    <button class="btn primary" id="rank" type="button">Ver ranking</button>
-    ${left > 0 ? `<button class="btn secondary" id="again" type="button">Jogar de novo (${attemptsLabel(left)})</button>` : '<p class="center muted small mono" style="margin-top:16px">&gt; todas as tentativas utilizadas</p>'}
-  `);
-  countUp(document.getElementById('big'), result.score);
-  document.getElementById('rank').onclick = () => go('ranking');
-  const again = document.getElementById('again');
-  if (again) again.onclick = startGame;
-}
-
-async function screenRanking(meEmail) {
-  const ranking = buildRanking(await Store.getAllResults());
-  const top = ranking.slice(0, CONFIG.rankingSize);
-  const me = meEmail ? ranking.findIndex(r => r.email === meEmail) : -1;
-  const row = (r, i, isMe) => `
-    <li class="${isMe ? 'me ' : ''}${i < 3 ? 'top' + (i + 1) : ''}">
-      <span class="pos">${pad2(i + 1)}</span>
-      <span class="who"><b>${esc(r.name)}</b><span>${esc(maskEmail(r.email))}</span></span>
-      <span class="pts">${r.score}</span>
-    </li>`;
-  render(`
-    <div class="tag">Leaderboard</div>
-    <h1 class="title" style="font-size:2.4rem;margin:8px 0 6px"><span class="grad">Ranking</span></h1>
-    <p class="muted small">Top ${CONFIG.rankingSize}. Os pontos de todas as suas partidas se somam. Em caso de empate vence quem acertou mais e respondeu mais rápido.</p>
-    <section class="panel" style="padding:8px 10px">
-      ${top.length ? `<ol class="rank">${top.map((r, i) => row(r, i, i === me)).join('')}</ol>` : '<p class="empty">&gt; nenhum jogador ainda. Seja o primeiro!</p>'}
-    </section>
-    ${me >= CONFIG.rankingSize ? `<section class="panel" style="padding:8px 10px"><ol class="rank">${row(ranking[me], me, true)}</ol></section>` : ''}
-    <button class="btn primary" id="play" type="button">Jogar</button>
-    <div class="center"><button class="linkish" id="admin" type="button">Organização</button></div>
-  `);
-  document.getElementById('play').onclick = () => go('jogar');
-  document.getElementById('admin').onclick = () => go('organizacao');
-}
-
-/* ---------- Área da organização (PROTÓTIPO: PIN no cliente não é segurança real) ---------- */
-function screenAdminLogin() {
-  if (TEST) return screenAdmin();
-  render(`
-    <div class="tag">Acesso restrito</div>
-    <h1 class="title" style="font-size:2.2rem;margin:8px 0 16px"><span class="grad">Organização</span></h1>
-    <form class="panel" id="f" novalidate>
-      <label for="pin" style="margin-top:0">PIN</label>
-      <input id="pin" type="password" inputmode="numeric" autocomplete="off">
-      <div class="error" id="err" role="alert"></div>
-      <button class="btn primary" type="submit">Entrar</button>
-    </form>
-    <button class="btn secondary" id="back" type="button">Voltar</button>`);
-  document.getElementById('back').onclick = () => go('ranking');
-  document.getElementById('f').onsubmit = ev => {
-    ev.preventDefault();
-    if (document.getElementById('pin').value === CONFIG.adminPin) screenAdmin();
-    else document.getElementById('err').textContent = '> acesso negado: PIN incorreto.';
-  };
-}
-
-async function screenAdmin() {
-  const all = await Store.getAllResults();
-  const ranking = buildRanking(all);
-  render(`
-    <div class="tag">Acesso restrito</div>
-    <h1 class="title" style="font-size:2.2rem;margin:8px 0 6px"><span class="grad">Organização</span></h1>
-    <p class="muted small mono">${all.length} partidas · ${ranking.length} participantes únicos (neste aparelho)</p>
-    <section class="panel"><div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Nome</th><th>E-mail</th><th>Pts</th><th>Acertos</th><th>Partidas</th><th>Tempo</th></tr></thead>
-      <tbody>${ranking.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${r.score}</td><td>${r.correct}/${r.total}</td><td>${r.games}</td><td>${fmtTime(r.timeMs)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">Sem dados.</td></tr>'}</tbody>
-    </table></div></section>
-    <button class="btn primary" id="csv" type="button" ${all.length ? '' : 'disabled'}>Exportar CSV (ranking)</button>
-    <button class="btn secondary" id="tv" type="button">Abrir ranking no telão</button>
-    <button class="btn danger" id="clear" type="button">Apagar todos os dados</button>
-    <button class="btn secondary" id="back" type="button">Voltar</button>`);
-  document.getElementById('back').onclick = () => go('ranking');
-  document.getElementById('tv').onclick = () => go('telao');
-  document.getElementById('csv').onclick = () => {
-    const head = ['posicao', 'nome', 'email', 'pontos', 'acertos', 'total', 'partidas', 'tempo_ms', 'data'];
-    const lines = ranking.map((r, i) => [i + 1, r.name, r.email, r.score, r.correct, r.total, r.games, r.timeMs, new Date(r.at).toISOString()].map(csvCell).join(','));
-    const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'ranking-seguranca-privacidade.csv';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  };
-  document.getElementById('clear').onclick = async () => {
-    if (confirm('Apagar TODOS os resultados deste aparelho? Esta ação não pode ser desfeita.')) { await Store.clearAll(); screenAdmin(); }
-  };
-}
-
-/* ---------- Telão: ranking em tela cheia, atualiza sozinho (abrir em #telao) ---------- */
-let tvStop = null;
-function stopTv() {
-  if (tvStop) { tvStop(); tvStop = null; }
-  document.body.classList.remove('tv', 'idle');
-}
-function screenTv() {
-  document.body.classList.add('tv');
-  const podSlot = (r, i, fresh) => r ? `
-    <section class="panel pod p${i + 1}${fresh ? ' fresh' : ''}">
-      <div class="medal">${pad2(i + 1)}</div>
-      <div class="pname">${esc(r.name)}</div>
-      <div class="pmail">${esc(maskEmail(r.email))}</div>
-      <div class="ppts">${r.score}</div>
-      <div class="pmeta">${r.correct}/${r.total} acertos &middot; ${fmtTime(r.timeMs)}</div>
-    </section>` : `
-    <section class="panel pod p${i + 1} vazio"><div class="medal">${pad2(i + 1)}</div><div class="pname">aguardando&hellip;</div></section>`;
-  const rowItem = (r, i, fresh) => `
-    <li class="${fresh ? 'fresh' : ''}">
-      <span class="pos">${pad2(i + 1)}</span>
-      <span class="who"><b>${esc(r.name)}</b><span>${esc(maskEmail(r.email))}</span></span>
-      <span class="pts">${r.score}</span>
-    </li>`;
-  render(`
-    <div class="tv-head">
-      <div>
-        <div class="tag">Leaderboard ao vivo</div>
-        <h1 class="title tv-title"><span class="grad">Ranking</span></h1>
-      </div>
-      <div class="tv-meta">
-        <span class="tv-live">ao vivo</span>
-        <span id="tvcount"></span>
-        <button class="linkish" id="tvfs" type="button">Tela cheia (F)</button>
-      </div>
-    </div>
-    <div id="tvlist"></div>
-    <div class="tv-foot">
-      <span>&gt; jogue agora: <b>${esc(location.host + location.pathname.replace(/index\.html$/, ''))}</b></span>
-      <span>Soma das partidas &middot; desempate: mais acertos, depois menor tempo.</span>
-    </div>
-  `);
-
-  const list = document.getElementById('tvlist');
-  const count = document.getElementById('tvcount');
-  let sig = '', prev = null, busy = false;
-  const refresh = async () => {
-    if (busy) return;
-    busy = true;
-    try {
-      const all = await Store.getAllResults();
-      const ranking = buildRanking(all);
-      const top = ranking.slice(0, CONFIG.rankingSize);
-      count.innerHTML = `<b>${ranking.length}</b> jogadores &middot; <b>${all.length}</b> partidas`;
-      const next = JSON.stringify(top.map(r => [r.email, r.score]));
-      if (next === sig) return;
-      const was = prev;
-      prev = new Map(top.map(r => [r.email, r.score]));
-      sig = next;
-      const isNew = r => !!was && was.get(r.email) !== r.score;
-      if (!top.length) { list.innerHTML = '<p class="tv-empty">&gt; nenhum jogador ainda. Seja o primeiro!</p>'; return; }
-      const rest = top.slice(3);
-      list.innerHTML = `
-        <div class="tv-pods">${[0, 1, 2].map(i => podSlot(top[i], i, top[i] && isNew(top[i]))).join('')}</div>
-        ${rest.length ? `<ol class="tv-rows" style="grid-template-rows:repeat(${Math.ceil(rest.length / 2)},auto)">${rest.map((r, i) => rowItem(r, i + 3, isNew(r))).join('')}</ol>` : ''}`;
-    } finally { busy = false; }
-  };
-
-  const fsBtn = document.getElementById('tvfs');
-  const toggleFs = () => {
-    try {
-      if (document.fullscreenElement) document.exitFullscreen();
-      else document.documentElement.requestFullscreen();
-    } catch { /* navegador sem suporte a tela cheia */ }
-  };
-  fsBtn.onclick = toggleFs;
-  keyHandler = ev => { if (ev.key === 'f' || ev.key === 'F') toggleFs(); };
-  document.addEventListener('keydown', keyHandler);
-
-  let idleT;
-  const wake = () => {
-    document.body.classList.remove('idle');
-    clearTimeout(idleT);
-    idleT = setTimeout(() => document.body.classList.add('idle'), 3000);
-  };
-  addEventListener('mousemove', wake);
-  wake();
-
-  refresh();
-  const poll = setInterval(refresh, 3000);
-  addEventListener('storage', refresh);
-  tvStop = () => {
-    clearInterval(poll); clearTimeout(idleT);
-    removeEventListener('mousemove', wake);
-    removeEventListener('storage', refresh);
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  };
-}
-
-function route() {
-  stopTv();
-  const h = location.hash.replace('#', '');
-  if (h === 'telao') screenTv();
-  else if (h === 'ranking') screenRanking(player && player.email);
-  else if (h === 'jogar') screenRegister(player || {});
-  else if (h === 'organizacao') screenAdminLogin();
-  else screenHome();
-}
-addEventListener('hashchange', route);
-
-initScene();
+/* ---------- início ---------- */
+if (TEST) renderTestBar();
+drawWheel();
 route();
 </script>
 </body>

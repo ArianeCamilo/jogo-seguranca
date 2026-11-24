@@ -19,7 +19,7 @@ $template = @'
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#002233">
 <meta name="robots" content="noindex,nofollow">
-<title>Chamadas · Cyber Shield Game</title>
+<title>Chamadas · Semana de Segurança e Privacidade</title>
 <style>
   html, body { height: 100%; margin: 0; background: #002233; overflow: hidden; }
   iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity .8s ease; background: #002233; }

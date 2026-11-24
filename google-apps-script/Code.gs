@@ -7,7 +7,7 @@ const TARGET_GID = 1308743066;
 const HEADER = ['data_hora', 'resposta_roleta', 'evento', 'fatia', 'tema', 'pergunta', 'acertou', 'detalhe', 'id', 'direito', 'brinde_entregue', 'resposta_correta'];
 const COL = {};
 HEADER.forEach(function (name, i) { COL[name] = i; });   // COL.direito = índice 0-based da coluna
-const EVENTS = ['quiz', 'quiz_abandonado', 'protecao_total', 'protecao_abandonada', 'premio_entregue', 'zerar'];
+const EVENTS = ['quiz', 'quiz_abandonado', 'protecao_total', 'protecao_abandonada', 'sem_brinde', 'premio_entregue', 'zerar'];
 const DIREITOS = ['simples', 'top'];
 const MAX_LEN = 300;        // tamanho máximo de cada campo
 const DEDUPE_ROWS = 500;    // quantas linhas recentes são conferidas para evitar registro duplicado
